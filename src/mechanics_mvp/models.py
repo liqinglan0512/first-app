@@ -40,6 +40,8 @@ class Element:
     material: str
     section: str
     type: str = "frame"
+    moment_release_i: bool = False
+    moment_release_j: bool = False
 
 
 @dataclass(frozen=True)

@@ -54,6 +54,7 @@ class Frame2DSolver:
             indexes = _element_indexes(element, dof_index)
             _, transform, length = _element_matrices(project, element)
             local_load = _consistent_element_load(element_load, length)
+            local_load = _apply_moment_releases_to_load(project, element, local_load)
             loads[indexes] += transform.T @ local_load
             existing = element_fixed_loads.get(element.id, np.zeros(6, dtype=float))
             element_fixed_loads[element.id] = existing + local_load
@@ -70,6 +71,7 @@ class Frame2DSolver:
 
         all_dofs = np.arange(total_dofs)
         free = np.array([index for index in all_dofs if index not in restrained], dtype=int)
+        free = _active_free_dofs(stiffness, loads, free)
         restrained_array = np.array(restrained, dtype=int)
 
         if free.size == 0:
@@ -107,7 +109,11 @@ class Frame2DSolver:
         )
 
 
-def _element_matrices(project: Project, element: Element) -> tuple[np.ndarray, np.ndarray, float]:
+def _element_matrices(
+    project: Project,
+    element: Element,
+    apply_releases: bool = True,
+) -> tuple[np.ndarray, np.ndarray, float]:
     nodes = {node.id: node for node in project.nodes}
     materials = {material.id: material for material in project.materials}
     sections = {section.id: section for section in project.sections}
@@ -130,8 +136,61 @@ def _element_matrices(project: Project, element: Element) -> tuple[np.ndarray, n
         local_k = _local_truss_stiffness(ea, length)
     else:
         local_k = _local_frame_stiffness(ea, ei, length)
+        if apply_releases:
+            local_k = _apply_moment_releases_to_stiffness(local_k, element)
     transform = _transformation(dx / length, dy / length)
     return local_k, transform, length
+
+
+def _active_free_dofs(stiffness: np.ndarray, loads: np.ndarray, free: np.ndarray) -> np.ndarray:
+    active: list[int] = []
+    stiffness_scale = max(float(np.max(np.abs(stiffness))), 1.0)
+    load_scale = max(float(np.max(np.abs(loads))), 1.0)
+    stiffness_tolerance = stiffness_scale * 1e-12
+    load_tolerance = load_scale * 1e-12
+    for index in free:
+        if np.max(np.abs(stiffness[int(index), :])) <= stiffness_tolerance and abs(loads[int(index)]) <= load_tolerance:
+            continue
+        active.append(int(index))
+    return np.array(active, dtype=int)
+
+
+def _moment_release_indexes(element: Element) -> list[int]:
+    indexes: list[int] = []
+    if element.moment_release_i:
+        indexes.append(2)
+    if element.moment_release_j:
+        indexes.append(5)
+    return indexes
+
+
+def _apply_moment_releases_to_stiffness(local_k: np.ndarray, element: Element) -> np.ndarray:
+    released = _moment_release_indexes(element)
+    if not released:
+        return local_k
+    kept = [index for index in range(6) if index not in released]
+    k_aa = local_k[np.ix_(kept, kept)]
+    k_ar = local_k[np.ix_(kept, released)]
+    k_ra = local_k[np.ix_(released, kept)]
+    k_rr = local_k[np.ix_(released, released)]
+    condensed = k_aa - k_ar @ np.linalg.solve(k_rr, k_ra)
+    result = np.zeros_like(local_k)
+    result[np.ix_(kept, kept)] = condensed
+    return result
+
+
+def _apply_moment_releases_to_load(project: Project, element: Element, local_load: np.ndarray) -> np.ndarray:
+    released = _moment_release_indexes(element)
+    if not released or element.type == "truss":
+        return local_load
+    base_k, _, _ = _element_matrices(project, element, apply_releases=False)
+    kept = [index for index in range(6) if index not in released]
+    k_ar = base_k[np.ix_(kept, released)]
+    k_rr = base_k[np.ix_(released, released)]
+    condensed = local_load[kept] - k_ar @ np.linalg.solve(k_rr, local_load[released])
+    result = np.zeros_like(local_load)
+    result[kept] = condensed
+    return result
 
 
 def _local_truss_stiffness(ea: float, length: float) -> np.ndarray:

@@ -45,6 +45,11 @@ def validate_project(project: Project) -> None:
             raise ValidationError(f"Element {element.id} references missing section {element.section}.")
         if element.type not in SUPPORTED_ELEMENT_TYPES:
             raise ValidationError(f"Unsupported element type: {element.type!r}.")
+        if element.moment_release_i and element.moment_release_j:
+            raise ValidationError(
+                f"Element {element.id} has moment releases at both ends. "
+                "Double-end releases are not supported yet."
+            )
         connected[element.node_i] += 1
         connected[element.node_j] += 1
 

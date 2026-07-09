@@ -3136,6 +3136,7 @@ for (const control of [
 }
 
 document.addEventListener("keydown", (event) => {
+  if (isTextEditingEvent(event)) return;
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
     event.preventDefault();
     undo();
@@ -3146,6 +3147,13 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.key === "Delete" || event.key === "Backspace") deleteSelection();
 });
+
+function isTextEditingEvent(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  return ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+}
 
 window.addEventListener("resize", resizeCanvas);
 applyFontSize(localStorage.getItem(AUTH_FONT_SIZE_KEY), false);

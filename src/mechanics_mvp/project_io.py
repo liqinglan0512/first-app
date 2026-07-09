@@ -76,6 +76,8 @@ def _parse_element(raw: dict[str, Any]) -> Element:
         material=str(raw["material"]),
         section=str(raw["section"]),
         type=str(raw.get("type", "frame")),
+        moment_release_i=bool(raw.get("moment_release_i", False)),
+        moment_release_j=bool(raw.get("moment_release_j", False)),
     )
 
 
