@@ -11,7 +11,7 @@ class ValidationError(ValueError):
     """Raised when a project is not valid for solving."""
 
 
-SUPPORTED_ELEMENT_TYPES = {"frame", "rigid", "arc", "tee"}
+SUPPORTED_ELEMENT_TYPES = {"frame", "rigid", "arc", "tee", "truss"}
 SUPPORTED_ELEMENT_LOADS = {"uniform_local", "linear_local", "polynomial_local"}
 
 

@@ -126,9 +126,27 @@ def _element_matrices(project: Project, element: Element) -> tuple[np.ndarray, n
     if element.type == "rigid":
         ea *= RIGID_STIFFNESS_FACTOR
         ei *= RIGID_STIFFNESS_FACTOR
-    local_k = _local_frame_stiffness(ea, ei, length)
+    if element.type == "truss":
+        local_k = _local_truss_stiffness(ea, length)
+    else:
+        local_k = _local_frame_stiffness(ea, ei, length)
     transform = _transformation(dx / length, dy / length)
     return local_k, transform, length
+
+
+def _local_truss_stiffness(ea: float, length: float) -> np.ndarray:
+    axial = ea / length
+    return np.array(
+        [
+            [axial, 0.0, 0.0, -axial, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [-axial, 0.0, 0.0, axial, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        ],
+        dtype=float,
+    )
 
 
 def _local_frame_stiffness(ea: float, ei: float, length: float) -> np.ndarray:
