@@ -612,9 +612,79 @@ function nodeAtScreen(x, y) {
   return best;
 }
 
+function nodeOrSupportAtScreen(x, y) {
+  return nodeAtScreen(x, y) || supportAtScreen(x, y);
+}
+
+function supportAtScreen(x, y) {
+  const point = { x, y };
+  let best = null;
+  let bestDistance = 18;
+  for (const node of state.nodes) {
+    if (node.fused || !isSupportNode(node)) continue;
+    const distance = supportHitDistance(node, point);
+    if (distance < bestDistance) {
+      best = node;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
+function supportSymbolSize() {
+  return Math.max(42, Math.min(110, state.pxPerMeter * 0.95));
+}
+
+function supportHitDistance(node, point) {
+  const screen = worldToScreen(node);
+  const support = node.support || supportFromRestraints(node.restraints);
+  const dir = supportDirection(node);
+  const normal = { x: -dir.y, y: dir.x };
+  const size = supportSymbolSize();
+  const toNode = Math.hypot(screen.x - point.x, screen.y - point.y);
+  let best = toNode;
+  if (support.type === "ground") {
+    const halfWidth = size * 0.62;
+    best = Math.min(best, pointToSegmentDistance(point, groundStart(screen, normal, halfWidth), groundEnd(screen, normal, halfWidth)));
+    return best;
+  }
+  if (support.type === "fixed" || (node.restraints.ux && node.restraints.uy && node.restraints.rz)) {
+    const halfWidth = size * 0.62;
+    best = Math.min(best, pointToSegmentDistance(point, groundStart(screen, normal, halfWidth), groundEnd(screen, normal, halfWidth)));
+    return best;
+  }
+  const height = support.type === "roller" ? size * 0.58 : size * 0.55;
+  const halfBase = support.type === "roller" ? size * 0.36 : size * 0.38;
+  const base = { x: screen.x - dir.x * height, y: screen.y - dir.y * height };
+  const p1 = { x: base.x + normal.x * halfBase, y: base.y + normal.y * halfBase };
+  const p2 = { x: base.x - normal.x * halfBase, y: base.y - normal.y * halfBase };
+  best = Math.min(best, pointToSegmentDistance(point, screen, p1), pointToSegmentDistance(point, screen, p2), pointToSegmentDistance(point, p1, p2));
+  if (support.type === "roller") {
+    const radius = Math.max(4, size * 0.085);
+    const rollerCenter = { x: base.x - dir.x * (radius + 3), y: base.y - dir.y * (radius + 3) };
+    for (const offset of [-radius * 1.8, radius * 1.8]) {
+      const center = { x: rollerCenter.x + normal.x * offset, y: rollerCenter.y + normal.y * offset };
+      best = Math.min(best, Math.abs(Math.hypot(point.x - center.x, point.y - center.y) - radius));
+    }
+    const groundCenter = { x: base.x - dir.x * (radius * 3 + 8), y: base.y - dir.y * (radius * 3 + 8) };
+    best = Math.min(best, pointToSegmentDistance(point, groundStart(groundCenter, normal, halfBase + 12), groundEnd(groundCenter, normal, halfBase + 12)));
+  } else {
+    best = Math.min(best, pointToSegmentDistance(point, groundStart(base, normal, halfBase + 8), groundEnd(base, normal, halfBase + 8)));
+  }
+  return best;
+}
+
+function groundStart(center, normal, halfWidth) {
+  return { x: center.x + normal.x * halfWidth, y: center.y + normal.y * halfWidth };
+}
+
+function groundEnd(center, normal, halfWidth) {
+  return { x: center.x - normal.x * halfWidth, y: center.y - normal.y * halfWidth };
+}
+
 function elementAtScreen(x, y) {
   let best = null;
-  let bestDistance = 9;
+  let bestDistance = 14;
   for (const element of state.elements) {
     const nodeI = getNode(element.node_i);
     const nodeJ = getNode(element.node_j);
@@ -758,7 +828,7 @@ function canvasPoint(event) {
 }
 
 function handlePointAction(point, event) {
-  const hitNode = nodeAtScreen(point.x, point.y);
+  const hitNode = nodeOrSupportAtScreen(point.x, point.y);
   const hitElement = elementAtScreen(point.x, point.y);
   let world = screenToWorld(point);
   world = applyOrthogonalLock(world);
@@ -898,7 +968,7 @@ function applySupportPreset(node, preset) {
   node.restraints = supportPresetToRestraints(preset);
   node.support = {
     type: preset,
-    mode: preset === "pin" ? "rotating" : preset === "ground" ? "ground" : preset,
+    mode: preset === "pin" ? "fixed-ground" : preset === "roller" ? "rolling-ground" : preset === "ground" ? "fixed-ground" : preset,
     angle: Number(node.support?.angle || 0),
   };
 }
@@ -924,6 +994,17 @@ function restraintsToList(restraints) {
 }
 
 function deleteSelection() {
+  if (!state.selected && !state.selection.nodes.length && !state.selection.elements.length && state.pointer) {
+    const hitNode = nodeOrSupportAtScreen(state.pointer.x, state.pointer.y);
+    const hitElement = elementAtScreen(state.pointer.x, state.pointer.y);
+    if (hitNode) {
+      state.selected = { type: "node", id: hitNode.id };
+      state.selection = { nodes: [hitNode.id], elements: [] };
+    } else if (hitElement) {
+      state.selected = { type: "element", id: hitElement.id };
+      state.selection = { nodes: [], elements: [hitElement.id] };
+    }
+  }
   if (!state.selected && !state.selection.nodes.length && !state.selection.elements.length) return;
   mutate(() => {
     const nodeIds = new Set(state.selection.nodes);
@@ -1148,8 +1229,8 @@ function parseSupport(raw, restraints) {
   }
   const parsed = parseRestraints(restraints);
   if (parsed.ux && parsed.uy && parsed.rz) return { type: "fixed", mode: "fixed", angle: 0 };
-  if (parsed.ux && parsed.uy) return { type: "pin", mode: "rotating", angle: 0 };
-  if (parsed.uy) return { type: "roller", mode: "roller", angle: 0 };
+  if (parsed.ux && parsed.uy) return { type: "pin", mode: "fixed-ground", angle: 0 };
+  if (parsed.uy) return { type: "roller", mode: "rolling-ground", angle: 0 };
   return { type: "free", mode: "free", angle: 0 };
 }
 
@@ -1504,10 +1585,11 @@ function openSolveDialog() {
 function openSupportDialog(node) {
   if (!node || !els.supportDialog) return;
   state.dialogNodeId = node.id;
-  const mode = node.support?.type === "ground" || node.support?.mode === "fixed-ground" ? "fixed" : "rotating";
+  const support = node.support || supportFromRestraints(node.restraints);
+  const mode = support.mode === "rotating" ? "rotating" : "fixed";
   const radio = document.querySelector(`input[name='supportMode'][value='${mode}']`);
   if (radio) radio.checked = true;
-  els.supportAngle.value = Number(node.support?.angle || 0);
+  els.supportAngle.value = Number(support.angle || 0);
   if (!els.supportDialog.open) els.supportDialog.showModal();
 }
 
@@ -1516,13 +1598,21 @@ function applySupportSettings() {
   if (!node) return;
   const mode = document.querySelector("input[name='supportMode']:checked").value;
   const angle = Number(els.supportAngle.value || 0);
+  const current = node.support || supportFromRestraints(node.restraints);
+  const type = ["pin", "roller", "ground", "fixed"].includes(current.type) ? current.type : "pin";
   mutate(() => {
-    if (mode === "fixed") {
+    if (type === "ground") {
       node.restraints = { ux: true, uy: true, rz: true };
       node.support = { type: "ground", mode: "fixed-ground", angle };
+    } else if (type === "fixed") {
+      node.restraints = { ux: true, uy: true, rz: true };
+      node.support = { type: "fixed", mode: "fixed", angle };
+    } else if (type === "roller") {
+      node.restraints = supportPresetToRestraints("roller");
+      node.support = { type: "roller", mode: mode === "rotating" ? "rotating" : "rolling-ground", angle };
     } else {
       node.restraints = { ux: true, uy: true, rz: false };
-      node.support = { type: "pin", mode: "rotating", angle };
+      node.support = { type: "pin", mode: mode === "rotating" ? "rotating" : "fixed-ground", angle };
     }
     setSelection("node", node.id);
   });
@@ -2136,7 +2226,7 @@ function drawSupports() {
     const point = worldToScreen(node);
     const support = node.support || supportFromRestraints(node.restraints);
     const direction = supportDirection(node);
-    if (support.type === "ground" || support.mode === "fixed-ground") {
+    if (support.type === "ground") {
       drawGroundFoundation(point, direction);
     } else if (support.type === "fixed" || (node.restraints.ux && node.restraints.uy && node.restraints.rz)) {
       drawFixedSupport(point, direction);
@@ -2150,14 +2240,14 @@ function drawSupports() {
 
 function supportFromRestraints(restraints) {
   if (restraints.ux && restraints.uy && restraints.rz) return { type: "fixed", mode: "fixed", angle: 0 };
-  if (restraints.ux && restraints.uy) return { type: "pin", mode: "rotating", angle: 0 };
-  if (restraints.uy) return { type: "roller", mode: "roller", angle: 0 };
+  if (restraints.ux && restraints.uy) return { type: "pin", mode: "fixed-ground", angle: 0 };
+  if (restraints.uy) return { type: "roller", mode: "rolling-ground", angle: 0 };
   return { type: "free", mode: "free", angle: 0 };
 }
 
 function supportDirection(node) {
   const support = node.support || {};
-  if (Number.isFinite(Number(support.angle)) && support.type !== "free") {
+  if (support.mode === "rotating" && Number.isFinite(Number(support.angle)) && support.type !== "free") {
     const radians = Number(support.angle) * (Math.PI / 180);
     return { x: Math.cos(radians), y: -Math.sin(radians) };
   }
@@ -2180,13 +2270,14 @@ function connectedDirection(node) {
 
 function drawFixedSupport(point, dir) {
   ctx.save();
-  ctx.strokeStyle = cssColor("--blue");
+  ctx.strokeStyle = cssColor("--ink");
   ctx.lineWidth = 2.2;
   const normal = { x: -dir.y, y: dir.x };
-  const a = { x: point.x + normal.x * 20, y: point.y + normal.y * 20 };
-  const b = { x: point.x - normal.x * 20, y: point.y - normal.y * 20 };
+  const halfWidth = supportSymbolSize() * 0.62;
+  const a = groundStart(point, normal, halfWidth);
+  const b = groundEnd(point, normal, halfWidth);
   line(a, b);
-  for (let i = -18; i <= 18; i += 8) {
+  for (let i = -halfWidth + 5; i <= halfWidth - 5; i += 8) {
     const base = { x: point.x + normal.x * i, y: point.y + normal.y * i };
     line(base, { x: base.x - dir.x * 12 + normal.x * 4, y: base.y - dir.y * 12 + normal.y * 4 });
   }
@@ -2195,27 +2286,23 @@ function drawFixedSupport(point, dir) {
 
 function drawGroundFoundation(point, dir) {
   ctx.save();
-  ctx.strokeStyle = cssColor("--ink");
-  ctx.lineWidth = 2.4;
   const normal = { x: -dir.y, y: dir.x };
-  const base = { x: point.x - dir.x * 18, y: point.y - dir.y * 18 };
-  line({ x: base.x + normal.x * 28, y: base.y + normal.y * 28 }, { x: base.x - normal.x * 28, y: base.y - normal.y * 28 });
-  ctx.setLineDash([6, 5]);
-  const dashed = { x: base.x - dir.x * 12, y: base.y - dir.y * 12 };
-  line({ x: dashed.x + normal.x * 26, y: dashed.y + normal.y * 26 }, { x: dashed.x - normal.x * 26, y: dashed.y - normal.y * 26 });
-  ctx.setLineDash([]);
+  drawSupportGround(point, dir, normal, supportSymbolSize() * 0.68, cssColor("--ink"), 2.4);
   ctx.restore();
 }
 
 function drawPinSupport(point, dir) {
   ctx.save();
-  ctx.strokeStyle = cssColor("--blue");
-  ctx.fillStyle = document.body.classList.contains("dark-theme") ? "rgba(72, 162, 255, 0.16)" : "rgba(36, 95, 159, 0.12)";
+  ctx.strokeStyle = cssColor("--ink");
+  ctx.fillStyle = document.body.classList.contains("dark-theme") ? "rgba(255, 255, 255, 0.08)" : "rgba(15, 23, 42, 0.05)";
   ctx.lineWidth = 2.1;
   const normal = { x: -dir.y, y: dir.x };
-  const base = { x: point.x - dir.x * 28, y: point.y - dir.y * 28 };
-  const p1 = { x: base.x + normal.x * 18, y: base.y + normal.y * 18 };
-  const p2 = { x: base.x - normal.x * 18, y: base.y - normal.y * 18 };
+  const size = supportSymbolSize();
+  const height = size * 0.55;
+  const halfBase = size * 0.38;
+  const base = { x: point.x - dir.x * height, y: point.y - dir.y * height };
+  const p1 = { x: base.x + normal.x * halfBase, y: base.y + normal.y * halfBase };
+  const p2 = { x: base.x - normal.x * halfBase, y: base.y - normal.y * halfBase };
   ctx.beginPath();
   ctx.moveTo(point.x, point.y);
   ctx.lineTo(p1.x, p1.y);
@@ -2223,20 +2310,23 @@ function drawPinSupport(point, dir) {
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  line({ x: base.x + normal.x * 24, y: base.y + normal.y * 24 }, { x: base.x - normal.x * 24, y: base.y - normal.y * 24 });
-  drawSupportGround(base, dir, normal, 26);
+  drawSupportGround(base, dir, normal, halfBase + 9, cssColor("--ink"), 1.9);
   ctx.restore();
 }
 
 function drawRollerSupport(point, dir) {
   ctx.save();
-  ctx.strokeStyle = cssColor("--blue");
-  ctx.fillStyle = document.body.classList.contains("dark-theme") ? "rgba(72, 162, 255, 0.16)" : "rgba(36, 95, 159, 0.12)";
+  ctx.strokeStyle = cssColor("--ink");
+  ctx.fillStyle = document.body.classList.contains("dark-theme") ? "rgba(255, 255, 255, 0.08)" : "rgba(15, 23, 42, 0.05)";
   ctx.lineWidth = 2.1;
   const normal = { x: -dir.y, y: dir.x };
-  const base = { x: point.x - dir.x * 24, y: point.y - dir.y * 24 };
-  const p1 = { x: base.x + normal.x * 16, y: base.y + normal.y * 16 };
-  const p2 = { x: base.x - normal.x * 16, y: base.y - normal.y * 16 };
+  const size = supportSymbolSize();
+  const height = size * 0.58;
+  const halfBase = size * 0.36;
+  const radius = Math.max(4, size * 0.085);
+  const base = { x: point.x - dir.x * height, y: point.y - dir.y * height };
+  const p1 = { x: base.x + normal.x * halfBase, y: base.y + normal.y * halfBase };
+  const p2 = { x: base.x - normal.x * halfBase, y: base.y - normal.y * halfBase };
   ctx.beginPath();
   ctx.moveTo(point.x, point.y);
   ctx.lineTo(p1.x, p1.y);
@@ -2244,24 +2334,28 @@ function drawRollerSupport(point, dir) {
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  const rollerCenter = { x: base.x - dir.x * 6, y: base.y - dir.y * 6 };
-  for (const offset of [-7, 7]) {
+  const rollerCenter = { x: base.x - dir.x * (radius + 3), y: base.y - dir.y * (radius + 3) };
+  for (const offset of [-radius * 1.8, radius * 1.8]) {
     ctx.beginPath();
-    ctx.arc(rollerCenter.x + normal.x * offset, rollerCenter.y + normal.y * offset, 3.5, 0, Math.PI * 2);
+    ctx.arc(rollerCenter.x + normal.x * offset, rollerCenter.y + normal.y * offset, radius, 0, Math.PI * 2);
     ctx.stroke();
   }
+  const groundCenter = { x: base.x - dir.x * (radius * 3 + 8), y: base.y - dir.y * (radius * 3 + 8) };
+  drawSupportGround(groundCenter, dir, normal, halfBase + 12, cssColor("--ink"), 1.9);
   ctx.restore();
 }
 
-function drawSupportGround(center, dir, normal, halfWidth) {
+function drawSupportGround(center, dir, normal, halfWidth, color = cssColor("--ink"), lineWidth = 1.8) {
   ctx.save();
-  ctx.strokeStyle = cssColor("--blue");
-  ctx.lineWidth = 1.6;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  line(groundStart(center, normal, halfWidth), groundEnd(center, normal, halfWidth));
+  ctx.lineWidth = Math.max(1.2, lineWidth - 0.4);
   for (let offset = -halfWidth + 4; offset <= halfWidth - 4; offset += 8) {
     const start = { x: center.x + normal.x * offset, y: center.y + normal.y * offset };
     const end = {
-      x: start.x - dir.x * 9 + normal.x * 4,
-      y: start.y - dir.y * 9 + normal.y * 4,
+      x: start.x - dir.x * 11 + normal.x * 4,
+      y: start.y - dir.y * 11 + normal.y * 4,
     };
     line(start, end);
   }
@@ -2762,8 +2856,8 @@ function drawText(text, x, y, color) {
   ctx.restore();
 }
 
-function isRotatingPinSupport(node) {
-  return node && node.support && node.support.type === "pin" && node.support.mode === "rotating";
+function isRotatableSupport(node) {
+  return node && node.support && ["pin", "roller"].includes(node.support.type) && node.support.mode === "rotating";
 }
 
 function isSupportNode(node) {
@@ -2795,9 +2889,9 @@ canvas.addEventListener("mousedown", (event) => {
     state.drag = null;
     return;
   }
-  const hitNode = nodeAtScreen(point.x, point.y);
+  const hitNode = nodeOrSupportAtScreen(point.x, point.y);
   const hitElement = elementAtScreen(point.x, point.y);
-  if (state.tool === "select" && isRotatingPinSupport(hitNode)) {
+  if (state.tool === "select" && isRotatableSupport(hitNode)) {
     state.rotateSupport = {
       nodeId: hitNode.id,
       start: point,
@@ -2932,7 +3026,7 @@ canvas.addEventListener("mouseleave", () => {
 
 canvas.addEventListener("dblclick", (event) => {
   const point = canvasPoint(event);
-  const hitNode = nodeAtScreen(point.x, point.y);
+  const hitNode = nodeOrSupportAtScreen(point.x, point.y);
   if (!hitNode) return;
   event.preventDefault();
   if (isSupportNode(hitNode)) openSupportDialog(hitNode);
