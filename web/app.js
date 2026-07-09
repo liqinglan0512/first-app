@@ -1598,6 +1598,7 @@ function applySolveDisplayOptions() {
 }
 
 function formatResult(payload, project, scope) {
+  const summary = payload.summary || {};
   const optionLabels = state.solveOptions.map((option) => solveOptionLabel(option));
   const lines = [
     "求解结果",
@@ -1606,6 +1607,8 @@ function formatResult(payload, project, scope) {
     `体系判断：${simpleSystemJudgement(project)}`,
     "",
   ];
+
+  appendDiagnosticsResult(lines, summary.diagnostics);
 
   if (state.solveOptions.includes("displacement")) {
     lines.push("节点位移与转角");
@@ -1667,7 +1670,6 @@ function formatResult(payload, project, scope) {
     appendStressStrainSummary(lines, payload, project);
   }
 
-  const summary = payload.summary || {};
   if (state.solveOptions.includes("danger") && (summary.dangerous_sections || []).length) {
     lines.push("危险截面");
     for (const item of summary.dangerous_sections.slice(0, 3)) {
@@ -1718,6 +1720,56 @@ function solveOptionLabel(option) {
     stress_strain: "应变-应力图",
   };
   return labels[option] || option;
+}
+
+function appendDiagnosticsResult(lines, diagnostics) {
+  if (!diagnostics) return;
+  lines.push("模型诊断");
+  lines.push(`- 节点数：${diagnostics.node_count ?? 0}`);
+  lines.push(`- 单元数：${diagnostics.element_count ?? 0}`);
+  lines.push(`- 约束自由度数：${diagnostics.restrained_dof_count ?? 0}`);
+  lines.push(`- 总自由度数：${diagnostics.total_dof_count ?? 0}`);
+  lines.push(`- 自由自由度数：${diagnostics.free_dof_count ?? 0}`);
+  lines.push(`- 静定指数 s：${diagnostics.determinacy_index ?? 0}`);
+  const components = diagnostics.connected_components || [];
+  if (components.length) {
+    lines.push(`- 连通分量：${components.map((component) => `[${component.join(", ")}]`).join("；")}`);
+  }
+  const issues = diagnostics.issues || [];
+  if (issues.length) {
+    lines.push("提示：");
+    for (const issue of issues) {
+      lines.push(`- [${diagnosticLevelLabel(issue.level)}] ${diagnosticIssueText(issue)}`);
+    }
+  } else {
+    lines.push("提示：未发现拓扑级诊断问题。");
+  }
+  lines.push("");
+}
+
+function diagnosticLevelLabel(level) {
+  const labels = {
+    info: "信息",
+    warning: "警告",
+    error: "错误",
+  };
+  return labels[level] || level || "信息";
+}
+
+function diagnosticIssueText(issue) {
+  const messages = {
+    duplicate_node_id: "存在重复节点 ID。",
+    missing_node_i: "存在杆件引用了缺失的起点节点。",
+    missing_node_j: "存在杆件引用了缺失的终点节点。",
+    zero_length_element: "存在零长度杆件。",
+    disconnected_structure: "模型存在多个不连通部分。",
+    isolated_node: "存在未连接到任何杆件的孤立节点。",
+    no_free_dof: "模型没有可求解的自由自由度。",
+    likely_mechanism: "静定指数为负，模型可能为机构或约束不足。",
+    roughly_determinate: "静定指数为 0，拓扑估算可能为静定结构。",
+    roughly_indeterminate: "静定指数为正，拓扑估算可能为超静定结构。",
+  };
+  return messages[issue.code] || issue.message || issue.code || "未知诊断信息。";
 }
 
 function sortedEntries(object) {
