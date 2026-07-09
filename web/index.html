@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Computational Mechanics Solver</title>
+    <link rel="stylesheet" href="/static/app.css">
+  </head>
+  <body>
+    <section id="welcomeScreen" class="welcome-screen">
+      <div class="welcome-content">
+        <h1 class="welcome-title rainbow-animated">
+          <span>欢迎使用</span>
+          <span>Computational Mechanics Solver</span>
+        </h1>
+        <p class="welcome-subtitle studio-credit"><span class="li-ion">Li<sup>+</sup></span>工作室出品</p>
+        <p class="welcome-contact">
+          如有任何错误、bug、请联系：620026600@qq.com 或202402040108@stu.bucea.edu.cn
+        </p>
+
+        <div id="authChoicePanel" class="auth-choice-panel">
+          <button id="showLoginButton" class="auth-choice-button">登录</button>
+          <button id="showRegisterButton" class="auth-choice-button">注册</button>
+        </div>
+
+        <div id="authPanel" class="auth-panel hidden">
+          <section id="loginCard" class="auth-card hidden">
+            <h2>登录</h2>
+            <label class="auth-field">
+              <span>账户名</span>
+              <input id="loginUsername" autocomplete="username">
+            </label>
+            <label class="auth-field">
+              <span>密码</span>
+              <input id="loginPassword" type="password" autocomplete="current-password">
+            </label>
+            <button id="loginSubmit" class="auth-action">登录</button>
+          </section>
+
+          <section id="registerCard" class="auth-card hidden">
+            <h2>注册</h2>
+            <label class="auth-field">
+              <span>账户名</span>
+              <input id="registerUsername" autocomplete="username">
+            </label>
+            <label class="auth-field">
+              <span>密码</span>
+              <input id="registerPassword" type="password" autocomplete="new-password">
+            </label>
+            <label class="auth-field">
+              <span>昵称</span>
+              <input id="registerNickname">
+            </label>
+            <div class="avatar-upload-row">
+              <span id="registerAvatarPreview" class="default-avatar">CM</span>
+              <label class="avatar-upload">
+                <span>上传头像</span>
+                <input id="registerAvatar" type="file" accept="image/*">
+              </label>
+            </div>
+            <button id="registerSubmit" class="auth-action">注册并登录</button>
+          </section>
+        </div>
+
+        <div id="startPanel" class="start-panel hidden">
+          <button id="startAppButton" class="start-app-button">开始计算</button>
+          <button id="welcomeLogoutButton" class="welcome-logout-button">退出登录</button>
+        </div>
+        <p id="authMessage" class="auth-message" role="status"></p>
+      </div>
+    </section>
+
+    <div id="appShell" class="app-shell app-hidden">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-copy">
+            <span class="brand-title rainbow-title">Computational Mechanics Solver</span>
+            <span class="brand-subtitle studio-credit"><span class="li-ion">Li<sup>+</sup></span>工作室出品</span>
+          </span>
+        </div>
+
+        <div class="tool-strip" role="toolbar" aria-label="建模工具">
+          <button class="tool-button active" data-tool="select" title="选择">选择</button>
+          <button class="tool-button" data-tool="node" title="节点">节点</button>
+          <button class="tool-button" data-tool="element" title="杆件">杆件</button>
+          <button class="tool-button" data-tool="support" title="支座">支座</button>
+          <button class="tool-button" data-tool="load" title="荷载">荷载</button>
+        </div>
+
+        <div class="user-settings">
+          <span id="mainUserAvatar" class="default-avatar main-avatar">CM</span>
+          <span id="mainUserName" class="main-user-name">未登录</span>
+          <button id="settingsButton" class="settings-button" title="设置">设置</button>
+        </div>
+
+        <div class="toolbar-controls">
+          <label class="compact-field">
+            <span>选择</span>
+            <select id="selectionMode">
+              <option value="point">点选</option>
+              <option value="box">虚线框选</option>
+              <option value="lasso">虚线套索</option>
+            </select>
+          </label>
+          <label class="compact-field">
+            <span>支座</span>
+            <select id="supportPreset">
+              <option value="fixed">固定端</option>
+              <option value="pin">铰支座</option>
+              <option value="roller">滚支座</option>
+              <option value="ground">地基</option>
+              <option value="free">自由</option>
+            </select>
+          </label>
+          <label class="inline-toggle"><input id="gridToggle" type="checkbox" checked>网格</label>
+          <label class="inline-toggle"><input id="snapToggle" type="checkbox" checked>捕捉</label>
+          <label class="inline-toggle"><input id="orthogonalToggle" type="checkbox">正交</label>
+          <button id="themeButton" title="切换黑白背景">黑底</button>
+        </div>
+
+        <div class="action-strip">
+          <button id="undoButton" title="撤销">撤销</button>
+          <button id="redoButton" title="重做">重做</button>
+          <button id="deleteButton" title="删除">删除</button>
+          <button id="openButton" title="打开工程">打开</button>
+          <button id="saveButton" title="保存工程">保存</button>
+          <button id="reportButton" title="导出计算书">报告</button>
+          <button id="solveButton" class="primary">求解</button>
+        </div>
+        <input id="fileInput" type="file" accept="application/json,.json" hidden>
+      </header>
+
+      <main class="workspace">
+        <section class="canvas-panel">
+          <canvas id="canvas" width="1200" height="760"></canvas>
+          <div id="toast" class="toast" role="status"></div>
+        </section>
+
+        <section class="diagram-panel">
+          <canvas id="diagramCanvas" width="1200" height="360"></canvas>
+        </section>
+
+        <aside class="side-panel">
+          <section class="panel">
+            <h2>模型</h2>
+            <dl class="metric-grid">
+              <div><dt>节点</dt><dd id="nodeCount">0</dd></div>
+              <div><dt>杆件</dt><dd id="elementCount">0</dd></div>
+              <div><dt>荷载</dt><dd id="loadCount">0</dd></div>
+            </dl>
+            <div class="toggle-grid">
+              <label><input id="deformedToggle" type="checkbox" checked>变形轮廓</label>
+              <label><input id="momentToggle" type="checkbox" checked>弯矩图</label>
+              <label><input id="shearToggle" type="checkbox">剪力图</label>
+              <label><input id="axialToggle" type="checkbox">轴力图</label>
+              <label><input id="stressStrainToggle" type="checkbox">应力-应变图</label>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h2>属性</h2>
+            <label class="wide-field">
+              <span>求解器</span>
+              <select id="solverBackend">
+                <option value="frame2d">Frame2D</option>
+                <option value="pinn">PINN 预留接口</option>
+              </select>
+            </label>
+            <label class="wide-field">
+              <span>杆件类型</span>
+              <select id="elementType">
+                <option value="frame">普通梁柱</option>
+                <option value="rigid">刚体杆件</option>
+              </select>
+            </label>
+            <div class="field-row">
+              <label class="wide-field">
+                <span>杆件长度</span>
+                <input id="elementLength" value="">
+              </label>
+              <button id="setElementLengthButton">设定</button>
+            </div>
+            <label class="wide-field">
+              <span>材料 E</span>
+              <input id="materialE" value="200 GPa">
+            </label>
+            <label class="wide-field">
+              <span>截面 A</span>
+              <input id="sectionA" value="10000 mm^2">
+            </label>
+            <label class="wide-field">
+              <span>惯性矩 I</span>
+              <input id="sectionI" value="80000000 mm^4">
+            </label>
+            <label class="wide-field">
+              <span>变形倍率</span>
+              <input id="deformScale" type="number" min="1" step="10" value="180">
+            </label>
+            <div id="selectionInfo" class="selection-info">未选择</div>
+          </section>
+
+          <section class="panel result-panel">
+            <h2>结果</h2>
+            <pre id="resultText">暂无结果</pre>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <dialog id="loadDialog" class="modal">
+      <form method="dialog">
+        <header class="modal-header">
+          <h2>荷载设置</h2>
+          <button value="cancel" class="icon-button" title="关闭">×</button>
+        </header>
+        <div class="segmented">
+          <label><input type="radio" name="loadMode" value="concentrated" checked>集中力</label>
+          <label><input type="radio" name="loadMode" value="point_moment">集中力偶</label>
+          <label><input type="radio" name="loadMode" value="distributed">分布力</label>
+          <label><input type="radio" name="loadMode" value="distributed_moment">均布力偶</label>
+        </div>
+
+        <section id="concentratedLoadPanel" class="modal-section">
+          <div class="button-grid">
+            <button type="button" data-load-direction="up">向上</button>
+            <button type="button" data-load-direction="down" class="active">向下</button>
+            <button type="button" data-load-direction="left">向左</button>
+            <button type="button" data-load-direction="right">向右</button>
+          </div>
+          <div class="field-row two">
+            <label class="wide-field">
+              <span>大小</span>
+              <input id="pointLoadMagnitude" value="10 kN">
+            </label>
+            <label class="wide-field">
+              <span>任意角度</span>
+              <input id="pointLoadAngle" type="number" value="-90">
+            </label>
+          </div>
+          <label class="wide-field">
+            <span>集中力偶 Mz</span>
+            <input id="pointLoadMoment" value="0 N*m">
+          </label>
+        </section>
+
+        <section id="pointMomentPanel" class="modal-section hidden">
+          <label class="wide-field">
+            <span>集中力偶 Mz</span>
+            <input id="pointMomentOnly" value="2 kN*m">
+          </label>
+        </section>
+
+        <section id="distributedLoadPanel" class="modal-section hidden">
+          <label class="wide-field">
+            <span>分布形式</span>
+            <select id="distributedShape">
+              <option value="rectangular">矩形分布</option>
+              <option value="triangular">三角分布</option>
+              <option value="custom">任意形状分布</option>
+            </select>
+          </label>
+          <div class="field-row two">
+            <label class="wide-field">
+              <span>方向</span>
+              <select id="distributedDirection">
+                <option value="down">向下</option>
+                <option value="up">向上</option>
+                <option value="left">向左</option>
+                <option value="right">向右</option>
+                <option value="angle">任意角度</option>
+              </select>
+            </label>
+            <label class="wide-field">
+              <span>角度</span>
+              <input id="distributedAngle" type="number" value="-90">
+            </label>
+          </div>
+          <div class="field-row two">
+            <label class="wide-field">
+              <span>起点大小 qi</span>
+              <input id="distributedQi" value="5 kN/m">
+            </label>
+            <label class="wide-field">
+              <span>终点大小 qj</span>
+              <input id="distributedQj" value="5 kN/m">
+            </label>
+          </div>
+          <label class="wide-field">
+            <span>任意形状多项式系数</span>
+            <input id="distributedCoefficients" value="-5 kN/m">
+          </label>
+        </section>
+
+        <section id="distributedMomentPanel" class="modal-section hidden">
+          <label class="wide-field">
+            <span>均布力偶强度</span>
+            <input id="distributedMoment" value="2 kN*m/m">
+          </label>
+        </section>
+
+        <footer class="modal-actions">
+          <button type="button" id="applyLoadToSelectionButton">应用到选中对象</button>
+          <button value="confirm" class="primary">确定</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="elementDialog" class="modal element-modal">
+      <form method="dialog">
+        <header class="modal-header">
+          <h2>杆件参数配置</h2>
+          <button value="cancel" class="icon-button" title="关闭">×</button>
+        </header>
+        <label class="wide-field">
+          <span>杆件形态</span>
+          <select id="elementGeometry">
+            <option value="right_angle">直角杆件</option>
+            <option value="straight" selected>直杆</option>
+            <option value="arc">弧形杆件</option>
+            <option value="tee">T形杆件</option>
+            <option value="freeform">任意形状杆件</option>
+          </select>
+        </label>
+        <div class="field-row two">
+          <label class="wide-field">
+            <span>截面形状</span>
+            <select id="sectionShape">
+              <option value="circle" selected>圆形</option>
+              <option value="rectangle">矩形</option>
+              <option value="tee">T形</option>
+              <option value="custom">任意形状</option>
+            </select>
+          </label>
+          <label class="wide-field">
+            <span>截面半径</span>
+            <input id="sectionRadius" value="50 mm">
+          </label>
+        </div>
+        <div class="field-row two">
+          <label class="wide-field">
+            <span>惯性矩 I</span>
+            <input id="shapeInertia" value="80000000 mm^4">
+          </label>
+          <label class="wide-field">
+            <span>惯性积 Ixy</span>
+            <input id="shapeInertiaProduct" value="0 mm^4">
+          </label>
+        </div>
+        <div class="field-row two">
+          <label class="wide-field">
+            <span>静矩 S</span>
+            <input id="shapeStaticMoment" value="0 mm^3">
+          </label>
+          <label class="wide-field">
+            <span>T形高度</span>
+            <input id="teeDepth" value="0.35 m">
+          </label>
+        </div>
+        <div class="field-row two">
+          <label class="wide-field">
+            <span>曲率</span>
+            <input id="elementCurvature" type="number" step="0.05" value="0.25">
+          </label>
+          <label class="wide-field">
+            <span>弧度</span>
+            <input id="elementArcAngle" type="number" step="5" value="45">
+          </label>
+        </div>
+        <footer class="modal-actions">
+          <button value="cancel">取消</button>
+          <button id="applyElementSettingsButton" value="confirm" class="primary">进入建模</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="supportDialog" class="modal">
+      <form method="dialog">
+        <header class="modal-header">
+          <h2>铰支座设置</h2>
+          <button value="cancel" class="icon-button" title="关闭">×</button>
+        </header>
+        <div class="segmented">
+          <label><input type="radio" name="supportMode" value="fixed" checked>固定接地</label>
+          <label><input type="radio" name="supportMode" value="rotating">旋转铰支座</label>
+        </div>
+        <label class="wide-field">
+          <span>旋转角度</span>
+          <input id="supportAngle" type="number" step="1" value="0">
+        </label>
+        <footer class="modal-actions">
+          <button value="cancel">取消</button>
+          <button id="applySupportSettingsButton" value="confirm" class="primary">应用</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="nodeDialog" class="modal">
+      <form method="dialog">
+        <header class="modal-header">
+          <h2>节点固化</h2>
+          <button value="cancel" class="icon-button" title="关闭">×</button>
+        </header>
+        <p class="modal-copy">固化后该节点会隐藏为杆件内部点，与它相连的杆件仍保留。</p>
+        <footer class="modal-actions">
+          <button value="cancel">否</button>
+          <button id="solidifyNodeButton" value="confirm" class="primary">是，固化节点</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="settingsDialog" class="modal settings-modal">
+      <form method="dialog">
+        <header class="modal-header">
+          <h2>设置</h2>
+          <button value="cancel" class="icon-button" title="关闭">×</button>
+        </header>
+        <label class="wide-field">
+          <span>字体大小</span>
+          <select id="fontSizeSelect">
+            <option value="13">小</option>
+            <option value="14">默认</option>
+            <option value="16">大</option>
+            <option value="18">特大</option>
+          </select>
+        </label>
+        <div class="settings-section">
+          <h3>昵称修改</h3>
+          <div class="field-row">
+            <label class="wide-field">
+              <span>新昵称</span>
+              <input id="settingsNickname">
+            </label>
+            <button id="saveNicknameButton" type="button">保存</button>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>密码修改</h3>
+          <label class="wide-field">
+            <span>原密码</span>
+            <input id="settingsOldPassword" type="password" autocomplete="current-password">
+          </label>
+          <label class="wide-field">
+            <span>新密码</span>
+            <input id="settingsNewPassword" type="password" autocomplete="new-password">
+          </label>
+          <button id="savePasswordButton" type="button">修改密码</button>
+        </div>
+        <div class="settings-section">
+          <h3>修改头像</h3>
+          <div class="avatar-upload-row">
+            <span id="settingsAvatarPreview" class="default-avatar settings-avatar-preview">CM</span>
+            <label class="avatar-upload">
+              <span>上传头像</span>
+              <input id="settingsAvatar" type="file" accept="image/*">
+            </label>
+          </div>
+          <button id="saveAvatarButton" type="button">保存头像</button>
+        </div>
+        <p id="settingsMessage" class="settings-message" role="status"></p>
+        <footer class="modal-actions">
+          <button id="logoutButton" type="button" class="danger-button">退出登录</button>
+          <button value="cancel" class="primary">完成</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="solveDialog" class="modal solve-modal">
+      <form method="dialog">
+        <header class="modal-header">
+          <h2>选择求解内容</h2>
+          <button value="cancel" class="icon-button" title="关闭">×</button>
+        </header>
+        <div class="scope-row">
+          <label><input type="radio" name="solveScope" value="whole" checked>整体模型</label>
+          <label><input type="radio" name="solveScope" value="selection">选中隔离体</label>
+        </div>
+        <div class="solve-grid">
+          <label><input type="checkbox" name="solveOption" value="determinacy" checked>静定 / 超静定分析</label>
+          <label><input type="checkbox" name="solveOption" value="system" checked>体系判断（常变 / 不变 / 瞬变）</label>
+          <label><input type="checkbox" name="solveOption" value="internal" checked>各内力求解</label>
+          <label><input type="checkbox" name="solveOption" value="moment" checked>弯矩图</label>
+          <label><input type="checkbox" name="solveOption" value="shear" checked>剪力图</label>
+          <label><input type="checkbox" name="solveOption" value="axial" checked>轴力图</label>
+          <label><input type="checkbox" name="solveOption" value="displacement" checked>位移 / 转角</label>
+          <label><input type="checkbox" name="solveOption" value="reaction" checked>支座反力</label>
+          <label><input type="checkbox" name="solveOption" value="danger" checked>危险截面</label>
+          <label><input type="checkbox" name="solveOption" value="flexibility">柔度</label>
+          <label><input type="checkbox" name="solveOption" value="stress">应力</label>
+          <label><input type="checkbox" name="solveOption" value="strain">应变</label>
+          <label><input type="checkbox" name="solveOption" value="stress_strain">应变-应力图</label>
+        </div>
+        <footer class="modal-actions">
+          <button value="cancel">取消</button>
+          <button id="runSolveButton" value="confirm" class="primary">开始求解</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

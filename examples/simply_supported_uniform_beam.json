@@ -1,0 +1,56 @@
+{
+  "metadata": {
+    "name": "simply_supported_uniform_beam"
+  },
+  "materials": [
+    {
+      "id": "steel",
+      "E": "200 GPa"
+    }
+  ],
+  "sections": [
+    {
+      "id": "beam",
+      "A": "10000 mm^2",
+      "I": "80000000 mm^4"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "A",
+      "x": "0 m",
+      "y": "0 m",
+      "restraints": [
+        "ux",
+        "uy"
+      ]
+    },
+    {
+      "id": "B",
+      "x": "4 m",
+      "y": "0 m",
+      "restraints": [
+        "uy"
+      ]
+    }
+  ],
+  "elements": [
+    {
+      "id": "E1",
+      "node_i": "A",
+      "node_j": "B",
+      "material": "steel",
+      "section": "beam"
+    }
+  ],
+  "loads": {
+    "elements": [
+      {
+        "element": "E1",
+        "kind": "uniform_local",
+        "qy": "-5 kN/m"
+      }
+    ]
+  }
+}
+
