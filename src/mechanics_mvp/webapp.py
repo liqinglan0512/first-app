@@ -12,7 +12,7 @@ from typing import Any
 
 from .engine import solve_with_backend
 from .project_io import project_from_dict
-from .report import build_report_pdf
+from .report import build_report_pdf, build_text_report_pdf
 
 
 WEB_ROOT = Path(__file__).resolve().parents[2] / "web"
@@ -42,6 +42,15 @@ def report_project_payload(raw: dict[str, Any]) -> bytes:
     return build_report_pdf(project, result, images=images, options=options)
 
 
+def dynamics_report_payload(raw: dict[str, Any]) -> bytes:
+    text = str(raw.get("report_text", "")).strip()
+    if not text:
+        raise ValueError("Dynamics report text is empty.")
+    if len(text) > 200_000:
+        raise ValueError("Dynamics report text is too large.")
+    return build_text_report_pdf(text, images=raw.get("report_images", {}), title="动力学计算书")
+
+
 def _solver_backend(raw: dict[str, Any]) -> str:
     metadata = raw.get("metadata", {})
     return str(raw.get("solver") or metadata.get("solver") or "frame2d")
@@ -62,7 +71,7 @@ class MechanicsWebHandler(BaseHTTPRequestHandler):
         self.send_error(404, "Not found")
 
     def do_POST(self) -> None:
-        if self.path not in {"/api/solve", "/api/report"}:
+        if self.path not in {"/api/solve", "/api/report", "/api/dynamics-report"}:
             self.send_error(404, "Not found")
             return
 
@@ -70,6 +79,13 @@ class MechanicsWebHandler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", "0"))
             raw_body = self.rfile.read(length)
             payload = json.loads(raw_body.decode("utf-8"))
+            if self.path == "/api/dynamics-report":
+                self._send_bytes(
+                    dynamics_report_payload(payload),
+                    content_type="application/pdf",
+                    headers={"Content-Disposition": 'attachment; filename="dynamics-report.pdf"'},
+                )
+                return
             if self.path == "/api/report":
                 self._send_bytes(
                     report_project_payload(payload),

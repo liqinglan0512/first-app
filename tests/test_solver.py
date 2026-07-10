@@ -133,7 +133,8 @@ class SolverTests(unittest.TestCase):
         report = build_report_pdf(project, result)
 
         self.assertTrue(report.startswith(b"%PDF-1.4"))
-        self.assertIn(b"Mechanics MVP Calculation Report", report)
+        self.assertIn(b"/STSong-Light", report)
+        self.assertIn("计算力学求解计算书".encode("utf-16-be").hex().upper().encode("ascii"), report)
 
     def test_unstable_model_raises_solver_error(self):
         project = Project(
