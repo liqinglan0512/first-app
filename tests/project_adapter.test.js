@@ -11,5 +11,19 @@ assert.deepEqual(adapter.solverElement({ type: "frame", moment_release_j: true }
   moment_release_i: false,
   moment_release_j: true,
 });
+assert.deepEqual(adapter.solverElement({ type: "truss", moment_release_i: true }), {
+  type: "truss",
+  moment_release_i: false,
+  moment_release_j: false,
+});
+assert.deepEqual(adapter.solverElement({ type: "rigid", moment_release_j: true }), {
+  type: "rigid",
+  moment_release_i: false,
+  moment_release_j: false,
+});
+assert.throws(
+  () => adapter.solverElement({ type: "frame", moment_release_i: true, moment_release_j: true }),
+  /双端弯矩释放/
+);
 
-console.log("project-adapter: 4 checks passed");
+console.log("project-adapter: 7 checks passed");

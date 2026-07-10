@@ -36,7 +36,7 @@ class Frame2DSolver:
         stiffness = np.zeros((total_dofs, total_dofs), dtype=float)
         loads = np.zeros(total_dofs, dtype=float)
         element_fixed_loads: dict[str, np.ndarray] = {}
-        load_integrals: dict[str, dict[str, np.ndarray]] = {}
+        load_integrals: dict[str, dict[str, object]] = {}
 
         for element in project.elements:
             indexes = _element_indexes(element, dof_index)
@@ -53,14 +53,16 @@ class Frame2DSolver:
             element = _element_by_id(project, element_load.element)
             indexes = _element_indexes(element, dof_index)
             _, transform, length = _element_matrices(project, element)
-            local_load = _consistent_element_load(element_load, length)
+            if _assemble_endpoint_point_load(element_load, element, dof_index, loads):
+                continue
+            local_load = _consistent_element_load(element_load, length, transform)
             local_load = _apply_moment_releases_to_load(project, element, local_load)
             loads[indexes] += transform.T @ local_load
             existing = element_fixed_loads.get(element.id, np.zeros(6, dtype=float))
             element_fixed_loads[element.id] = existing + local_load
             load_integrals[element.id] = _merge_load_integrals(
                 load_integrals.get(element.id),
-                _load_integrals(element_load, length),
+                _load_integrals(element_load, length, transform),
             )
 
         restrained: list[int] = []
@@ -241,12 +243,15 @@ def _transformation(cosine: float, sine: float) -> np.ndarray:
     )
 
 
-def _consistent_element_load(load: ElementLoad, length: float) -> np.ndarray:
+def _consistent_element_load(load: ElementLoad, length: float, transform: np.ndarray) -> np.ndarray:
     """Equivalent local nodal load by Gauss integration.
 
     `r` is the normalized coordinate x / L. Axial loads use linear shape
     functions; transverse loads use Euler-Bernoulli Hermite functions.
     """
+
+    if load.kind == "point_global":
+        return _consistent_point_load(load, length, transform)
 
     result = np.zeros(6, dtype=float)
     points, weights = np.polynomial.legendre.leggauss(8)
@@ -266,6 +271,51 @@ def _consistent_element_load(load: ElementLoad, length: float) -> np.ndarray:
             dtype=float,
         )
     return result
+
+
+def _consistent_point_load(load: ElementLoad, length: float, transform: np.ndarray) -> np.ndarray:
+    if load.ratio is None:
+        raise SolverError(f"Point load on element {load.element} has no position ratio.")
+    r = float(load.ratio)
+    local_fx, local_fy = _point_load_local_components(load, transform)
+    n1 = 1.0 - r
+    n2 = r
+    h1 = 1.0 - 3.0 * r**2 + 2.0 * r**3
+    h2 = length * (r - 2.0 * r**2 + r**3)
+    h3 = 3.0 * r**2 - 2.0 * r**3
+    h4 = length * (-r**2 + r**3)
+    dh1 = (-6.0 * r + 6.0 * r**2) / length
+    dh2 = 1.0 - 4.0 * r + 3.0 * r**2
+    dh3 = (6.0 * r - 6.0 * r**2) / length
+    dh4 = -2.0 * r + 3.0 * r**2
+    force_vector = np.array(
+        [n1 * local_fx, h1 * local_fy, h2 * local_fy, n2 * local_fx, h3 * local_fy, h4 * local_fy],
+        dtype=float,
+    )
+    moment_vector = load.mz * np.array([0.0, dh1, dh2, 0.0, dh3, dh4], dtype=float)
+    return force_vector + moment_vector
+
+
+def _point_load_local_components(load: ElementLoad, transform: np.ndarray) -> tuple[float, float]:
+    local = transform[:2, :2] @ np.array([load.fx, load.fy], dtype=float)
+    return float(local[0]), float(local[1])
+
+
+def _assemble_endpoint_point_load(
+    load: ElementLoad,
+    element: Element,
+    dof_index: dict[tuple[str, str], int],
+    loads: np.ndarray,
+) -> bool:
+    if load.kind != "point_global" or load.ratio is None:
+        return False
+    if not (math.isclose(load.ratio, 0.0, abs_tol=1e-12) or math.isclose(load.ratio, 1.0, abs_tol=1e-12)):
+        return False
+    node_id = element.node_i if math.isclose(load.ratio, 0.0, abs_tol=1e-12) else element.node_j
+    loads[dof_index[(node_id, "ux")]] += load.fx
+    loads[dof_index[(node_id, "uy")]] += load.fy
+    loads[dof_index[(node_id, "rz")]] += load.mz
+    return True
 
 
 def _evaluate_axis_load(load: ElementLoad, axis: str, r: float) -> float:
@@ -298,8 +348,29 @@ def _axis_attr(load: ElementLoad, axis: str, end: str) -> float | None:
     return load.qy_j
 
 
-def _load_integrals(load: ElementLoad, length: float) -> dict[str, np.ndarray]:
+def _load_integrals(load: ElementLoad, length: float, transform: np.ndarray) -> dict[str, object]:
     samples = np.linspace(0.0, length, 41)
+    if load.kind == "point_global":
+        if load.ratio is None:
+            raise SolverError(f"Point load on element {load.element} has no position ratio.")
+        local_fx, local_fy = _point_load_local_components(load, transform)
+        zeros = np.zeros_like(samples, dtype=float)
+        return {
+            "x": samples,
+            "qx": zeros.copy(),
+            "qy": zeros.copy(),
+            "axial": zeros.copy(),
+            "shear": zeros.copy(),
+            "moment": zeros.copy(),
+            "point_events": [
+                {
+                    "x": float(load.ratio) * length,
+                    "fx": local_fx,
+                    "fy": local_fy,
+                    "mz": float(load.mz),
+                }
+            ],
+        }
     qx_values = np.array([_evaluate_axis_load(load, "x", x / length) for x in samples], dtype=float)
     qy_values = np.array([_evaluate_axis_load(load, "y", x / length) for x in samples], dtype=float)
     shear_integral = _cumulative_trapezoid(samples, qy_values)
@@ -312,6 +383,7 @@ def _load_integrals(load: ElementLoad, length: float) -> dict[str, np.ndarray]:
         "axial": axial_integral,
         "shear": shear_integral,
         "moment": moment_integral,
+        "point_events": [],
     }
 
 
@@ -324,18 +396,19 @@ def _cumulative_trapezoid(x_values: np.ndarray, y_values: np.ndarray) -> np.ndar
 
 
 def _merge_load_integrals(
-    existing: dict[str, np.ndarray] | None,
-    current: dict[str, np.ndarray],
-) -> dict[str, np.ndarray]:
+    existing: dict[str, object] | None,
+    current: dict[str, object],
+) -> dict[str, object]:
     if existing is None:
         return current
     return {
         "x": current["x"],
-        "qx": existing["qx"] + current["qx"],
-        "qy": existing["qy"] + current["qy"],
-        "axial": existing["axial"] + current["axial"],
-        "shear": existing["shear"] + current["shear"],
-        "moment": existing["moment"] + current["moment"],
+        "qx": np.asarray(existing["qx"]) + np.asarray(current["qx"]),
+        "qy": np.asarray(existing["qy"]) + np.asarray(current["qy"]),
+        "axial": np.asarray(existing["axial"]) + np.asarray(current["axial"]),
+        "shear": np.asarray(existing["shear"]) + np.asarray(current["shear"]),
+        "moment": np.asarray(existing["moment"]) + np.asarray(current["moment"]),
+        "point_events": [*list(existing.get("point_events", [])), *list(current.get("point_events", []))],
     }
 
 
@@ -416,7 +489,7 @@ def _map_element_forces(
 def _map_element_diagrams(
     project: Project,
     element_end_forces: dict[str, dict[str, float]],
-    load_integrals: dict[str, dict[str, np.ndarray]],
+    load_integrals: dict[str, dict[str, object]],
 ) -> dict[str, list[dict[str, float]]]:
     diagrams: dict[str, list[dict[str, float]]] = {}
     for element in project.elements:
@@ -442,13 +515,21 @@ def _map_element_diagrams(
     return diagrams
 
 
-def _interpolated_integrals(integrals: dict[str, np.ndarray], position: float) -> dict[str, float]:
-    x_values = integrals["x"]
-    return {
-        "axial": float(np.interp(position, x_values, integrals["axial"])),
-        "shear": float(np.interp(position, x_values, integrals["shear"])),
-        "moment": float(np.interp(position, x_values, integrals["moment"])),
+def _interpolated_integrals(integrals: dict[str, object], position: float) -> dict[str, float]:
+    x_values = np.asarray(integrals["x"])
+    result = {
+        "axial": float(np.interp(position, x_values, np.asarray(integrals["axial"]))),
+        "shear": float(np.interp(position, x_values, np.asarray(integrals["shear"]))),
+        "moment": float(np.interp(position, x_values, np.asarray(integrals["moment"]))),
     }
+    for event in integrals.get("point_events", []):
+        event_x = float(event["x"])
+        if position + 1e-12 < event_x:
+            continue
+        result["axial"] += float(event["fx"])
+        result["shear"] += float(event["fy"])
+        result["moment"] += float(event["fy"]) * (position - event_x) - float(event["mz"])
+    return result
 
 
 def _build_summary(

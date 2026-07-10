@@ -56,6 +56,10 @@ class NodalLoad:
 class ElementLoad:
     element: str
     kind: str
+    ratio: float | None = None
+    fx: float = 0.0
+    fy: float = 0.0
+    mz: float = 0.0
     qx: float = 0.0
     qy: float = 0.0
     qx_i: float | None = None

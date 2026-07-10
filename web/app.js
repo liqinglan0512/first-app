@@ -334,7 +334,8 @@ function showDefaultAvatar(target) {
 }
 
 function showAvatar(target, avatarData) {
-  target.innerHTML = "";
+  target.replaceChildren();
+  target.classList.toggle("default-avatar", !avatarData);
   if (avatarData) {
     const image = document.createElement("img");
     image.src = avatarData;
@@ -1279,55 +1280,32 @@ function solverElementType(element) {
 }
 
 function projectElementLoads(model) {
-  return model.elementLoads
-    .filter((load) => load.kind !== "uniform_moment_local")
-    .map((load) => ({ ...load }));
+  if (model.elementLoads.some((load) => load.kind === "uniform_moment_local")) {
+    throw new Error("均布力偶的一致荷载向量仍在开发中，请先删除该荷载后求解。");
+  }
+  const distributedLoads = model.elementLoads.map((load) => ({ ...load }));
+  const pointLoads = model.loads
+    .filter((load) => load.kind === "element_point" && load.element)
+    .map((load) => ({
+      element: load.element,
+      kind: "point_global",
+      ratio: Math.max(0, Math.min(1, Number(load.ratio ?? 0.5))),
+      fx: load.fx || "0 N",
+      fy: load.fy || "0 N",
+      mz: load.mz || "0 N*m",
+    }));
+  return [...distributedLoads, ...pointLoads];
 }
 
 function projectNodalLoads(model) {
-  const loads = [];
-  for (const load of model.loads) {
-    if (load.node) {
-      loads.push({
+  return model.loads
+    .filter((load) => load.node)
+    .map((load) => ({
         node: load.node,
         fx: load.fx || "0 N",
         fy: load.fy || "0 N",
         mz: load.mz || "0 N*m",
-      });
-      continue;
-    }
-    if (load.kind === "element_point" && load.element) {
-      const element = model.elements.find((item) => item.id === load.element);
-      if (!element) continue;
-      const ratio = Math.max(0, Math.min(1, Number(load.ratio ?? 0.5)));
-      const fx = quantityToNumber(load.fx, "N");
-      const fy = quantityToNumber(load.fy, "N");
-      const mz = quantityToNumber(load.mz, "N*m");
-      loads.push({
-        node: element.node_i,
-        fx: formatQuantity(fx * (1 - ratio), "N"),
-        fy: formatQuantity(fy * (1 - ratio), "N"),
-        mz: formatQuantity(mz * (1 - ratio), "N*m"),
-      });
-      loads.push({
-        node: element.node_j,
-        fx: formatQuantity(fx * ratio, "N"),
-        fy: formatQuantity(fy * ratio, "N"),
-        mz: formatQuantity(mz * ratio, "N*m"),
-      });
-    }
-  }
-  for (const load of model.elementLoads || []) {
-    if (load.kind !== "uniform_moment_local") continue;
-    const element = model.elements.find((item) => item.id === load.element);
-    if (!element) continue;
-    const length = elementLengthWorld(element);
-    const intensity = quantityToNumber(load.mz || "0 N*m/m", "N*m/m");
-    const nodalMoment = (intensity * length) / 2;
-    loads.push({ node: element.node_i, fx: "0 N", fy: "0 N", mz: formatQuantity(nodalMoment, "N*m") });
-    loads.push({ node: element.node_j, fx: "0 N", fy: "0 N", mz: formatQuantity(nodalMoment, "N*m") });
-  }
-  return loads;
+      }));
 }
 
 function scopedModel(scope) {
@@ -1390,7 +1368,9 @@ function importProject(project) {
     moment_release_i: Boolean(element.moment_release_i),
     moment_release_j: Boolean(element.moment_release_j),
   }));
-  state.loads = ((project.loads && project.loads.nodes) || []).map((load) => {
+  const rawNodeLoads = (project.loads && project.loads.nodes) || [];
+  const rawElementLoads = (project.loads && project.loads.elements) || [];
+  state.loads = rawNodeLoads.map((load) => {
     const imported = {
       kind: load.kind ? String(load.kind) : "node",
       fx: quantityToText(load.fx, "N"),
@@ -1405,7 +1385,17 @@ function importProject(project) {
     }
     return imported;
   });
-  state.elementLoads = ((project.loads && project.loads.elements) || []).map((load) => ({
+  for (const load of rawElementLoads.filter((item) => ["point_global", "element_point"].includes(String(item.kind)))) {
+    state.loads.push({
+      kind: "element_point",
+      element: String(load.element),
+      ratio: load.ratio == null ? 0.5 : Number(load.ratio),
+      fx: quantityToText(load.fx, "N"),
+      fy: quantityToText(load.fy, "N"),
+      mz: quantityToText(load.mz, "N*m"),
+    });
+  }
+  state.elementLoads = rawElementLoads.filter((load) => !["point_global", "element_point"].includes(String(load.kind))).map((load) => ({
     element: String(load.element),
     kind: String(load.kind || "uniform_local"),
     qx: quantityToText(load.qx, "N/m"),
@@ -1416,6 +1406,7 @@ function importProject(project) {
     qy_j: quantityToText(load.qy_j, "N/m"),
     qx_coefficients: (load.qx_coefficients || []).map((item) => quantityToText(item, "N/m")),
     qy_coefficients: (load.qy_coefficients || []).map((item) => quantityToText(item, "N/m")),
+    mz: quantityToText(load.mz, "N*m/m"),
   }));
   els.solverBackend.value = String(project.solver || (project.metadata && project.metadata.solver) || "frame2d");
   state.nodeSeq = nextSequence(state.nodes, "N");
@@ -1453,66 +1444,11 @@ function nextSequence(items, prefix) {
 }
 
 function quantityToText(value, defaultUnit) {
-  if (value == null) return `0 ${defaultUnit}`;
-  if (typeof value === "number") return `${value} ${defaultUnit}`;
-  if (typeof value === "object" && "value" in value) return `${value.value} ${value.unit || defaultUnit}`;
-  return String(value);
+  return Units.quantityToText(value, defaultUnit);
 }
 
 function quantityToNumber(value, defaultUnit) {
-  if (typeof value === "number") return value * unitFactor(defaultUnit);
-  if (typeof value === "object" && value && "value" in value) {
-    return Number(value.value) * unitFactor(value.unit || defaultUnit);
-  }
-  const text = String(value || "0").trim();
-  const match = text.match(/^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s*([A-Za-z0-9*/^.\-·]+)?$/i);
-  if (!match) return 0;
-  return Number(match[1]) * unitFactor(match[2] || defaultUnit);
-}
-
-function unitFactor(unit) {
-  const factors = {
-    "": 1,
-    N: 1,
-    kN: 1000,
-    MN: 1000000,
-    "N/m": 1,
-    "kN/m": 1000,
-    "MN/m": 1000000,
-    "N/mm": 1000,
-    kg: 1,
-    g: 0.001,
-    m: 1,
-    cm: 0.01,
-    mm: 0.001,
-    s: 1,
-    ms: 0.001,
-    "m/s": 1,
-    "km/h": 1 / 3.6,
-    "m/s^2": 1,
-    "m/s2": 1,
-    "kg/m^3": 1,
-    "g/cm^3": 1000,
-    "rad/s": 1,
-    "rad/s^2": 1,
-    C: 1,
-    T: 1,
-    "N/C": 1,
-    Pa: 1,
-    MPa: 1000000,
-    GPa: 1000000000,
-    "N*m": 1,
-    "kN*m": 1000,
-    "N*s": 1,
-    "N·s": 1,
-    "kN*s": 1000,
-    "kN·s": 1000,
-    "N*m/m": 1,
-    "kN*m/m": 1000,
-    "N·m/m": 1,
-    "kN·m/m": 1000,
-  };
-  return factors[String(unit).replace(/\s/g, "")] || 1;
+  return Units.parseQuantity(value, defaultUnit);
 }
 
 function formatQuantity(value, unit) {
@@ -1562,8 +1498,13 @@ function buildEditableProject() {
       moment_release_j: Boolean(element.moment_release_j),
     })),
     loads: {
-      nodes: state.loads.map((load) => ({ ...load })),
-      elements: state.elementLoads.map((load) => ({ ...load })),
+      nodes: state.loads.filter((load) => load.node).map((load) => ({ ...load })),
+      elements: [
+        ...state.elementLoads.map((load) => ({ ...load })),
+        ...state.loads
+          .filter((load) => load.kind === "element_point" && load.element)
+          .map((load) => ({ ...load, kind: "point_global" })),
+      ],
     },
   };
 }
@@ -1664,6 +1605,11 @@ function setLoadDirection(direction) {
 }
 
 function applyCurrentLoad(hitNode = null, hitElement = null, screenPoint = null) {
+  if (state.loadMode === "distributed_moment") {
+    showToast("均布力偶的一致荷载向量仍在开发中，当前版本暂不允许施加。");
+    return;
+  }
+
   if (state.loadMode === "concentrated" || state.loadMode === "point_moment") {
     const node = hitNode || (state.selected && state.selected.type === "node" ? getNode(state.selected.id) : null);
     if (node) {
@@ -1675,6 +1621,10 @@ function applyCurrentLoad(hitNode = null, hitElement = null, screenPoint = null)
     const element = hitElement || (state.selected && state.selected.type === "element" ? getElement(state.selected.id) : null);
     if (!element) {
       showToast("集中力或集中力偶需要点选节点或杆件上的任意位置。");
+      return;
+    }
+    if (solverElementType(element) === "truss") {
+      showToast("桁架杆只能在节点处承受外荷载；请在荷载位置插入节点并拆分杆件。");
       return;
     }
     const ratio = screenPoint ? elementRatioAtScreen(element, screenPoint) : 0.5;
@@ -1689,7 +1639,7 @@ function applyCurrentLoad(hitNode = null, hitElement = null, screenPoint = null)
     showToast("分布荷载需要点选一根杆件。");
     return;
   }
-  const load = state.loadMode === "distributed_moment" ? makeUniformMomentLoad(element) : makeDistributedLoad(element);
+  const load = makeDistributedLoad(element);
   state.elementLoads.push(load);
   setSelection("element", element.id);
 }
@@ -1792,14 +1742,6 @@ function makeDistributedLoad(element) {
     qy_i: formatQuantity(qi.qy, "N/m"),
     qx_j: formatQuantity(qj.qx, "N/m"),
     qy_j: formatQuantity(qj.qy, "N/m"),
-  };
-}
-
-function makeUniformMomentLoad(element) {
-  return {
-    element: element.id,
-    kind: "uniform_moment_local",
-    mz: els.distributedMoment.value || "0 N*m/m",
   };
 }
 
@@ -2536,12 +2478,41 @@ function deleteDynamicsForce(id) {
   drawDynamicsScene();
 }
 
-function dynamicsSceneRow({ id, text, color, selected = false, kind }) {
-  return `<div class="dynamics-scene-row${selected ? " selected" : ""}" data-kind="${kind}" data-id="${id}">
-    <span class="dynamics-scene-swatch" style="background:${color}"></span>
-    <span class="dynamics-scene-row-main">${text}</span>
-    <button type="button" data-delete="${kind}" aria-label="删除">×</button>
-  </div>`;
+function createDynamicsSceneRow({ id, text, color, selected = false, kind }) {
+  const row = document.createElement("div");
+  row.className = `dynamics-scene-row${selected ? " selected" : ""}`;
+  row.dataset.kind = String(kind);
+  row.dataset.id = String(id);
+
+  const swatch = document.createElement("span");
+  swatch.className = "dynamics-scene-swatch";
+  swatch.style.backgroundColor = color;
+
+  const label = document.createElement("span");
+  label.className = "dynamics-scene-row-main";
+  label.textContent = text;
+
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.dataset.delete = String(kind);
+  deleteButton.setAttribute("aria-label", "删除");
+  deleteButton.textContent = "×";
+  row.append(swatch, label, deleteButton);
+  return row;
+}
+
+function replaceDynamicsSceneList(container, rows, emptyText) {
+  container.replaceChildren();
+  if (!rows.length) {
+    const empty = document.createElement("div");
+    empty.className = "dynamics-scene-empty";
+    empty.textContent = emptyText;
+    container.appendChild(empty);
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  rows.forEach((row) => fragment.appendChild(row));
+  container.appendChild(fragment);
 }
 
 function renderDynamicsSceneLists() {
@@ -2549,46 +2520,46 @@ function renderDynamicsSceneLists() {
   els.dynamicsObjectCount.textContent = String(state.dynamics.objects.length);
   els.dynamicsFieldCount.textContent = String(state.dynamics.fields.length);
   els.dynamicsForceCount.textContent = String(state.dynamics.forces.length);
-  els.dynamicsObjectList.innerHTML = state.dynamics.objects.length
-    ? state.dynamics.objects
-        .map((object, index) =>
-          dynamicsSceneRow({
-            id: object.id,
-            text: `${object.name} · m=${formatNumber(object.mass)} kg`,
-            color: dynamicsObjectColor(index),
-            selected: object.id === state.dynamics.selectedObjectId,
-            kind: "object",
-          })
-        )
-        .join("")
-    : '<div class="dynamics-scene-empty">暂无对象</div>';
-  els.dynamicsFieldList.innerHTML = state.dynamics.fields.length
-    ? state.dynamics.fields
-        .map((field) =>
-          dynamicsSceneRow({
-            id: field.id,
-            text: `${dynamicsFieldKindLabel(field.kind)} · ${dynamicsRangeLabel(field.rangeType)}`,
-            color: dynamicsFieldColor(field.kind),
-            kind: "field",
-          })
-        )
-        .join("")
-    : '<div class="dynamics-scene-empty">暂无场</div>';
-  els.dynamicsForceList.innerHTML = state.dynamics.forces.length
-    ? state.dynamics.forces
-        .map((force) => {
-          const target = dynamicsObjectById(force.targetId);
-          const type = force.type === "impulse" ? "瞬时" : "持续";
-          const unit = force.type === "impulse" ? "N·s" : "N";
-          return dynamicsSceneRow({
-            id: force.id,
-            text: `${type} · ${target?.name || force.targetId} · ${formatNumber(force.magnitude)} ${unit}`,
-            color: force.type === "impulse" ? "#8b5fc7" : "#e06c3b",
-            kind: "force",
-          });
-        })
-        .join("")
-    : '<div class="dynamics-scene-empty">暂无外力</div>';
+  replaceDynamicsSceneList(
+    els.dynamicsObjectList,
+    state.dynamics.objects.map((object, index) =>
+      createDynamicsSceneRow({
+        id: object.id,
+        text: `${object.name} · m=${formatNumber(object.mass)} kg`,
+        color: dynamicsObjectColor(index),
+        selected: object.id === state.dynamics.selectedObjectId,
+        kind: "object",
+      })
+    ),
+    "暂无对象"
+  );
+  replaceDynamicsSceneList(
+    els.dynamicsFieldList,
+    state.dynamics.fields.map((field) =>
+      createDynamicsSceneRow({
+        id: field.id,
+        text: `${dynamicsFieldKindLabel(field.kind)} · ${dynamicsRangeLabel(field.rangeType)}`,
+        color: dynamicsFieldColor(field.kind),
+        kind: "field",
+      })
+    ),
+    "暂无场"
+  );
+  replaceDynamicsSceneList(
+    els.dynamicsForceList,
+    state.dynamics.forces.map((force) => {
+      const target = dynamicsObjectById(force.targetId);
+      const type = force.type === "impulse" ? "瞬时" : "持续";
+      const unit = force.type === "impulse" ? "N·s" : "N";
+      return createDynamicsSceneRow({
+        id: force.id,
+        text: `${type} · ${target?.name || force.targetId} · ${formatNumber(force.magnitude)} ${unit}`,
+        color: force.type === "impulse" ? "#8b5fc7" : "#e06c3b",
+        kind: "force",
+      });
+    }),
+    "暂无外力"
+  );
   syncDynamicsActionUi();
 }
 
@@ -2932,9 +2903,13 @@ function openDynamicsForceDialog() {
     showDynamicsToast("请先放置至少一个对象。", 2400);
     return;
   }
-  els.dynamicsForceTarget.innerHTML = state.dynamics.objects
-    .map((object) => `<option value="${object.id}">${object.name}</option>`)
-    .join("");
+  els.dynamicsForceTarget.replaceChildren();
+  state.dynamics.objects.forEach((object) => {
+    const option = document.createElement("option");
+    option.value = String(object.id);
+    option.textContent = object.name;
+    els.dynamicsForceTarget.appendChild(option);
+  });
   if (state.dynamics.selectedObjectId) els.dynamicsForceTarget.value = state.dynamics.selectedObjectId;
   els.dynamicsForceType.value = "impulse";
   els.dynamicsForceMagnitude.value = "1 N*s";

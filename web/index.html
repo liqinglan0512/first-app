@@ -580,7 +580,7 @@
           <label><input type="radio" name="loadMode" value="concentrated" checked>集中力</label>
           <label><input type="radio" name="loadMode" value="point_moment">集中力偶</label>
           <label><input type="radio" name="loadMode" value="distributed">分布力</label>
-          <label><input type="radio" name="loadMode" value="distributed_moment">均布力偶</label>
+          <label title="一致荷载向量开发中"><input type="radio" name="loadMode" value="distributed_moment" disabled>均布力偶（开发中）</label>
         </div>
 
         <section id="concentratedLoadPanel" class="modal-section">
@@ -655,10 +655,8 @@
         </section>
 
         <section id="distributedMomentPanel" class="modal-section hidden">
-          <label class="wide-field">
-            <span>均布力偶强度</span>
-            <input id="distributedMoment" value="2 kN*m/m">
-          </label>
+          <p>均布力偶的一致荷载向量仍在开发中，当前版本暂不允许施加。</p>
+          <input id="distributedMoment" type="hidden" value="0 N*m/m">
         </section>
 
         <footer class="modal-actions">
@@ -848,6 +846,7 @@
       </form>
     </dialog>
 
+    <script src="/static/units.js"></script>
     <script src="/static/project-adapter.js"></script>
     <script src="/static/dynamics-core.js"></script>
     <script src="/static/app.js"></script>

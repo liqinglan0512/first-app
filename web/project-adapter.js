@@ -13,10 +13,16 @@
   }
 
   function solverElement(element) {
+    const type = solverElementType(element);
+    const momentReleaseI = type === "frame" && Boolean(element?.moment_release_i);
+    const momentReleaseJ = type === "frame" && Boolean(element?.moment_release_j);
+    if (momentReleaseI && momentReleaseJ) {
+      throw new Error("当前版本不支持普通梁柱双端弯矩释放，请拆分杆件或改用桁架单元。");
+    }
     return {
-      type: solverElementType(element),
-      moment_release_i: Boolean(element?.moment_release_i),
-      moment_release_j: Boolean(element?.moment_release_j),
+      type,
+      moment_release_i: momentReleaseI,
+      moment_release_j: momentReleaseJ,
     };
   }
 

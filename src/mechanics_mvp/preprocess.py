@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections import Counter, defaultdict
 
 from .models import DOFS, Project
@@ -12,7 +13,7 @@ class ValidationError(ValueError):
 
 
 SUPPORTED_ELEMENT_TYPES = {"frame", "rigid", "arc", "tee", "truss"}
-SUPPORTED_ELEMENT_LOADS = {"uniform_local", "linear_local", "polynomial_local"}
+SUPPORTED_ELEMENT_LOADS = {"uniform_local", "linear_local", "polynomial_local", "point_global"}
 
 
 def validate_project(project: Project) -> None:
@@ -24,7 +25,7 @@ def validate_project(project: Project) -> None:
     nodes = {node.id: node for node in project.nodes}
     materials = {material.id for material in project.materials}
     sections = {section.id for section in project.sections}
-    elements = {element.id for element in project.elements}
+    elements = {element.id: element for element in project.elements}
     connected: dict[str, int] = defaultdict(int)
 
     if not project.nodes:
@@ -50,6 +51,8 @@ def validate_project(project: Project) -> None:
                 f"Element {element.id} has moment releases at both ends. "
                 "Double-end releases are not supported yet."
             )
+        if element.type != "frame" and (element.moment_release_i or element.moment_release_j):
+            raise ValidationError(f"Element {element.id} is not a frame and cannot carry moment-release flags.")
         connected[element.node_i] += 1
         connected[element.node_j] += 1
 
@@ -70,6 +73,16 @@ def validate_project(project: Project) -> None:
             raise ValidationError(f"Element load references missing element {load.element}.")
         if load.kind not in SUPPORTED_ELEMENT_LOADS:
             raise ValidationError(f"Unsupported element load kind: {load.kind!r}.")
+        element = elements[load.element]
+        if element.type == "truss":
+            at_end_node = load.kind == "point_global" and load.ratio is not None and (
+                math.isclose(load.ratio, 0.0, abs_tol=1e-12) or math.isclose(load.ratio, 1.0, abs_tol=1e-12)
+            )
+            if not at_end_node or not math.isclose(load.mz, 0.0, abs_tol=1e-12):
+                raise ValidationError("桁架杆只能在节点处承受外荷载；请在荷载位置插入节点并拆分杆件。")
+        if load.kind == "point_global":
+            if load.ratio is None or not math.isfinite(load.ratio) or not 0.0 <= load.ratio <= 1.0:
+                raise ValidationError(f"Point load on element {load.element} must have a ratio between 0 and 1.")
 
 
 def _ensure_unique(label: str, ids: list[str]) -> None:

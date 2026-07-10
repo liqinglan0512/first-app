@@ -1,0 +1,24 @@
+{
+  "schema": "mechanics-dynamics-project@1",
+  "module": "dynamics",
+  "model": "independent-particle2d",
+  "simulation": {
+    "duration": "1 s",
+    "timeStep": "0.02 s"
+  },
+  "objects": [
+    {
+      "id": "D1",
+      "name": "<img src=x onerror=alert(1)>",
+      "kind": "particle",
+      "mass": 1,
+      "charge": 0,
+      "x0": 0,
+      "y0": 0,
+      "vx0": 0,
+      "vy0": 0
+    }
+  ],
+  "fields": [],
+  "forces": []
+}
