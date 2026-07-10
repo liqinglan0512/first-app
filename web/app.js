@@ -5,6 +5,9 @@ const ctx = canvas.getContext("2d");
 const diagramCanvas = document.getElementById("diagramCanvas");
 const dctx = diagramCanvas.getContext("2d");
 const toast = document.getElementById("toast");
+const dynamicsCanvas = document.getElementById("dynamicsCanvas");
+const dynamicsCtx = dynamicsCanvas ? dynamicsCanvas.getContext("2d") : null;
+const dynamicsToast = document.getElementById("dynamicsToast");
 
 const els = {
   welcomeScreen: document.getElementById("welcomeScreen"),
@@ -27,9 +30,40 @@ const els = {
   registerAvatarPreview: document.getElementById("registerAvatarPreview"),
   registerSubmit: document.getElementById("registerSubmit"),
   startAppButton: document.getElementById("startAppButton"),
+  moduleChoicePanel: document.getElementById("moduleChoicePanel"),
+  staticModuleButton: document.getElementById("staticModuleButton"),
+  dynamicsModuleButton: document.getElementById("dynamicsModuleButton"),
   welcomeLogoutButton: document.getElementById("welcomeLogoutButton"),
   mainUserAvatar: document.getElementById("mainUserAvatar"),
   mainUserName: document.getElementById("mainUserName"),
+  dynamicsShell: document.getElementById("dynamicsShell"),
+  dynamicsUserAvatar: document.getElementById("dynamicsUserAvatar"),
+  dynamicsUserName: document.getElementById("dynamicsUserName"),
+  dynamicsSettingsButton: document.getElementById("dynamicsSettingsButton"),
+  dynamicsToStaticButton: document.getElementById("dynamicsToStaticButton"),
+  dynamicsBuildKind: document.getElementById("dynamicsBuildKind"),
+  dynamicsCustomMode: document.getElementById("dynamicsCustomMode"),
+  dynamicsEnvironment: document.getElementById("dynamicsEnvironment"),
+  dynamicsFieldMagnitude: document.getElementById("dynamicsFieldMagnitude"),
+  dynamicsFieldAngle: document.getElementById("dynamicsFieldAngle"),
+  dynamicsRigidToggle: document.getElementById("dynamicsRigidToggle"),
+  dynamicsSolveButton: document.getElementById("dynamicsSolveButton"),
+  dynamicsMass: document.getElementById("dynamicsMass"),
+  dynamicsDensity: document.getElementById("dynamicsDensity"),
+  dynamicsSizeA: document.getElementById("dynamicsSizeA"),
+  dynamicsSizeB: document.getElementById("dynamicsSizeB"),
+  dynamicsMaterialE: document.getElementById("dynamicsMaterialE"),
+  dynamicsShapeEquation: document.getElementById("dynamicsShapeEquation"),
+  dynamicsX0: document.getElementById("dynamicsX0"),
+  dynamicsY0: document.getElementById("dynamicsY0"),
+  dynamicsVx0: document.getElementById("dynamicsVx0"),
+  dynamicsVy0: document.getElementById("dynamicsVy0"),
+  dynamicsFx: document.getElementById("dynamicsFx"),
+  dynamicsFy: document.getElementById("dynamicsFy"),
+  dynamicsDuration: document.getElementById("dynamicsDuration"),
+  dynamicsTimeStep: document.getElementById("dynamicsTimeStep"),
+  dynamicsOptionInputs: [...document.querySelectorAll("input[name='dynamicsOption']")],
+  dynamicsResultText: document.getElementById("dynamicsResultText"),
   settingsButton: document.getElementById("settingsButton"),
   settingsDialog: document.getElementById("settingsDialog"),
   fontSizeSelect: document.getElementById("fontSizeSelect"),
@@ -159,6 +193,16 @@ const state = {
     arcAngle: 45,
   },
   solveOptions: ["determinacy", "system", "internal", "moment", "shear", "axial", "displacement", "reaction", "danger"],
+  activeModule: "welcome",
+  dynamics: {
+    result: null,
+    animationId: null,
+    animationStart: 0,
+    paintPath: [],
+    painting: false,
+    scale: 58,
+    origin: { x: 80, y: 520 },
+  },
 };
 
 const AUTH_USERS_KEY = "cms_users";
@@ -224,12 +268,22 @@ function refreshCurrentUserDisplay(user = state.currentUser) {
     els.mainUserName.textContent = "未登录";
     els.mainUserName.title = "";
     showAvatar(els.mainUserAvatar, DEFAULT_USER_AVATAR);
+    if (els.dynamicsUserName && els.dynamicsUserAvatar) {
+      els.dynamicsUserName.textContent = "未登录";
+      els.dynamicsUserName.title = "";
+      showAvatar(els.dynamicsUserAvatar, DEFAULT_USER_AVATAR);
+    }
     return;
   }
   const displayName = user.nickname || user.username;
   els.mainUserName.textContent = displayName;
   els.mainUserName.title = user.nickname ? `${user.nickname} (${user.username})` : user.username;
   showAvatar(els.mainUserAvatar, userAvatar(user));
+  if (els.dynamicsUserName && els.dynamicsUserAvatar) {
+    els.dynamicsUserName.textContent = displayName;
+    els.dynamicsUserName.title = user.nickname ? `${user.nickname} (${user.username})` : user.username;
+    showAvatar(els.dynamicsUserAvatar, userAvatar(user));
+  }
 }
 
 function updateCurrentUser(patch) {
@@ -263,6 +317,8 @@ function resetAuthChoice() {
   els.registerCard.classList.add("hidden");
   els.showLoginButton.classList.remove("active");
   els.showRegisterButton.classList.remove("active");
+  els.startAppButton.classList.remove("hidden");
+  if (els.moduleChoicePanel) els.moduleChoicePanel.classList.add("hidden");
 }
 
 function setCurrentUser(user) {
@@ -273,6 +329,8 @@ function setCurrentUser(user) {
   els.loginCard.classList.add("hidden");
   els.registerCard.classList.add("hidden");
   els.startPanel.classList.remove("hidden");
+  els.startAppButton.classList.remove("hidden");
+  if (els.moduleChoicePanel) els.moduleChoicePanel.classList.add("hidden");
   refreshCurrentUserDisplay(user);
   setAuthMessage(`已登录：${user.username}`);
 }
@@ -414,8 +472,11 @@ function logoutUser() {
   localStorage.removeItem(AUTH_CURRENT_KEY);
   if (els.settingsDialog.open) els.settingsDialog.close();
   els.appShell.classList.add("app-hidden");
+  if (els.dynamicsShell) els.dynamicsShell.classList.add("app-hidden");
   els.welcomeScreen.classList.remove("hidden");
   els.startPanel.classList.add("hidden");
+  if (els.moduleChoicePanel) els.moduleChoicePanel.classList.add("hidden");
+  state.activeModule = "welcome";
   resetAuthChoice();
   showDefaultAvatar(els.registerAvatarPreview);
   refreshCurrentUserDisplay(null);
@@ -428,10 +489,36 @@ function startApplication() {
     initAuth();
     return;
   }
+  els.startAppButton.classList.add("hidden");
+  if (els.moduleChoicePanel) els.moduleChoicePanel.classList.remove("hidden");
+  setAuthMessage("请选择计算模块。");
+}
+
+function launchStaticApplication() {
+  if (!state.currentUser) {
+    initAuth();
+    return;
+  }
+  state.activeModule = "static";
   els.welcomeScreen.classList.add("hidden");
   els.appShell.classList.remove("app-hidden");
+  if (els.dynamicsShell) els.dynamicsShell.classList.add("app-hidden");
   resizeCanvas();
   syncUi();
+}
+
+function launchDynamicsApplication() {
+  if (!state.currentUser) {
+    initAuth();
+    return;
+  }
+  state.activeModule = "dynamics";
+  els.welcomeScreen.classList.add("hidden");
+  els.appShell.classList.add("app-hidden");
+  els.dynamicsShell.classList.remove("app-hidden");
+  resizeDynamicsCanvas();
+  syncDynamicsControls();
+  drawDynamicsScene();
 }
 
 function snapshot() {
@@ -1271,9 +1358,21 @@ function unitFactor(unit) {
     "kN/m": 1000,
     "MN/m": 1000000,
     "N/mm": 1000,
+    kg: 1,
+    g: 0.001,
     m: 1,
     cm: 0.01,
     mm: 0.001,
+    s: 1,
+    ms: 0.001,
+    "m/s": 1,
+    "km/h": 1 / 3.6,
+    "m/s^2": 1,
+    "m/s2": 1,
+    "kg/m^3": 1,
+    "g/cm^3": 1000,
+    "rad/s": 1,
+    "rad/s^2": 1,
     Pa: 1,
     MPa: 1000000,
     GPa: 1000000000,
@@ -2080,6 +2179,385 @@ function draw() {
   drawPreview();
   drawSelectionGesture();
   drawDiagrams();
+}
+
+function resizeDynamicsCanvas() {
+  if (!dynamicsCanvas) return;
+  const rect = dynamicsCanvas.getBoundingClientRect();
+  dynamicsCanvas.width = Math.max(760, Math.floor(rect.width || 760));
+  dynamicsCanvas.height = Math.max(460, Math.floor(rect.height || 560));
+  state.dynamics.origin = { x: 72, y: dynamicsCanvas.height - 62 };
+  drawDynamicsScene();
+}
+
+function syncDynamicsControls() {
+  if (!els.dynamicsBuildKind) return;
+  const isCustom = els.dynamicsBuildKind.value === "custom";
+  els.dynamicsCustomMode.disabled = !isCustom;
+  els.dynamicsShapeEquation.disabled = !(isCustom && els.dynamicsCustomMode.value === "equation");
+}
+
+function selectedDynamicsOptions() {
+  return new Set(els.dynamicsOptionInputs.filter((input) => input.checked).map((input) => input.value));
+}
+
+function dynamicsValue(input, defaultUnit) {
+  return quantityToNumber(input.value, defaultUnit);
+}
+
+function vectorFromAngle(magnitude, angleDegrees) {
+  const radians = Number(angleDegrees || 0) * (Math.PI / 180);
+  return { x: magnitude * Math.cos(radians), y: magnitude * Math.sin(radians) };
+}
+
+function dynamicsFieldAcceleration() {
+  const kind = els.dynamicsEnvironment.value;
+  if (kind === "zero") return { x: 0, y: 0 };
+  return vectorFromAngle(dynamicsValue(els.dynamicsFieldMagnitude, "m/s^2"), Number(els.dynamicsFieldAngle.value || 0));
+}
+
+function dynamicsInertia(kind, mass, sizeA, sizeB) {
+  const a = Math.max(Math.abs(sizeA), 1e-9);
+  const b = Math.max(Math.abs(sizeB), 1e-9);
+  if (kind === "particle") return mass * b * b;
+  if (kind === "rod") return (mass * a * a) / 12;
+  if (kind === "circle") return 0.5 * mass * b * b;
+  if (kind === "ring") return mass * b * b;
+  if (kind === "rectangle") return (mass * (a * a + b * b)) / 12;
+  return (mass * (a * a + b * b)) / 12;
+}
+
+function solveDynamics() {
+  if (!els.dynamicsMass) return;
+  cancelDynamicsAnimation();
+  const mass = Math.max(dynamicsValue(els.dynamicsMass, "kg"), 1e-9);
+  const x0 = dynamicsValue(els.dynamicsX0, "m");
+  const y0 = dynamicsValue(els.dynamicsY0, "m");
+  const vx0 = dynamicsValue(els.dynamicsVx0, "m/s");
+  const vy0 = dynamicsValue(els.dynamicsVy0, "m/s");
+  const fx = dynamicsValue(els.dynamicsFx, "N");
+  const fy = dynamicsValue(els.dynamicsFy, "N");
+  const duration = Math.max(dynamicsValue(els.dynamicsDuration, "s"), 0.02);
+  const timeStep = Math.min(0.2, Math.max(dynamicsValue(els.dynamicsTimeStep, "s"), 0.005));
+  const sizeA = Math.max(dynamicsValue(els.dynamicsSizeA, "m"), 1e-9);
+  const sizeB = Math.max(dynamicsValue(els.dynamicsSizeB, "m"), 1e-9);
+  const field = dynamicsFieldAcceleration();
+  const ax = fx / mass + field.x;
+  const ay = fy / mass + field.y;
+  const buildKind = els.dynamicsBuildKind.value;
+  const inertia = dynamicsInertia(buildKind, mass, sizeA, sizeB);
+  const torqueArm = buildKind === "particle" ? sizeB : Math.max(sizeA, sizeB) / 2;
+  const torque = torqueArm * Math.hypot(fx, fy);
+  const angularAcceleration = inertia > 1e-12 ? torque / inertia : 0;
+  const angularVelocity = angularAcceleration * duration;
+  const samples = [];
+  for (let t = 0; t <= duration + 1e-9; t += timeStep) {
+    const clamped = Math.min(t, duration);
+    const vx = vx0 + ax * clamped;
+    const vy = vy0 + ay * clamped;
+    samples.push({
+      t: clamped,
+      x: x0 + vx0 * clamped + 0.5 * ax * clamped * clamped,
+      y: y0 + vy0 * clamped + 0.5 * ay * clamped * clamped,
+      vx,
+      vy,
+    });
+  }
+  const final = samples[samples.length - 1];
+  const speed = Math.hypot(final.vx, final.vy);
+  state.dynamics.result = {
+    mass,
+    buildKind,
+    x0,
+    y0,
+    vx0,
+    vy0,
+    ax,
+    ay,
+    fx,
+    fy,
+    duration,
+    timeStep,
+    sizeA,
+    sizeB,
+    inertia,
+    torque,
+    angularAcceleration,
+    angularVelocity,
+    final,
+    samples,
+    kineticEnergy: 0.5 * mass * speed * speed + 0.5 * inertia * angularVelocity * angularVelocity,
+    momentum: { x: mass * final.vx, y: mass * final.vy },
+    trajectoryEquation: {
+      x: `x(t) = ${formatNumber(x0)} + ${formatNumber(vx0)} t + ${formatNumber(0.5 * ax)} t^2`,
+      y: `y(t) = ${formatNumber(y0)} + ${formatNumber(vy0)} t + ${formatNumber(0.5 * ay)} t^2`,
+    },
+  };
+  renderDynamicsResult();
+  drawDynamicsScene();
+  if (selectedDynamicsOptions().has("trajectory")) startDynamicsAnimation();
+  showDynamicsToast("动力学求解完成。");
+}
+
+function renderDynamicsResult() {
+  const result = state.dynamics.result;
+  if (!result) {
+    els.dynamicsResultText.textContent = "暂无结果";
+    return;
+  }
+  const options = selectedDynamicsOptions();
+  const lines = [`求解模块：二维动力学`, `构建对象：${dynamicsKindLabel(result.buildKind)}`];
+  if (options.has("kinetic")) lines.push(`动能：${formatNumber(result.kineticEnergy)} J`);
+  if (options.has("momentum")) lines.push(`动量：px=${formatNumber(result.momentum.x)} kg·m/s, py=${formatNumber(result.momentum.y)} kg·m/s`);
+  if (options.has("velocity")) lines.push(`速度：vx=${formatNumber(result.final.vx)} m/s, vy=${formatNumber(result.final.vy)} m/s`);
+  if (options.has("acceleration")) lines.push(`加速度：ax=${formatNumber(result.ax)} m/s^2, ay=${formatNumber(result.ay)} m/s^2`);
+  if (options.has("angular_velocity")) lines.push(`角速度：ω=${formatNumber(result.angularVelocity)} rad/s`);
+  if (options.has("angular_acceleration")) lines.push(`角加速度：α=${formatNumber(result.angularAcceleration)} rad/s^2`);
+  if (options.has("torque")) lines.push(`力矩：M=${formatNumber(result.torque)} N·m`);
+  if (options.has("inertia")) lines.push(`转动惯量：I=${formatNumber(result.inertia)} kg·m^2`);
+  if (options.has("displacement")) lines.push(`位移：x=${formatNumber(result.final.x - result.x0)} m, y=${formatNumber(result.final.y - result.y0)} m`);
+  if (options.has("trajectory")) lines.push(`位移轨迹：已在建模区生成动态演示和抛物线轨迹。`);
+  if (options.has("trajectory_equation")) {
+    lines.push(`位移轨迹方程：`);
+    lines.push(`  ${result.trajectoryEquation.x}`);
+    lines.push(`  ${result.trajectoryEquation.y}`);
+  }
+  els.dynamicsResultText.textContent = lines.join("\n");
+}
+
+function dynamicsKindLabel(kind) {
+  return {
+    particle: "质点",
+    rod: "杆",
+    circle: "圆",
+    ring: "圆环",
+    rectangle: "矩形",
+    custom: "任意形状",
+  }[kind] || kind;
+}
+
+function drawDynamicsScene(sample = null) {
+  if (!dynamicsCtx || !dynamicsCanvas) return;
+  fitDynamicsView();
+  dynamicsCtx.clearRect(0, 0, dynamicsCanvas.width, dynamicsCanvas.height);
+  drawDynamicsGrid();
+  drawDynamicsField();
+  const result = state.dynamics.result;
+  if (result) {
+    drawDynamicsTrajectory(result.samples);
+    drawDynamicsObject(sample || result.samples[0], result);
+  } else {
+    drawDynamicsObject({ x: dynamicsValue(els.dynamicsX0, "m"), y: dynamicsValue(els.dynamicsY0, "m") }, null);
+  }
+  drawDynamicsCustomPath();
+}
+
+function fitDynamicsView() {
+  const result = state.dynamics.result;
+  if (!result || result.samples.length < 2) {
+    state.dynamics.scale = 58;
+    state.dynamics.origin = { x: 72, y: dynamicsCanvas.height - 62 };
+    return;
+  }
+  const xs = result.samples.map((point) => point.x);
+  const ys = result.samples.map((point) => point.y);
+  const minX = Math.min(...xs, 0);
+  const maxX = Math.max(...xs, 1);
+  const minY = Math.min(...ys, 0);
+  const maxY = Math.max(...ys, 1);
+  const scaleX = (dynamicsCanvas.width - 140) / Math.max(maxX - minX, 1);
+  const scaleY = (dynamicsCanvas.height - 130) / Math.max(maxY - minY, 1);
+  const scale = Math.max(22, Math.min(86, scaleX, scaleY));
+  state.dynamics.scale = scale;
+  state.dynamics.origin = {
+    x: 72 - minX * scale,
+    y: dynamicsCanvas.height - 62 + minY * scale,
+  };
+}
+
+function dynamicsToScreen(point) {
+  return {
+    x: state.dynamics.origin.x + point.x * state.dynamics.scale,
+    y: state.dynamics.origin.y - point.y * state.dynamics.scale,
+  };
+}
+
+function drawDynamicsGrid() {
+  dynamicsCtx.save();
+  dynamicsCtx.fillStyle = cssColor("--canvas");
+  dynamicsCtx.fillRect(0, 0, dynamicsCanvas.width, dynamicsCanvas.height);
+  dynamicsCtx.strokeStyle = cssColor("--grid");
+  dynamicsCtx.lineWidth = 1;
+  const step = state.dynamics.scale;
+  for (let x = state.dynamics.origin.x % step; x < dynamicsCanvas.width; x += step) lineDynamics({ x, y: 0 }, { x, y: dynamicsCanvas.height });
+  for (let y = state.dynamics.origin.y % step; y < dynamicsCanvas.height; y += step) lineDynamics({ x: 0, y }, { x: dynamicsCanvas.width, y });
+  dynamicsCtx.strokeStyle = cssColor("--grid-major");
+  dynamicsCtx.lineWidth = 1.4;
+  lineDynamics({ x: 0, y: state.dynamics.origin.y }, { x: dynamicsCanvas.width, y: state.dynamics.origin.y });
+  lineDynamics({ x: state.dynamics.origin.x, y: 0 }, { x: state.dynamics.origin.x, y: dynamicsCanvas.height });
+  dynamicsCtx.fillStyle = cssColor("--muted");
+  dynamicsCtx.font = "12px Segoe UI, Arial, sans-serif";
+  dynamicsCtx.fillText("x (m)", dynamicsCanvas.width - 54, state.dynamics.origin.y - 8);
+  dynamicsCtx.fillText("y (m)", state.dynamics.origin.x + 8, 18);
+  dynamicsCtx.restore();
+}
+
+function drawDynamicsField() {
+  const field = dynamicsFieldAcceleration();
+  const start = { x: dynamicsCanvas.width - 128, y: 54 };
+  const end = { x: start.x + field.x * 4, y: start.y - field.y * 4 };
+  dynamicsCtx.save();
+  dynamicsCtx.strokeStyle = cssColor("--warn");
+  dynamicsCtx.fillStyle = cssColor("--warn");
+  dynamicsCtx.lineWidth = 2;
+  drawDynamicsArrow(start, end);
+  dynamicsCtx.font = "12px Segoe UI, Arial, sans-serif";
+  dynamicsCtx.fillText(els.dynamicsEnvironment.options[els.dynamicsEnvironment.selectedIndex].textContent, start.x - 8, start.y + 22);
+  dynamicsCtx.restore();
+}
+
+function drawDynamicsTrajectory(samples) {
+  if (!samples.length) return;
+  dynamicsCtx.save();
+  dynamicsCtx.strokeStyle = cssColor("--accent");
+  dynamicsCtx.lineWidth = 2.2;
+  dynamicsCtx.beginPath();
+  samples.forEach((point, index) => {
+    const screen = dynamicsToScreen(point);
+    if (index === 0) dynamicsCtx.moveTo(screen.x, screen.y);
+    else dynamicsCtx.lineTo(screen.x, screen.y);
+  });
+  dynamicsCtx.stroke();
+  dynamicsCtx.setLineDash([5, 5]);
+  dynamicsCtx.strokeStyle = cssColor("--muted");
+  for (let index = 0; index < samples.length; index += Math.max(1, Math.floor(samples.length / 18))) {
+    const screen = dynamicsToScreen(samples[index]);
+    lineDynamics({ x: screen.x, y: screen.y }, { x: screen.x, y: state.dynamics.origin.y });
+  }
+  dynamicsCtx.restore();
+}
+
+function drawDynamicsObject(point, result) {
+  const kind = result?.buildKind || els.dynamicsBuildKind.value;
+  const screen = dynamicsToScreen(point);
+  const sizeA = Math.max(16, Math.min(90, (result?.sizeA || dynamicsValue(els.dynamicsSizeA, "m")) * state.dynamics.scale));
+  const sizeB = Math.max(10, Math.min(62, (result?.sizeB || dynamicsValue(els.dynamicsSizeB, "m")) * state.dynamics.scale));
+  dynamicsCtx.save();
+  dynamicsCtx.strokeStyle = cssColor("--blue");
+  dynamicsCtx.fillStyle = document.body.classList.contains("dark-theme") ? "rgba(106, 167, 232, 0.24)" : "rgba(36, 95, 159, 0.16)";
+  dynamicsCtx.lineWidth = 2;
+  if (kind === "rod") {
+    lineDynamics({ x: screen.x - sizeA / 2, y: screen.y }, { x: screen.x + sizeA / 2, y: screen.y });
+  } else if (kind === "rectangle") {
+    dynamicsCtx.strokeRect(screen.x - sizeA / 2, screen.y - sizeB / 2, sizeA, sizeB);
+    dynamicsCtx.fillRect(screen.x - sizeA / 2, screen.y - sizeB / 2, sizeA, sizeB);
+  } else {
+    dynamicsCtx.beginPath();
+    dynamicsCtx.arc(screen.x, screen.y, kind === "particle" ? 8 : sizeB, 0, Math.PI * 2);
+    if (kind !== "ring") dynamicsCtx.fill();
+    dynamicsCtx.stroke();
+    if (kind === "ring") {
+      dynamicsCtx.beginPath();
+      dynamicsCtx.arc(screen.x, screen.y, Math.max(4, sizeB * 0.62), 0, Math.PI * 2);
+      dynamicsCtx.stroke();
+    }
+  }
+  dynamicsCtx.fillStyle = cssColor("--ink");
+  dynamicsCtx.font = "12px Segoe UI, Arial, sans-serif";
+  dynamicsCtx.fillText(`t=${formatNumber(point.t || 0)} s`, screen.x + 12, screen.y - 12);
+  dynamicsCtx.restore();
+}
+
+function drawDynamicsCustomPath() {
+  if (els.dynamicsBuildKind.value !== "custom" || els.dynamicsCustomMode.value !== "paint" || state.dynamics.paintPath.length < 2) return;
+  dynamicsCtx.save();
+  dynamicsCtx.strokeStyle = cssColor("--select");
+  dynamicsCtx.setLineDash([6, 4]);
+  dynamicsCtx.lineWidth = 2;
+  dynamicsCtx.beginPath();
+  state.dynamics.paintPath.forEach((point, index) => {
+    if (index === 0) dynamicsCtx.moveTo(point.x, point.y);
+    else dynamicsCtx.lineTo(point.x, point.y);
+  });
+  dynamicsCtx.stroke();
+  dynamicsCtx.restore();
+}
+
+function startDynamicsAnimation() {
+  if (!state.dynamics.result) return;
+  cancelDynamicsAnimation();
+  state.dynamics.animationStart = performance.now();
+  const duration = state.dynamics.result.duration;
+  const animate = (now) => {
+    if (!state.dynamics.result || state.activeModule !== "dynamics") return;
+    const elapsed = ((now - state.dynamics.animationStart) / 1000) % Math.max(duration, 0.01);
+    const sample = nearestDynamicsSample(elapsed);
+    drawDynamicsScene(sample);
+    state.dynamics.animationId = requestAnimationFrame(animate);
+  };
+  state.dynamics.animationId = requestAnimationFrame(animate);
+}
+
+function nearestDynamicsSample(time) {
+  const samples = state.dynamics.result?.samples || [];
+  if (!samples.length) return { x: 0, y: 0, t: 0 };
+  let best = samples[0];
+  let bestDistance = Math.abs(samples[0].t - time);
+  for (const sample of samples) {
+    const distance = Math.abs(sample.t - time);
+    if (distance < bestDistance) {
+      best = sample;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
+function cancelDynamicsAnimation() {
+  if (state.dynamics.animationId) cancelAnimationFrame(state.dynamics.animationId);
+  state.dynamics.animationId = null;
+}
+
+function lineDynamics(a, b) {
+  dynamicsCtx.beginPath();
+  dynamicsCtx.moveTo(a.x, a.y);
+  dynamicsCtx.lineTo(b.x, b.y);
+  dynamicsCtx.stroke();
+}
+
+function drawDynamicsArrow(start, end) {
+  const angle = Math.atan2(end.y - start.y, end.x - start.x);
+  lineDynamics(start, end);
+  dynamicsCtx.beginPath();
+  dynamicsCtx.moveTo(end.x, end.y);
+  dynamicsCtx.lineTo(end.x - 9 * Math.cos(angle - Math.PI / 7), end.y - 9 * Math.sin(angle - Math.PI / 7));
+  dynamicsCtx.lineTo(end.x - 9 * Math.cos(angle + Math.PI / 7), end.y - 9 * Math.sin(angle + Math.PI / 7));
+  dynamicsCtx.closePath();
+  dynamicsCtx.fill();
+}
+
+function showDynamicsToast(message) {
+  if (!dynamicsToast) return;
+  dynamicsToast.textContent = message;
+  dynamicsToast.classList.add("visible");
+  clearTimeout(showDynamicsToast.timer);
+  showDynamicsToast.timer = setTimeout(() => dynamicsToast.classList.remove("visible"), 2400);
+}
+
+function isDynamicsPaintMode() {
+  return (
+    state.activeModule === "dynamics" &&
+    els.dynamicsBuildKind.value === "custom" &&
+    els.dynamicsCustomMode.value === "paint"
+  );
+}
+
+function dynamicsCanvasPoint(event) {
+  const rect = dynamicsCanvas.getBoundingClientRect();
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
+  };
 }
 
 function drawGrid() {
@@ -3038,8 +3516,12 @@ els.showRegisterButton.addEventListener("click", () => showAuthMode("register"))
 els.loginSubmit.addEventListener("click", loginUser);
 els.registerSubmit.addEventListener("click", registerUser);
 els.startAppButton.addEventListener("click", startApplication);
+if (els.staticModuleButton) els.staticModuleButton.addEventListener("click", launchStaticApplication);
+if (els.dynamicsModuleButton) els.dynamicsModuleButton.addEventListener("click", launchDynamicsApplication);
 els.welcomeLogoutButton.addEventListener("click", logoutUser);
 els.settingsButton.addEventListener("click", openSettingsDialog);
+if (els.dynamicsSettingsButton) els.dynamicsSettingsButton.addEventListener("click", openSettingsDialog);
+if (els.dynamicsToStaticButton) els.dynamicsToStaticButton.addEventListener("click", launchStaticApplication);
 els.fontSizeSelect.addEventListener("change", () => applyFontSize(els.fontSizeSelect.value));
 els.saveNicknameButton.addEventListener("click", saveNickname);
 els.savePasswordButton.addEventListener("click", savePassword);
@@ -3121,6 +3603,61 @@ els.fileInput.addEventListener("change", async () => {
   }
 });
 
+if (els.dynamicsSolveButton) els.dynamicsSolveButton.addEventListener("click", solveDynamics);
+for (const control of [
+  els.dynamicsBuildKind,
+  els.dynamicsCustomMode,
+  els.dynamicsEnvironment,
+  els.dynamicsFieldMagnitude,
+  els.dynamicsFieldAngle,
+  els.dynamicsRigidToggle,
+  els.dynamicsMass,
+  els.dynamicsDensity,
+  els.dynamicsSizeA,
+  els.dynamicsSizeB,
+  els.dynamicsMaterialE,
+  els.dynamicsShapeEquation,
+  els.dynamicsX0,
+  els.dynamicsY0,
+  els.dynamicsVx0,
+  els.dynamicsVy0,
+  els.dynamicsFx,
+  els.dynamicsFy,
+  els.dynamicsDuration,
+  els.dynamicsTimeStep,
+  ...els.dynamicsOptionInputs,
+]) {
+  if (!control) continue;
+  control.addEventListener("input", () => {
+    syncDynamicsControls();
+    if (state.dynamics.result) renderDynamicsResult();
+    drawDynamicsScene();
+  });
+}
+
+if (dynamicsCanvas) {
+  dynamicsCanvas.addEventListener("mousedown", (event) => {
+    if (!isDynamicsPaintMode()) return;
+    state.dynamics.painting = true;
+    state.dynamics.paintPath = [dynamicsCanvasPoint(event)];
+    drawDynamicsScene();
+  });
+  dynamicsCanvas.addEventListener("mousemove", (event) => {
+    if (!state.dynamics.painting || !isDynamicsPaintMode()) return;
+    const point = dynamicsCanvasPoint(event);
+    const last = state.dynamics.paintPath[state.dynamics.paintPath.length - 1];
+    if (!last || Math.hypot(point.x - last.x, point.y - last.y) > 3) state.dynamics.paintPath.push(point);
+    drawDynamicsScene();
+  });
+  dynamicsCanvas.addEventListener("mouseup", () => {
+    state.dynamics.painting = false;
+    drawDynamicsScene();
+  });
+  dynamicsCanvas.addEventListener("mouseleave", () => {
+    state.dynamics.painting = false;
+  });
+}
+
 for (const control of [
   els.gridToggle,
   els.snapToggle,
@@ -3155,9 +3692,14 @@ function isTextEditingEvent(event) {
   return ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
 }
 
-window.addEventListener("resize", resizeCanvas);
+window.addEventListener("resize", () => {
+  resizeCanvas();
+  resizeDynamicsCanvas();
+});
 applyFontSize(localStorage.getItem(AUTH_FONT_SIZE_KEY), false);
 syncLoadPanels();
 initAuth();
 resizeCanvas();
+resizeDynamicsCanvas();
+syncDynamicsControls();
 syncUi();

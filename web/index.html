@@ -66,6 +66,14 @@
           <button id="startAppButton" class="start-app-button">开始计算</button>
           <button id="welcomeLogoutButton" class="welcome-logout-button">退出登录</button>
         </div>
+        <div id="moduleChoicePanel" class="module-choice-panel hidden" aria-label="力学模块选择">
+          <button id="staticModuleButton" class="module-choice-button" type="button">
+            <span>静力学</span>
+          </button>
+          <button id="dynamicsModuleButton" class="module-choice-button" type="button">
+            <span>动力学</span>
+          </button>
+        </div>
         <p id="authMessage" class="auth-message" role="status"></p>
       </div>
     </section>
@@ -202,6 +210,175 @@
           <section class="panel result-panel">
             <h2>结果</h2>
             <pre id="resultText">暂无结果</pre>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <div id="dynamicsShell" class="app-shell dynamics-shell app-hidden">
+      <header class="topbar dynamics-topbar">
+        <div class="brand">
+          <span class="brand-copy">
+            <span class="brand-title rainbow-title">Computational Mechanics Solver</span>
+            <span class="brand-subtitle studio-credit"><span class="li-ion">Li<sup>+</sup></span>工作室出品</span>
+          </span>
+        </div>
+
+        <div class="module-switch" role="toolbar" aria-label="力学模块切换">
+          <button id="dynamicsToStaticButton" type="button">静力学</button>
+          <button id="dynamicsActiveButton" class="active" type="button">动力学</button>
+        </div>
+
+        <div class="user-settings">
+          <span id="dynamicsUserAvatar" class="default-avatar main-avatar">CM</span>
+          <span id="dynamicsUserName" class="main-user-name">未登录</span>
+          <button id="dynamicsSettingsButton" class="settings-button" title="设置">设置</button>
+        </div>
+
+        <div class="dynamics-controls">
+          <label class="compact-field">
+            <span>构建</span>
+            <select id="dynamicsBuildKind">
+              <option value="particle">质点</option>
+              <option value="rod">杆</option>
+              <option value="circle">圆</option>
+              <option value="ring">圆环</option>
+              <option value="rectangle">矩形</option>
+              <option value="custom">任意形状</option>
+            </select>
+          </label>
+          <label class="compact-field">
+            <span>任意形状</span>
+            <select id="dynamicsCustomMode">
+              <option value="paint">画笔绘制</option>
+              <option value="equation">方程 / 函数</option>
+            </select>
+          </label>
+          <label class="compact-field">
+            <span>环境</span>
+            <select id="dynamicsEnvironment">
+              <option value="zero">零场</option>
+              <option value="gravity" selected>重力场</option>
+              <option value="electric">电场</option>
+              <option value="magnetic">磁场</option>
+            </select>
+          </label>
+          <label class="compact-field">
+            <span>场大小</span>
+            <input id="dynamicsFieldMagnitude" value="9.8 m/s^2">
+          </label>
+          <label class="compact-field">
+            <span>场方向</span>
+            <input id="dynamicsFieldAngle" type="number" value="-90">
+          </label>
+          <label class="inline-toggle"><input id="dynamicsRigidToggle" type="checkbox">刚体</label>
+          <button id="dynamicsSolveButton" class="primary" type="button">求解</button>
+        </div>
+      </header>
+
+      <main class="dynamics-workspace">
+        <section class="canvas-panel dynamics-canvas-panel">
+          <canvas id="dynamicsCanvas" width="1200" height="680"></canvas>
+          <div id="dynamicsToast" class="toast" role="status"></div>
+        </section>
+
+        <aside class="side-panel dynamics-side-panel">
+          <section class="panel">
+            <h2>对象参数</h2>
+            <div class="field-row two">
+              <label class="wide-field">
+                <span>质量</span>
+                <input id="dynamicsMass" value="1 kg">
+              </label>
+              <label class="wide-field">
+                <span>密度</span>
+                <input id="dynamicsDensity" value="7850 kg/m^3">
+              </label>
+            </div>
+            <div class="field-row two">
+              <label class="wide-field">
+                <span>尺寸 A</span>
+                <input id="dynamicsSizeA" value="1 m">
+              </label>
+              <label class="wide-field">
+                <span>尺寸 B / 半径</span>
+                <input id="dynamicsSizeB" value="0.2 m">
+              </label>
+            </div>
+            <label class="wide-field">
+              <span>材料 E</span>
+              <input id="dynamicsMaterialE" value="200 GPa">
+            </label>
+            <label class="wide-field">
+              <span>任意形状函数</span>
+              <input id="dynamicsShapeEquation" value="y=0.2*sin(2*pi*x)">
+            </label>
+          </section>
+
+          <section class="panel">
+            <h2>初始条件</h2>
+            <div class="field-row two">
+              <label class="wide-field">
+                <span>x0</span>
+                <input id="dynamicsX0" value="0 m">
+              </label>
+              <label class="wide-field">
+                <span>y0</span>
+                <input id="dynamicsY0" value="0 m">
+              </label>
+            </div>
+            <div class="field-row two">
+              <label class="wide-field">
+                <span>vx0</span>
+                <input id="dynamicsVx0" value="8 m/s">
+              </label>
+              <label class="wide-field">
+                <span>vy0</span>
+                <input id="dynamicsVy0" value="12 m/s">
+              </label>
+            </div>
+            <div class="field-row two">
+              <label class="wide-field">
+                <span>Fx</span>
+                <input id="dynamicsFx" value="0 N">
+              </label>
+              <label class="wide-field">
+                <span>Fy</span>
+                <input id="dynamicsFy" value="0 N">
+              </label>
+            </div>
+            <div class="field-row two">
+              <label class="wide-field">
+                <span>总时长</span>
+                <input id="dynamicsDuration" value="3 s">
+              </label>
+              <label class="wide-field">
+                <span>步长</span>
+                <input id="dynamicsTimeStep" value="0.02 s">
+              </label>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h2>求解内容</h2>
+            <div class="toggle-grid dynamics-option-grid">
+              <label><input name="dynamicsOption" type="checkbox" value="kinetic" checked>动能</label>
+              <label><input name="dynamicsOption" type="checkbox" value="momentum" checked>动量</label>
+              <label><input name="dynamicsOption" type="checkbox" value="velocity" checked>速度</label>
+              <label><input name="dynamicsOption" type="checkbox" value="acceleration" checked>加速度</label>
+              <label><input name="dynamicsOption" type="checkbox" value="angular_velocity">角速度</label>
+              <label><input name="dynamicsOption" type="checkbox" value="angular_acceleration">角加速度</label>
+              <label><input name="dynamicsOption" type="checkbox" value="torque">力矩</label>
+              <label><input name="dynamicsOption" type="checkbox" value="inertia">转动惯量</label>
+              <label><input name="dynamicsOption" type="checkbox" value="displacement" checked>位移</label>
+              <label><input name="dynamicsOption" type="checkbox" value="trajectory" checked>位移轨迹</label>
+              <label><input name="dynamicsOption" type="checkbox" value="trajectory_equation" checked>位移轨迹方程</label>
+            </div>
+          </section>
+
+          <section class="panel result-panel">
+            <h2>动力学结果</h2>
+            <pre id="dynamicsResultText">暂无结果</pre>
           </section>
         </aside>
       </main>
