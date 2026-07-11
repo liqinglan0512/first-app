@@ -7,7 +7,12 @@ ARG GIT_COMMIT=unknown
 ARG GIT_DIRTY=true
 
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install \
+    --default-timeout=300 \
+    --retries 10 \
+    -i https://mirrors.aliyun.com/pypi/simple/ \
+    --no-cache-dir \
+    -r requirements.txt
 
 COPY . .
 
