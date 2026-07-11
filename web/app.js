@@ -2738,21 +2738,19 @@ async function downloadDynamicsReport() {
     return;
   }
   els.dynamicsReportButton.disabled = true;
-  const derivation = [
-    "",
-    "计算方法",
-    "1. 所有输入先换算为 SI 单位，位置为 m、时间为 s、质量为 kg、力为 N。",
-    "2. 瞬时力按冲量 J 处理，初速度增量为 Δv=J/m；持续力在设定时间段内进入合力。",
-    "3. 重力场、电场和磁场按各自空间范围叠加，洛伦兹力采用 F=q(E+v×B)。",
-    "4. 平动方程 m·a=ΣF 采用四阶 Runge-Kutta 方法逐步积分，得到位置、速度和加速度。",
-    "5. 当前各对象独立求解，不包含碰撞、接触、约束及对象间相互作用。",
-  ].join("\n");
   try {
+    const reportText = DynamicsReport.buildReportText({
+      objects: state.dynamics.objects,
+      fields: state.dynamics.fields,
+      forces: state.dynamics.forces,
+      result: state.dynamics.result,
+      options: selectedDynamicsOptions(),
+    });
     const response = await fetch("/api/dynamics-report", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        report_text: `${els.dynamicsResultText.textContent}${derivation}`,
+        report_text: reportText,
         report_images: { model: canvasDataUrl(dynamicsCanvas) },
       }),
     });
@@ -3173,19 +3171,6 @@ function solveDynamics() {
   showDynamicsToast(`已完成 ${state.dynamics.result.objectResults.length} 个对象的动力学求解。`);
 }
 
-function dynamicsTrajectoryEquation(model) {
-  if (!model || model.kind !== "constant-acceleration") {
-    return {
-      x: "x(t)：由四阶 Runge-Kutta 数值积分得到",
-      y: "y(t)：分区场、磁场或分段外力使加速度变化，无单一二次解析式",
-    };
-  }
-  return {
-    x: `x(t) = ${formatNumber(model.x0)} + ${formatNumber(model.vx0)} t + ${formatNumber(0.5 * model.ax)} t^2`,
-    y: `y(t) = ${formatNumber(model.y0)} + ${formatNumber(model.vy0)} t + ${formatNumber(0.5 * model.ay)} t^2`,
-  };
-}
-
 function renderDynamicsResult() {
   const result = state.dynamics.result;
   if (!result) {
@@ -3193,54 +3178,12 @@ function renderDynamicsResult() {
     syncDynamicsActionUi();
     return;
   }
-  const options = selectedDynamicsOptions();
-  const lines = [
-    "求解模块：二维多对象独立质点动力学",
-    `场景：${result.objectResults.length} 个对象，${state.dynamics.fields.length} 个场，${state.dynamics.forces.length} 个外加作用力`,
-    `用户请求步长：${formatNumber(result.requestedTimeStep)} s`,
-    `实际采用步长：${formatNumber(result.timeStep)} s`,
-    `单对象积分步数：${result.stepCount}，总样本数：${result.totalSampleCount}`,
-  ];
-  if (options.has("kinetic")) lines.push(`系统总动能：${formatNumber(result.totals.kineticEnergy)} J`);
-  if (options.has("potential")) lines.push(`系统总势能：${formatNumber(result.totals.potentialEnergy)} J（坐标原点为零势能参考）`);
-  if (options.has("total_energy")) lines.push(`系统机械能：${formatNumber(result.totals.mechanicalEnergy)} J`);
-  if (options.has("momentum")) {
-    lines.push(`系统总动量：px=${formatNumber(result.totals.momentumX)} kg·m/s, py=${formatNumber(result.totals.momentumY)} kg·m/s`);
-  }
-  if (options.has("angular_momentum")) {
-    lines.push(`系统关于全局原点的轨道角动量：Lz=${formatNumber(result.totals.orbitalAngularMomentum)} kg·m^2/s`);
-  }
-  for (const diagnostic of result.diagnostics || []) {
-    lines.push(`[${diagnostic.level === "warning" ? "警告" : "提示"}] ${diagnostic.message}`);
-  }
-  for (const item of result.objectResults) {
-    lines.push("", `${item.name}：`);
-    if (options.has("kinetic")) lines.push(`  动能：${formatNumber(item.kineticEnergy)} J`);
-    if (options.has("potential")) lines.push(`  势能：${formatNumber(item.potentialEnergy)} J`);
-    if (options.has("total_energy")) lines.push(`  机械能：${formatNumber(item.mechanicalEnergy)} J`);
-    if (options.has("momentum")) lines.push(`  动量：(${formatNumber(item.momentum.x)}, ${formatNumber(item.momentum.y)}) kg·m/s`);
-    if (options.has("angular_momentum")) {
-      lines.push(`  关于全局原点的轨道角动量 Lz：${formatNumber(item.orbitalAngularMomentum)} kg·m^2/s`);
-    }
-    if (options.has("lorentz_force")) {
-      lines.push(`  洛伦兹力：Fx=${formatNumber(item.lorentzForce.x)} N, Fy=${formatNumber(item.lorentzForce.y)} N`);
-    }
-    if (options.has("velocity")) lines.push(`  速度：vx=${formatNumber(item.final.vx)} m/s, vy=${formatNumber(item.final.vy)} m/s`);
-    if (options.has("acceleration")) lines.push(`  加速度：ax=${formatNumber(item.ax)} m/s^2, ay=${formatNumber(item.ay)} m/s^2`);
-    if (options.has("inertia")) {
-      lines.push(`  几何质心转动惯量估算：I=${formatNumber(item.inertia)} kg·m^2（不参与当前平动积分）`);
-    }
-    if (options.has("displacement")) {
-      lines.push(`  位移：Δx=${formatNumber(item.final.x - item.x0)} m, Δy=${formatNumber(item.final.y - item.y0)} m`);
-    }
-    if (options.has("trajectory_equation")) {
-      const equation = dynamicsTrajectoryEquation(item.trajectoryModel);
-      lines.push(`  ${equation.x}`);
-      lines.push(`  ${equation.y}`);
-    }
-  }
-  if (options.has("trajectory")) lines.push("", "位移轨迹：已在建模区生成多对象动态演示。");
-  els.dynamicsResultText.textContent = lines.join("\n");
+  els.dynamicsResultText.textContent = DynamicsReport.buildResultText({
+    result,
+    fields: state.dynamics.fields,
+    forces: state.dynamics.forces,
+    options: selectedDynamicsOptions(),
+  }).trimEnd();
   syncDynamicsActionUi();
 }
 

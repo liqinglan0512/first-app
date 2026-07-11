@@ -1,0 +1,2 @@
+ac34853723db4844554c9167f062b83482e23146c63455337160f738b0f04cf5  computational-mechanics-solver-v1.3.2-manual.pdf
+3a55ef342ebc769004d31ca9ad57332312ff7d3fca098226e1aec3c4c82662c1  mechanics-v1.3.2-source.zip

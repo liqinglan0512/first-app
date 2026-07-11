@@ -1,0 +1,61 @@
+﻿Computational Mechanics Solver v1.3.2 source archive manifest
+source_commit=87b683d11bf028ca2db419ca607e5f915f15288f
+archive=mechanics-v1.3.2-source.zip
+entry_count=55
+
+--- entries ---
+.dockerignore	89 bytes
+.gitignore	203 bytes
+Dockerfile	543 bytes
+examples/advanced_frame_project.json	1315 bytes
+examples/cantilever_beam.json	975 bytes
+examples/simply_supported_uniform_beam.json	839 bytes
+Procfile	42 bytes
+pyproject.toml	433 bytes
+README.md	2054 bytes
+requirements.txt	13 bytes
+run_webapp.py	273 bytes
+src/mechanics_mvp/__init__.py	587 bytes
+src/mechanics_mvp/__main__.py	87 bytes
+src/mechanics_mvp/cli.py	1435 bytes
+src/mechanics_mvp/diagnostics.py	6300 bytes
+src/mechanics_mvp/engine.py	1953 bytes
+src/mechanics_mvp/models.py	2047 bytes
+src/mechanics_mvp/preprocess.py	4676 bytes
+src/mechanics_mvp/project_io.py	4667 bytes
+src/mechanics_mvp/report.py	21399 bytes
+src/mechanics_mvp/solver.py	24955 bytes
+src/mechanics_mvp/units.py	2750 bytes
+src/mechanics_mvp/webapp.py	8402 bytes
+start_webapp.py	2768 bytes
+tests/avatar_layout.test.js	578 bytes
+tests/dynamics_core.test.js	4128 bytes
+tests/dynamics_field_placement.test.js	5260 bytes
+tests/fixtures/malicious-dynamics-name.json	454 bytes
+tests/imported_text_safety.test.js	729 bytes
+tests/project_adapter.test.js	1018 bytes
+tests/project_schema.test.js	8815 bytes
+tests/test_diagnostics.py	2719 bytes
+tests/test_engine_diagnostics.py	1834 bytes
+tests/test_moment_release.py	3227 bytes
+tests/test_point_element_load.py	6935 bytes
+tests/test_point_global_webapp.py	5610 bytes
+tests/test_project_io.py	1936 bytes
+tests/test_report.py	2738 bytes
+tests/test_solver.py	6705 bytes
+tests/test_truss_element.py	1682 bytes
+tests/test_units.py	905 bytes
+tests/test_webapp.py	2327 bytes
+tests/units_frontend.test.js	1188 bytes
+web/app.css	22688 bytes
+web/app.js	200833 bytes
+web/brand-avatar.jpg	2155154 bytes
+web/brand-avatar.png	2155154 bytes
+web/dynamics-core.js	16135 bytes
+web/dynamics-field-geometry.js	5452 bytes
+web/dynamics-field-placement.js	4155 bytes
+web/index.html	40817 bytes
+web/project-adapter.js	1375 bytes
+web/project-schema.js	25248 bytes
+web/units.js	3151 bytes
+web/welcome-bg.jpg	1904936 bytes
