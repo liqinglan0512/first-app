@@ -94,6 +94,10 @@ def _parse_element_load(raw: dict[str, Any]) -> ElementLoad:
     return ElementLoad(
         element=str(raw["element"]),
         kind=str(raw.get("kind", "uniform_local")),
+        ratio=None if raw.get("ratio") is None else float(raw["ratio"]),
+        fx=to_si(raw.get("fx", 0.0), default_unit="N"),
+        fy=to_si(raw.get("fy", 0.0), default_unit="N"),
+        mz=to_si(raw.get("mz", 0.0), default_unit="N*m"),
         qx=to_si(raw.get("qx", 0.0), default_unit="N/m"),
         qy=to_si(raw.get("qy", 0.0), default_unit="N/m"),
         qx_i=_optional_si(raw, "qx_i", "N/m"),

@@ -12,3 +12,6 @@ venv/
 .codex/
 .webapp.*.log
 .webapp.pid
+report_image_insert_work/
+rvt_report_work/
+*.rvt

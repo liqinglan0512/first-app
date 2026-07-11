@@ -21,10 +21,8 @@ const els = {
   startPanel: document.getElementById("startPanel"),
   authMessage: document.getElementById("authMessage"),
   loginUsername: document.getElementById("loginUsername"),
-  loginPassword: document.getElementById("loginPassword"),
   loginSubmit: document.getElementById("loginSubmit"),
   registerUsername: document.getElementById("registerUsername"),
-  registerPassword: document.getElementById("registerPassword"),
   registerNickname: document.getElementById("registerNickname"),
   registerAvatar: document.getElementById("registerAvatar"),
   registerAvatarPreview: document.getElementById("registerAvatarPreview"),
@@ -33,6 +31,8 @@ const els = {
   moduleChoicePanel: document.getElementById("moduleChoicePanel"),
   staticModuleButton: document.getElementById("staticModuleButton"),
   dynamicsModuleButton: document.getElementById("dynamicsModuleButton"),
+  staticActiveButton: document.getElementById("staticActiveButton"),
+  staticToDynamicsButton: document.getElementById("staticToDynamicsButton"),
   welcomeLogoutButton: document.getElementById("welcomeLogoutButton"),
   mainUserAvatar: document.getElementById("mainUserAvatar"),
   mainUserName: document.getElementById("mainUserName"),
@@ -43,37 +43,89 @@ const els = {
   dynamicsToStaticButton: document.getElementById("dynamicsToStaticButton"),
   dynamicsBuildKind: document.getElementById("dynamicsBuildKind"),
   dynamicsCustomMode: document.getElementById("dynamicsCustomMode"),
+  dynamicsPlaceButton: document.getElementById("dynamicsPlaceButton"),
+  dynamicsFieldButton: document.getElementById("dynamicsFieldButton"),
+  dynamicsForceButton: document.getElementById("dynamicsForceButton"),
+  dynamicsFieldStatus: document.getElementById("dynamicsFieldStatus"),
+  dynamicsFieldCancelButton: document.getElementById("dynamicsFieldCancelButton"),
+  dynamicsClearButton: document.getElementById("dynamicsClearButton"),
+  dynamicsUndoButton: document.getElementById("dynamicsUndoButton"),
+  dynamicsRedoButton: document.getElementById("dynamicsRedoButton"),
+  dynamicsDeleteButton: document.getElementById("dynamicsDeleteButton"),
+  dynamicsOpenButton: document.getElementById("dynamicsOpenButton"),
+  dynamicsSaveButton: document.getElementById("dynamicsSaveButton"),
+  dynamicsReportButton: document.getElementById("dynamicsReportButton"),
+  dynamicsFileInput: document.getElementById("dynamicsFileInput"),
+  dynamicsSolveDialog: document.getElementById("dynamicsSolveDialog"),
+  runDynamicsSolveButton: document.getElementById("runDynamicsSolveButton"),
+  dynamicsFieldDialog: document.getElementById("dynamicsFieldDialog"),
   dynamicsEnvironment: document.getElementById("dynamicsEnvironment"),
   dynamicsFieldMagnitude: document.getElementById("dynamicsFieldMagnitude"),
+  dynamicsFieldDirectionPreset: document.getElementById("dynamicsFieldDirectionPreset"),
+  dynamicsVectorDirectionField: document.getElementById("dynamicsVectorDirectionField"),
+  dynamicsFieldAngleField: document.getElementById("dynamicsFieldAngleField"),
   dynamicsFieldAngle: document.getElementById("dynamicsFieldAngle"),
+  dynamicsMagneticDirectionField: document.getElementById("dynamicsMagneticDirectionField"),
+  dynamicsMagneticDirection: document.getElementById("dynamicsMagneticDirection"),
+  dynamicsFieldRange: document.getElementById("dynamicsFieldRange"),
+  dynamicsFieldCenterX: document.getElementById("dynamicsFieldCenterX"),
+  dynamicsFieldCenterY: document.getElementById("dynamicsFieldCenterY"),
+  dynamicsRectangleRangeFields: document.getElementById("dynamicsRectangleRangeFields"),
+  dynamicsFieldWidth: document.getElementById("dynamicsFieldWidth"),
+  dynamicsFieldHeight: document.getElementById("dynamicsFieldHeight"),
+  dynamicsCircleRangeField: document.getElementById("dynamicsCircleRangeField"),
+  dynamicsFieldRadius: document.getElementById("dynamicsFieldRadius"),
+  dynamicsFieldMessage: document.getElementById("dynamicsFieldMessage"),
+  dynamicsFieldNumericApplyButton: document.getElementById("dynamicsFieldNumericApplyButton"),
+  dynamicsFieldApplyButton: document.getElementById("dynamicsFieldApplyButton"),
+  dynamicsForceDialog: document.getElementById("dynamicsForceDialog"),
+  dynamicsForceTarget: document.getElementById("dynamicsForceTarget"),
+  dynamicsForceType: document.getElementById("dynamicsForceType"),
+  dynamicsForceMagnitudeLabel: document.getElementById("dynamicsForceMagnitudeLabel"),
+  dynamicsForceMagnitude: document.getElementById("dynamicsForceMagnitude"),
+  dynamicsForceDirectionPreset: document.getElementById("dynamicsForceDirectionPreset"),
+  dynamicsForceAngle: document.getElementById("dynamicsForceAngle"),
+  dynamicsForceStartField: document.getElementById("dynamicsForceStartField"),
+  dynamicsForceStart: document.getElementById("dynamicsForceStart"),
+  dynamicsForceDurationField: document.getElementById("dynamicsForceDurationField"),
+  dynamicsForceDuration: document.getElementById("dynamicsForceDuration"),
+  dynamicsForceMessage: document.getElementById("dynamicsForceMessage"),
+  dynamicsForceApplyButton: document.getElementById("dynamicsForceApplyButton"),
   dynamicsRigidToggle: document.getElementById("dynamicsRigidToggle"),
   dynamicsSolveButton: document.getElementById("dynamicsSolveButton"),
   dynamicsMass: document.getElementById("dynamicsMass"),
   dynamicsDensity: document.getElementById("dynamicsDensity"),
+  dynamicsCharge: document.getElementById("dynamicsCharge"),
+  dynamicsSizeALabel: document.getElementById("dynamicsSizeALabel"),
+  dynamicsSizeBLabel: document.getElementById("dynamicsSizeBLabel"),
+  dynamicsSizeCLabel: document.getElementById("dynamicsSizeCLabel"),
   dynamicsSizeA: document.getElementById("dynamicsSizeA"),
   dynamicsSizeB: document.getElementById("dynamicsSizeB"),
+  dynamicsSizeC: document.getElementById("dynamicsSizeC"),
   dynamicsMaterialE: document.getElementById("dynamicsMaterialE"),
   dynamicsShapeEquation: document.getElementById("dynamicsShapeEquation"),
   dynamicsX0: document.getElementById("dynamicsX0"),
   dynamicsY0: document.getElementById("dynamicsY0"),
   dynamicsVx0: document.getElementById("dynamicsVx0"),
   dynamicsVy0: document.getElementById("dynamicsVy0"),
-  dynamicsFx: document.getElementById("dynamicsFx"),
-  dynamicsFy: document.getElementById("dynamicsFy"),
   dynamicsDuration: document.getElementById("dynamicsDuration"),
   dynamicsTimeStep: document.getElementById("dynamicsTimeStep"),
   dynamicsOptionInputs: [...document.querySelectorAll("input[name='dynamicsOption']")],
   dynamicsResultText: document.getElementById("dynamicsResultText"),
+  dynamicsObjectPanelTitle: document.getElementById("dynamicsObjectPanelTitle"),
+  dynamicsObjectCount: document.getElementById("dynamicsObjectCount"),
+  dynamicsFieldCount: document.getElementById("dynamicsFieldCount"),
+  dynamicsForceCount: document.getElementById("dynamicsForceCount"),
+  dynamicsObjectList: document.getElementById("dynamicsObjectList"),
+  dynamicsFieldList: document.getElementById("dynamicsFieldList"),
+  dynamicsForceList: document.getElementById("dynamicsForceList"),
   settingsButton: document.getElementById("settingsButton"),
   settingsDialog: document.getElementById("settingsDialog"),
   fontSizeSelect: document.getElementById("fontSizeSelect"),
   settingsNickname: document.getElementById("settingsNickname"),
-  settingsOldPassword: document.getElementById("settingsOldPassword"),
-  settingsNewPassword: document.getElementById("settingsNewPassword"),
   settingsAvatar: document.getElementById("settingsAvatar"),
   settingsAvatarPreview: document.getElementById("settingsAvatarPreview"),
   saveNicknameButton: document.getElementById("saveNicknameButton"),
-  savePasswordButton: document.getElementById("savePasswordButton"),
   saveAvatarButton: document.getElementById("saveAvatarButton"),
   logoutButton: document.getElementById("logoutButton"),
   settingsMessage: document.getElementById("settingsMessage"),
@@ -86,6 +138,8 @@ const els = {
   themeButton: document.getElementById("themeButton"),
   solverBackend: document.getElementById("solverBackend"),
   elementType: document.getElementById("elementType"),
+  momentReleaseI: document.getElementById("momentReleaseI"),
+  momentReleaseJ: document.getElementById("momentReleaseJ"),
   elementLength: document.getElementById("elementLength"),
   setElementLengthButton: document.getElementById("setElementLengthButton"),
   materialE: document.getElementById("materialE"),
@@ -145,6 +199,7 @@ const els = {
   supportDialog: document.getElementById("supportDialog"),
   supportAngle: document.getElementById("supportAngle"),
   applySupportSettingsButton: document.getElementById("applySupportSettingsButton"),
+  solidifySupportNodeButton: document.getElementById("solidifySupportNodeButton"),
   nodeDialog: document.getElementById("nodeDialog"),
   solidifyNodeButton: document.getElementById("solidifyNodeButton"),
 };
@@ -170,6 +225,9 @@ const state = {
   result: null,
   lastProject: null,
   lastScope: "whole",
+  projectMetadata: { name: "canvas_project" },
+  projectMaterials: [{ id: "steel", E: "200 GPa", nu: 0.3 }],
+  projectSections: [{ id: "default", A: "10000 mm^2", I: "80000000 mm^4" }],
   nodeSeq: 1,
   elementSeq: 1,
   undoStack: [],
@@ -195,13 +253,28 @@ const state = {
   solveOptions: ["determinacy", "system", "internal", "moment", "shear", "axial", "displacement", "reaction", "danger"],
   activeModule: "welcome",
   dynamics: {
+    objects: [],
+    fields: [],
+    forces: [],
+    objectSeq: 1,
+    fieldSeq: 1,
+    forceSeq: 1,
+    selectedObjectId: null,
+    object: null,
+    field: null,
     result: null,
     animationId: null,
     animationStart: 0,
     paintPath: [],
     painting: false,
+    placementMode: false,
+    pan: null,
+    fieldPlacement: DynamicsFieldPlacement.createPlacementState(),
+    undoStack: [],
+    redoStack: [],
     scale: 58,
     origin: { x: 80, y: 520 },
+    viewportInitialized: false,
   },
 };
 
@@ -212,14 +285,29 @@ const DEFAULT_USER_AVATAR = "/static/brand-avatar.png";
 
 function loadUsers() {
   try {
-    return JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || "{}");
+    const stored = JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || "{}");
+    const users = {};
+    let removedPlaintextPassword = false;
+    for (const [username, rawUser] of Object.entries(stored)) {
+      if (!rawUser || typeof rawUser !== "object") continue;
+      const { password: _discardedPassword, ...safeUser } = rawUser;
+      removedPlaintextPassword ||= "password" in rawUser;
+      users[username] = { ...safeUser, username };
+    }
+    if (removedPlaintextPassword) localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(users));
+    return users;
   } catch (error) {
     return {};
   }
 }
 
 function saveUsers(users) {
-  localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(users));
+  const safeUsers = {};
+  for (const [username, rawUser] of Object.entries(users || {})) {
+    const { password: _discardedPassword, ...safeUser } = rawUser || {};
+    safeUsers[username] = { ...safeUser, username };
+  }
+  localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(safeUsers));
 }
 
 function setAuthMessage(message) {
@@ -248,7 +336,8 @@ function showDefaultAvatar(target) {
 }
 
 function showAvatar(target, avatarData) {
-  target.innerHTML = "";
+  target.replaceChildren();
+  target.classList.add("default-avatar");
   if (avatarData) {
     const image = document.createElement("img");
     image.src = avatarData;
@@ -332,7 +421,7 @@ function setCurrentUser(user) {
   els.startAppButton.classList.remove("hidden");
   if (els.moduleChoicePanel) els.moduleChoicePanel.classList.add("hidden");
   refreshCurrentUserDisplay(user);
-  setAuthMessage(`已登录：${user.username}`);
+  setAuthMessage(`当前本地配置：${user.username}`);
 }
 
 function initAuth() {
@@ -352,14 +441,13 @@ function initAuth() {
 
 function loginUser() {
   const username = els.loginUsername.value.trim();
-  const password = els.loginPassword.value;
-  if (!username || !password) {
-    setAuthMessage("请填写账户名和密码。");
+  if (!username) {
+    setAuthMessage("请填写本地配置名称。");
     return;
   }
   const user = loadUsers()[username];
-  if (!user || user.password !== password) {
-    setAuthMessage("账户名或密码不正确。");
+  if (!user) {
+    setAuthMessage("未找到该本地配置。");
     return;
   }
   setCurrentUser(user);
@@ -367,10 +455,9 @@ function loginUser() {
 
 function registerUser() {
   const username = els.registerUsername.value.trim();
-  const password = els.registerPassword.value;
   const nickname = els.registerNickname.value.trim();
-  if (!username || !password || !nickname) {
-    setAuthMessage("注册需要填写账户名、密码和昵称。");
+  if (!username || !nickname) {
+    setAuthMessage("创建本地配置需要填写账户名和昵称。");
     return;
   }
   const users = loadUsers();
@@ -380,7 +467,6 @@ function registerUser() {
   }
   const user = {
     username,
-    password,
     nickname,
     avatar: state.pendingAvatar || "",
   };
@@ -407,8 +493,6 @@ function openSettingsDialog() {
   if (!state.currentUser) return;
   state.pendingSettingsAvatar = "";
   els.settingsNickname.value = state.currentUser.nickname || "";
-  els.settingsOldPassword.value = "";
-  els.settingsNewPassword.value = "";
   els.settingsAvatar.value = "";
   applyFontSize(localStorage.getItem(AUTH_FONT_SIZE_KEY), false);
   showAvatar(els.settingsAvatarPreview, userAvatar(state.currentUser));
@@ -424,24 +508,6 @@ function saveNickname() {
   }
   updateCurrentUser({ nickname });
   setSettingsMessage("昵称已保存。");
-}
-
-function savePassword() {
-  if (!state.currentUser) return;
-  const oldPassword = els.settingsOldPassword.value;
-  const newPassword = els.settingsNewPassword.value;
-  if (!oldPassword || !newPassword) {
-    setSettingsMessage("请填写原密码和新密码。");
-    return;
-  }
-  if (oldPassword !== state.currentUser.password) {
-    setSettingsMessage("原密码不正确。");
-    return;
-  }
-  updateCurrentUser({ password: newPassword });
-  els.settingsOldPassword.value = "";
-  els.settingsNewPassword.value = "";
-  setSettingsMessage("密码已修改。");
 }
 
 function previewSettingsAvatar(file) {
@@ -468,6 +534,7 @@ function saveSettingsAvatar() {
 }
 
 function logoutUser() {
+  cancelDynamicsFieldPlacement({ silent: true });
   state.currentUser = null;
   localStorage.removeItem(AUTH_CURRENT_KEY);
   if (els.settingsDialog.open) els.settingsDialog.close();
@@ -477,6 +544,7 @@ function logoutUser() {
   els.startPanel.classList.add("hidden");
   if (els.moduleChoicePanel) els.moduleChoicePanel.classList.add("hidden");
   state.activeModule = "welcome";
+  document.body.classList.remove("dynamics-active");
   resetAuthChoice();
   showDefaultAvatar(els.registerAvatarPreview);
   refreshCurrentUserDisplay(null);
@@ -499,7 +567,10 @@ function launchStaticApplication() {
     initAuth();
     return;
   }
+  cancelDynamicsFieldPlacement({ silent: true });
   state.activeModule = "static";
+  document.body.classList.remove("dynamics-active");
+  cancelDynamicsAnimation();
   els.welcomeScreen.classList.add("hidden");
   els.appShell.classList.remove("app-hidden");
   if (els.dynamicsShell) els.dynamicsShell.classList.add("app-hidden");
@@ -513,11 +584,14 @@ function launchDynamicsApplication() {
     return;
   }
   state.activeModule = "dynamics";
+  document.body.classList.add("dynamics-active");
   els.welcomeScreen.classList.add("hidden");
   els.appShell.classList.add("app-hidden");
   els.dynamicsShell.classList.remove("app-hidden");
   resizeDynamicsCanvas();
   syncDynamicsControls();
+  updateDynamicsFieldStatus();
+  renderDynamicsSceneLists();
   drawDynamicsScene();
 }
 
@@ -568,6 +642,64 @@ function redo() {
   if (state.redoStack.length === 0) return;
   state.undoStack.push(snapshot());
   restore(state.redoStack.pop());
+}
+
+function dynamicsSnapshot() {
+  return JSON.stringify({
+    objects: state.dynamics.objects,
+    fields: state.dynamics.fields,
+    forces: state.dynamics.forces,
+    objectSeq: state.dynamics.objectSeq,
+    fieldSeq: state.dynamics.fieldSeq,
+    forceSeq: state.dynamics.forceSeq,
+  });
+}
+
+function recordDynamicsHistory() {
+  state.dynamics.undoStack.push(dynamicsSnapshot());
+  if (state.dynamics.undoStack.length > 100) state.dynamics.undoStack.shift();
+  state.dynamics.redoStack = [];
+}
+
+function restoreDynamics(serialized) {
+  cancelDynamicsFieldPlacement({ silent: true });
+  cancelDynamicsAnimation();
+  const data = JSON.parse(serialized);
+  state.dynamics.objects = data.objects || [];
+  state.dynamics.fields = data.fields || [];
+  state.dynamics.forces = data.forces || [];
+  state.dynamics.objectSeq = data.objectSeq || nextSequence(state.dynamics.objects, "D");
+  state.dynamics.fieldSeq = data.fieldSeq || nextSequence(state.dynamics.fields, "F");
+  state.dynamics.forceSeq = data.forceSeq || nextSequence(state.dynamics.forces, "A");
+  state.dynamics.selectedObjectId = state.dynamics.objects[0]?.id || null;
+  state.dynamics.object = state.dynamics.objects[0] || null;
+  state.dynamics.field = state.dynamics.fields[state.dynamics.fields.length - 1] || null;
+  state.dynamics.result = null;
+  syncDynamicsObjectControls(state.dynamics.object);
+  updateDynamicsFieldStatus();
+  renderDynamicsSceneLists();
+  renderDynamicsResult();
+  drawDynamicsScene();
+}
+
+function undoDynamics() {
+  if (state.dynamics.fieldPlacement.active) {
+    cancelDynamicsFieldPlacement();
+    return;
+  }
+  if (!state.dynamics.undoStack.length) return;
+  state.dynamics.redoStack.push(dynamicsSnapshot());
+  restoreDynamics(state.dynamics.undoStack.pop());
+}
+
+function redoDynamics() {
+  if (state.dynamics.fieldPlacement.active) {
+    cancelDynamicsFieldPlacement();
+    return;
+  }
+  if (!state.dynamics.redoStack.length) return;
+  state.dynamics.undoStack.push(dynamicsSnapshot());
+  restoreDynamics(state.dynamics.redoStack.pop());
 }
 
 function setTool(tool) {
@@ -686,7 +818,7 @@ function elementGeometryOf(element) {
 
 function nodeAtScreen(x, y) {
   let best = null;
-  let bestDistance = 13;
+  let bestDistance = 9;
   for (const node of state.nodes) {
     if (node.fused) continue;
     const screen = worldToScreen(node);
@@ -706,9 +838,9 @@ function nodeOrSupportAtScreen(x, y) {
 function supportAtScreen(x, y) {
   const point = { x, y };
   let best = null;
-  let bestDistance = 18;
+  let bestDistance = 10;
   for (const node of state.nodes) {
-    if (node.fused || !isSupportNode(node)) continue;
+    if (!isSupportNode(node)) continue;
     const distance = supportHitDistance(node, point);
     if (distance < bestDistance) {
       best = node;
@@ -771,7 +903,7 @@ function groundEnd(center, normal, halfWidth) {
 
 function elementAtScreen(x, y) {
   let best = null;
-  let bestDistance = 14;
+  let bestDistance = 8;
   for (const element of state.elements) {
     const nodeI = getNode(element.node_i);
     const nodeJ = getNode(element.node_j);
@@ -800,8 +932,8 @@ function elementDistanceAtScreen(element, point, a, b) {
   const control = arcControlPoint(element, a, b);
   let best = Infinity;
   let previous = a;
-  for (let index = 1; index <= 24; index++) {
-    const t = index / 24;
+  for (let index = 1; index <= 48; index++) {
+    const t = index / 48;
     const current = quadraticPoint(a, control, b, t);
     best = Math.min(best, pointToSegmentDistance(point, previous, current));
     previous = current;
@@ -857,14 +989,16 @@ function addElement(nodeI, nodeJ) {
     id: `E${state.elementSeq++}`,
     node_i: nodeI,
     node_j: nodeJ,
-    material: "steel",
-    section: "default",
+    material: state.projectMaterials[0]?.id || "steel",
+    section: state.projectSections[0]?.id || "default",
     type: els.elementType.value || "frame",
     geometry: state.elementGeometry,
     curvature: Number(state.elementDefaults.curvature || 0),
     arcAngle: Number(state.elementDefaults.arcAngle || 45),
     teeDepth: state.elementDefaults.teeDepth || "0.35 m",
     sectionParams: { ...state.elementDefaults },
+    moment_release_i: false,
+    moment_release_j: false,
   };
   state.elements.push(element);
   setSelection("element", element.id);
@@ -911,7 +1045,10 @@ function isElementSelected(id) {
 
 function canvasPoint(event) {
   const rect = canvas.getBoundingClientRect();
-  return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / Math.max(rect.width, 1)),
+    y: (event.clientY - rect.top) * (canvas.height / Math.max(rect.height, 1)),
+  };
 }
 
 function handlePointAction(point, event) {
@@ -1052,11 +1189,13 @@ function supportPresetToRestraints(preset) {
 }
 
 function applySupportPreset(node, preset) {
+  const current = node.support || {};
   node.restraints = supportPresetToRestraints(preset);
   node.support = {
     type: preset,
     mode: preset === "pin" ? "fixed-ground" : preset === "roller" ? "rolling-ground" : preset === "ground" ? "fixed-ground" : preset,
-    angle: Number(node.support?.angle || 0),
+    angle: Number(current.angle || 0),
+    orientationExplicit: Boolean(current.orientationExplicit || current.mode === "rotating"),
   };
 }
 
@@ -1120,6 +1259,9 @@ function buildProject(options = {}) {
   const scope = options.scope || "whole";
   const model = scopedModel(scope);
   return {
+    schema: ProjectAdapter.STATIC_SCHEMA,
+    application: ProjectAdapter.APPLICATION_ID,
+    module: "statics",
     metadata: {
       name: scope === "selection" ? "isolated_body" : "canvas_project",
       solve_options: state.solveOptions.join(","),
@@ -1141,7 +1283,7 @@ function buildProject(options = {}) {
       node_j: element.node_j,
       material: "steel",
       section: "default",
-      type: solverElementType(element),
+      ...ProjectAdapter.solverElement(element),
       geometry: elementGeometryOf(element),
       curvature: Number(element.curvature || 0),
       arcAngle: Number(element.arcAngle || 45),
@@ -1156,59 +1298,36 @@ function buildProject(options = {}) {
 }
 
 function solverElementType(element) {
-  return element.type === "rigid" ? "rigid" : "frame";
+  return ProjectAdapter.solverElementType(element);
 }
 
 function projectElementLoads(model) {
-  return model.elementLoads
-    .filter((load) => load.kind !== "uniform_moment_local")
-    .map((load) => ({ ...load }));
+  if (model.elementLoads.some((load) => load.kind === "uniform_moment_local")) {
+    throw new Error("均布力偶的一致荷载向量仍在开发中，请先删除该荷载后求解。");
+  }
+  const distributedLoads = model.elementLoads.map((load) => ({ ...load }));
+  const pointLoads = model.loads
+    .filter((load) => load.kind === "element_point" && load.element)
+    .map((load) => ({
+      element: load.element,
+      kind: "point_global",
+      ratio: Math.max(0, Math.min(1, Number(load.ratio ?? 0.5))),
+      fx: load.fx || "0 N",
+      fy: load.fy || "0 N",
+      mz: load.mz || "0 N*m",
+    }));
+  return [...distributedLoads, ...pointLoads];
 }
 
 function projectNodalLoads(model) {
-  const loads = [];
-  for (const load of model.loads) {
-    if (load.node) {
-      loads.push({
+  return model.loads
+    .filter((load) => load.node)
+    .map((load) => ({
         node: load.node,
         fx: load.fx || "0 N",
         fy: load.fy || "0 N",
         mz: load.mz || "0 N*m",
-      });
-      continue;
-    }
-    if (load.kind === "element_point" && load.element) {
-      const element = model.elements.find((item) => item.id === load.element);
-      if (!element) continue;
-      const ratio = Math.max(0, Math.min(1, Number(load.ratio ?? 0.5)));
-      const fx = quantityToNumber(load.fx, "N");
-      const fy = quantityToNumber(load.fy, "N");
-      const mz = quantityToNumber(load.mz, "N*m");
-      loads.push({
-        node: element.node_i,
-        fx: formatQuantity(fx * (1 - ratio), "N"),
-        fy: formatQuantity(fy * (1 - ratio), "N"),
-        mz: formatQuantity(mz * (1 - ratio), "N*m"),
-      });
-      loads.push({
-        node: element.node_j,
-        fx: formatQuantity(fx * ratio, "N"),
-        fy: formatQuantity(fy * ratio, "N"),
-        mz: formatQuantity(mz * ratio, "N*m"),
-      });
-    }
-  }
-  for (const load of model.elementLoads || []) {
-    if (load.kind !== "uniform_moment_local") continue;
-    const element = model.elements.find((item) => item.id === load.element);
-    if (!element) continue;
-    const length = elementLengthWorld(element);
-    const intensity = quantityToNumber(load.mz || "0 N*m/m", "N*m/m");
-    const nodalMoment = (intensity * length) / 2;
-    loads.push({ node: element.node_i, fx: "0 N", fy: "0 N", mz: formatQuantity(nodalMoment, "N*m") });
-    loads.push({ node: element.node_j, fx: "0 N", fy: "0 N", mz: formatQuantity(nodalMoment, "N*m") });
-  }
-  return loads;
+      }));
 }
 
 function scopedModel(scope) {
@@ -1246,8 +1365,9 @@ function scopedModel(scope) {
   };
 }
 
-function importProject(project) {
-  state.nodes = (project.nodes || []).map((node, index) => ({
+function importProject(rawProject) {
+  const project = ProjectAdapter.loadStaticProject(rawProject);
+  const nextNodes = project.nodes.map((node, index) => ({
     id: String(node.id || `N${index + 1}`),
     x: quantityToNumber(node.x ?? 0, "m"),
     y: quantityToNumber(node.y ?? 0, "m"),
@@ -1255,21 +1375,23 @@ function importProject(project) {
     support: parseSupport(node.support, node.restraints),
     fused: Boolean(node.fused),
   }));
-  state.elements = (project.elements || []).map((element, index) => ({
+  const nextElements = project.elements.map((element, index) => ({
     id: String(element.id || `E${index + 1}`),
     node_i: String(element.node_i),
     node_j: String(element.node_j),
-    material: "steel",
-    section: "default",
-    type: ["arc", "tee", "freeform", "right_angle"].includes(String(element.type)) ? "frame" : String(element.type || "frame"),
-    geometry: String(element.geometry || (["arc", "tee", "freeform", "right_angle"].includes(String(element.type)) ? element.type : "straight")),
+    material: String(element.material),
+    section: String(element.section),
+    type: String(element.type),
+    geometry: String(element.geometry),
     curvature: Number(element.curvature || 0),
     arcAngle: Number(element.arcAngle || 45),
     teeDepth: element.teeDepth == null ? "0.35 m" : quantityToText(element.teeDepth, "m"),
-    path: (element.path || []).map((point) => ({ x: Number(point.x || 0), y: Number(point.y || 0) })),
-    sectionParams: element.sectionParams || {},
+    path: (element.path || []).map((point) => ({ x: Number(point.x), y: Number(point.y) })),
+    sectionParams: JSON.parse(JSON.stringify(element.sectionParams || {})),
+    moment_release_i: Boolean(element.moment_release_i),
+    moment_release_j: Boolean(element.moment_release_j),
   }));
-  state.loads = ((project.loads && project.loads.nodes) || []).map((load) => {
+  const nextLoads = project.loads.nodes.map((load) => {
     const imported = {
       kind: load.kind ? String(load.kind) : "node",
       fx: quantityToText(load.fx, "N"),
@@ -1284,24 +1406,58 @@ function importProject(project) {
     }
     return imported;
   });
-  state.elementLoads = ((project.loads && project.loads.elements) || []).map((load) => ({
-    element: String(load.element),
-    kind: String(load.kind || "uniform_local"),
-    qx: quantityToText(load.qx, "N/m"),
-    qy: quantityToText(load.qy, "N/m"),
-    qx_i: quantityToText(load.qx_i, "N/m"),
-    qx_j: quantityToText(load.qx_j, "N/m"),
-    qy_i: quantityToText(load.qy_i, "N/m"),
-    qy_j: quantityToText(load.qy_j, "N/m"),
-    qx_coefficients: (load.qx_coefficients || []).map((item) => quantityToText(item, "N/m")),
-    qy_coefficients: (load.qy_coefficients || []).map((item) => quantityToText(item, "N/m")),
-  }));
-  els.solverBackend.value = String(project.solver || (project.metadata && project.metadata.solver) || "frame2d");
-  state.nodeSeq = nextSequence(state.nodes, "N");
-  state.elementSeq = nextSequence(state.elements, "E");
-  clearSelection();
+  for (const load of project.loads.elements.filter((item) => String(item.kind) === "point_global")) {
+    nextLoads.push({
+      kind: "element_point",
+      element: String(load.element),
+      ratio: Number(load.ratio),
+      fx: quantityToText(load.fx, "N"),
+      fy: quantityToText(load.fy, "N"),
+      mz: quantityToText(load.mz, "N*m"),
+    });
+  }
+  const nextElementLoads = project.loads.elements
+    .filter((load) => String(load.kind) !== "point_global")
+    .map((load) => ({
+      element: String(load.element),
+      kind: String(load.kind),
+      qx: quantityToText(load.qx, "N/m"),
+      qy: quantityToText(load.qy, "N/m"),
+      qx_i: quantityToText(load.qx_i, "N/m"),
+      qx_j: quantityToText(load.qx_j, "N/m"),
+      qy_i: quantityToText(load.qy_i, "N/m"),
+      qy_j: quantityToText(load.qy_j, "N/m"),
+      qx_coefficients: (load.qx_coefficients || []).map((item) => quantityToText(item, "N/m")),
+      qy_coefficients: (load.qy_coefficients || []).map((item) => quantityToText(item, "N/m")),
+    }));
+  const nextMetadata = JSON.parse(JSON.stringify(project.metadata || {}));
+  const nextMaterials = JSON.parse(JSON.stringify(project.materials));
+  const nextSections = JSON.parse(JSON.stringify(project.sections));
+  const nextSolver = String(project.solver || project.metadata?.solver || "frame2d");
+  const nextMaterialE = nextMaterials[0]?.E;
+  const nextSectionA = nextSections[0]?.A;
+  const nextSectionI = nextSections[0]?.I;
+
+  state.nodes = nextNodes;
+  state.elements = nextElements;
+  state.loads = nextLoads;
+  state.elementLoads = nextElementLoads;
+  state.projectMetadata = nextMetadata;
+  state.projectMaterials = nextMaterials;
+  state.projectSections = nextSections;
+  state.nodeSeq = nextSequence(nextNodes, "N");
+  state.elementSeq = nextSequence(nextElements, "E");
+  state.selected = null;
+  state.selection = { nodes: [], elements: [] };
   state.pendingNode = null;
   state.result = null;
+  state.undoStack = [];
+  state.redoStack = [];
+  els.solverBackend.value = nextSolver;
+  if (!els.solverBackend.value) els.solverBackend.value = "frame2d";
+  if (nextMaterialE !== undefined) els.materialE.value = quantityToText(nextMaterialE, "Pa");
+  if (nextSectionA !== undefined) els.sectionA.value = quantityToText(nextSectionA, "m^2");
+  if (nextSectionI !== undefined) els.sectionI.value = quantityToText(nextSectionI, "m^4");
   syncUi();
   draw();
 }
@@ -1312,6 +1468,7 @@ function parseSupport(raw, restraints) {
       type: String(raw.type || "free"),
       mode: String(raw.mode || raw.type || "free"),
       angle: Number(raw.angle || 0),
+      orientationExplicit: Boolean(raw.orientationExplicit || raw.mode === "rotating"),
     };
   }
   const parsed = parseRestraints(restraints);
@@ -1331,59 +1488,11 @@ function nextSequence(items, prefix) {
 }
 
 function quantityToText(value, defaultUnit) {
-  if (value == null) return `0 ${defaultUnit}`;
-  if (typeof value === "number") return `${value} ${defaultUnit}`;
-  if (typeof value === "object" && "value" in value) return `${value.value} ${value.unit || defaultUnit}`;
-  return String(value);
+  return Units.quantityToText(value, defaultUnit);
 }
 
 function quantityToNumber(value, defaultUnit) {
-  if (typeof value === "number") return value * unitFactor(defaultUnit);
-  if (typeof value === "object" && value && "value" in value) {
-    return Number(value.value) * unitFactor(value.unit || defaultUnit);
-  }
-  const text = String(value || "0").trim();
-  const match = text.match(/^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s*([A-Za-z0-9*/^.\-·]+)?$/i);
-  if (!match) return 0;
-  return Number(match[1]) * unitFactor(match[2] || defaultUnit);
-}
-
-function unitFactor(unit) {
-  const factors = {
-    "": 1,
-    N: 1,
-    kN: 1000,
-    MN: 1000000,
-    "N/m": 1,
-    "kN/m": 1000,
-    "MN/m": 1000000,
-    "N/mm": 1000,
-    kg: 1,
-    g: 0.001,
-    m: 1,
-    cm: 0.01,
-    mm: 0.001,
-    s: 1,
-    ms: 0.001,
-    "m/s": 1,
-    "km/h": 1 / 3.6,
-    "m/s^2": 1,
-    "m/s2": 1,
-    "kg/m^3": 1,
-    "g/cm^3": 1000,
-    "rad/s": 1,
-    "rad/s^2": 1,
-    Pa: 1,
-    MPa: 1000000,
-    GPa: 1000000000,
-    "N*m": 1,
-    "kN*m": 1000,
-    "N*m/m": 1,
-    "kN*m/m": 1000,
-    "N·m/m": 1,
-    "kN·m/m": 1000,
-  };
-  return factors[String(unit).replace(/\s/g, "")] || 1;
+  return Units.parseQuantity(value, defaultUnit);
 }
 
 function formatQuantity(value, unit) {
@@ -1392,23 +1501,38 @@ function formatQuantity(value, unit) {
 }
 
 function saveProject() {
-  const blob = new Blob([JSON.stringify(buildEditableProject(), null, 2)], { type: "application/json" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "mechanics-project.json";
-  link.click();
-  URL.revokeObjectURL(link.href);
+  try {
+    const project = ProjectAdapter.loadStaticProject(buildEditableProject());
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "mechanics-project.json";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  } catch (error) {
+    showToast(String(error.message || error));
+  }
 }
 
 function buildEditableProject() {
+  const materials = JSON.parse(JSON.stringify(state.projectMaterials));
+  const sections = JSON.parse(JSON.stringify(state.projectSections));
+  if (!materials.length) materials.push({ id: "steel", E: els.materialE.value, nu: 0.3 });
+  if (!sections.length) sections.push({ id: "default", A: els.sectionA.value, I: els.sectionI.value });
+  materials[0] = { ...materials[0], E: els.materialE.value };
+  sections[0] = { ...sections[0], A: els.sectionA.value, I: els.sectionI.value };
   return {
+    schema: ProjectAdapter.STATIC_SCHEMA,
+    application: ProjectAdapter.APPLICATION_ID,
+    module: "statics",
     metadata: {
-      name: "canvas_project",
+      ...JSON.parse(JSON.stringify(state.projectMetadata || {})),
+      name: state.projectMetadata?.name || "canvas_project",
       solve_options: state.solveOptions.join(","),
     },
     solver: els.solverBackend.value,
-    materials: [{ id: "steel", E: els.materialE.value, nu: 0.3 }],
-    sections: [{ id: "default", A: els.sectionA.value, I: els.sectionI.value }],
+    materials,
+    sections,
     nodes: state.nodes.map((node) => ({
       id: node.id,
       x: `${node.x} m`,
@@ -1421,18 +1545,25 @@ function buildEditableProject() {
       id: element.id,
       node_i: element.node_i,
       node_j: element.node_j,
-      material: "steel",
-      section: "default",
+      material: element.material || materials[0].id,
+      section: element.section || sections[0].id,
       type: element.type || "frame",
       geometry: elementGeometryOf(element),
       curvature: Number(element.curvature || 0),
       arcAngle: Number(element.arcAngle || 45),
       teeDepth: element.teeDepth || "0.35 m",
       sectionParams: element.sectionParams || {},
+      moment_release_i: Boolean(element.moment_release_i),
+      moment_release_j: Boolean(element.moment_release_j),
     })),
     loads: {
-      nodes: state.loads.map((load) => ({ ...load })),
-      elements: state.elementLoads.map((load) => ({ ...load })),
+      nodes: state.loads.filter((load) => load.node).map((load) => ({ ...load })),
+      elements: [
+        ...state.elementLoads.map((load) => ({ ...load })),
+        ...state.loads
+          .filter((load) => load.kind === "element_point" && load.element)
+          .map((load) => ({ ...load, kind: "point_global" })),
+      ],
     },
   };
 }
@@ -1450,6 +1581,35 @@ function setSelectedElementType() {
   }
   mutate(() => {
     element.type = els.elementType.value;
+    if (element.type !== "frame") {
+      element.moment_release_i = false;
+      element.moment_release_j = false;
+    }
+  });
+}
+
+function setSelectedElementReleases(changedEnd) {
+  const element = selectedElement();
+  if (!element) {
+    showToast("请先选择普通梁柱杆件。");
+    syncUi();
+    return;
+  }
+  if (solverElementType(element) !== "frame") {
+    showToast("端部弯矩释放仅适用于普通梁柱杆件。");
+    syncUi();
+    return;
+  }
+  let releaseI = Boolean(els.momentReleaseI.checked);
+  let releaseJ = Boolean(els.momentReleaseJ.checked);
+  if (releaseI && releaseJ) {
+    if (changedEnd === "i") releaseJ = false;
+    else releaseI = false;
+    showToast("当前版本一次仅支持一个端部弯矩释放。");
+  }
+  mutate(() => {
+    element.moment_release_i = releaseI;
+    element.moment_release_j = releaseJ;
   });
 }
 
@@ -1504,13 +1664,16 @@ function setLoadDirection(direction) {
 }
 
 function applyCurrentLoad(hitNode = null, hitElement = null, screenPoint = null) {
+  if (state.loadMode === "distributed_moment") {
+    showToast("均布力偶的一致荷载向量仍在开发中，当前版本暂不允许施加。");
+    return;
+  }
+
   if (state.loadMode === "concentrated" || state.loadMode === "point_moment") {
     const node = hitNode || (state.selected && state.selected.type === "node" ? getNode(state.selected.id) : null);
     if (node) {
       const load = state.loadMode === "point_moment" ? makePointMomentLoad(node.id) : makeConcentratedLoad(node.id);
-      const index = state.loads.findIndex((item) => item.node === node.id);
-      if (index >= 0) state.loads[index] = load;
-      else state.loads.push(load);
+      state.loads.push(load);
       setSelection("node", node.id);
       return;
     }
@@ -1519,11 +1682,13 @@ function applyCurrentLoad(hitNode = null, hitElement = null, screenPoint = null)
       showToast("集中力或集中力偶需要点选节点或杆件上的任意位置。");
       return;
     }
+    if (solverElementType(element) === "truss") {
+      showToast("桁架杆只能在节点处承受外荷载；请在荷载位置插入节点并拆分杆件。");
+      return;
+    }
     const ratio = screenPoint ? elementRatioAtScreen(element, screenPoint) : 0.5;
     const load = state.loadMode === "point_moment" ? makeElementPointMomentLoad(element.id, ratio) : makeElementPointLoad(element.id, ratio);
-    const index = state.loads.findIndex((item) => item.kind === "element_point" && item.element === element.id);
-    if (index >= 0) state.loads[index] = load;
-    else state.loads.push(load);
+    state.loads.push(load);
     setSelection("element", element.id);
     return;
   }
@@ -1533,10 +1698,8 @@ function applyCurrentLoad(hitNode = null, hitElement = null, screenPoint = null)
     showToast("分布荷载需要点选一根杆件。");
     return;
   }
-  const load = state.loadMode === "distributed_moment" ? makeUniformMomentLoad(element) : makeDistributedLoad(element);
-  const index = state.elementLoads.findIndex((item) => item.element === element.id);
-  if (index >= 0) state.elementLoads[index] = load;
-  else state.elementLoads.push(load);
+  const load = makeDistributedLoad(element);
+  state.elementLoads.push(load);
   setSelection("element", element.id);
 }
 
@@ -1641,14 +1804,6 @@ function makeDistributedLoad(element) {
   };
 }
 
-function makeUniformMomentLoad(element) {
-  return {
-    element: element.id,
-    kind: "uniform_moment_local",
-    mz: els.distributedMoment.value || "0 N*m/m",
-  };
-}
-
 function splitCoefficients(text) {
   return String(text || "")
     .split(",")
@@ -1699,19 +1854,25 @@ function applySupportSettings() {
   const angle = Number(els.supportAngle.value || 0);
   const current = node.support || supportFromRestraints(node.restraints);
   const type = ["pin", "roller", "ground", "fixed"].includes(current.type) ? current.type : "pin";
+  const orientationExplicit = Boolean(
+    current.orientationExplicit ||
+    current.mode === "rotating" ||
+    mode === "rotating" ||
+    Math.abs(angle - Number(current.angle || 0)) > 1e-9
+  );
   mutate(() => {
     if (type === "ground") {
       node.restraints = { ux: true, uy: true, rz: true };
-      node.support = { type: "ground", mode: "fixed-ground", angle };
+      node.support = { type: "ground", mode: "fixed-ground", angle, orientationExplicit };
     } else if (type === "fixed") {
       node.restraints = { ux: true, uy: true, rz: true };
-      node.support = { type: "fixed", mode: "fixed", angle };
+      node.support = { type: "fixed", mode: "fixed", angle, orientationExplicit };
     } else if (type === "roller") {
       node.restraints = supportPresetToRestraints("roller");
-      node.support = { type: "roller", mode: mode === "rotating" ? "rotating" : "rolling-ground", angle };
+      node.support = { type: "roller", mode: mode === "rotating" ? "rotating" : "rolling-ground", angle, orientationExplicit };
     } else {
       node.restraints = { ux: true, uy: true, rz: false };
-      node.support = { type: "pin", mode: mode === "rotating" ? "rotating" : "fixed-ground", angle };
+      node.support = { type: "pin", mode: mode === "rotating" ? "rotating" : "fixed-ground", angle, orientationExplicit };
     }
     setSelection("node", node.id);
   });
@@ -1904,7 +2065,7 @@ function solveOptionLabel(option) {
     reaction: "支座反力",
     danger: "危险截面",
     flexibility: "柔度",
-    stress: "应力",
+    stress: "组合正应力估算",
     strain: "应变",
     stress_strain: "应变-应力图",
   };
@@ -2109,11 +2270,17 @@ function syncSelectionInfo() {
   if (!state.selected && selectedCount === 0) {
     els.selectionInfo.textContent = "未选择";
     els.setElementLengthButton.disabled = true;
+    els.momentReleaseI.checked = false;
+    els.momentReleaseJ.checked = false;
+    els.momentReleaseI.disabled = true;
+    els.momentReleaseJ.disabled = true;
     return;
   }
   els.setElementLengthButton.disabled = !(state.selected && state.selected.type === "element");
   if (selectedCount > 1) {
     els.selectionInfo.textContent = `已选择：${state.selection.nodes.length} 个节点，${state.selection.elements.length} 根杆件`;
+    els.momentReleaseI.disabled = true;
+    els.momentReleaseJ.disabled = true;
     return;
   }
   if (state.selected && state.selected.type === "node") {
@@ -2123,6 +2290,10 @@ function syncSelectionInfo() {
     els.selectionInfo.textContent = `${node.id}: x=${node.x.toFixed(3)} m, y=${node.y.toFixed(3)} m, 约束=${restraints}${
       load ? `, 荷载=(${load.fx}, ${load.fy}, ${load.mz})` : ""
     }`;
+    els.momentReleaseI.checked = false;
+    els.momentReleaseJ.checked = false;
+    els.momentReleaseI.disabled = true;
+    els.momentReleaseJ.disabled = true;
     return;
   }
   if (state.selected && state.selected.type === "element") {
@@ -2132,6 +2303,11 @@ function syncSelectionInfo() {
     const length = Math.hypot(nodeJ.x - nodeI.x, nodeJ.y - nodeI.y);
     const load = state.elementLoads.find((item) => item.element === element.id);
     els.elementType.value = element.type || "frame";
+    const canReleaseMoment = solverElementType(element) === "frame";
+    els.momentReleaseI.checked = Boolean(element.moment_release_i);
+    els.momentReleaseJ.checked = Boolean(element.moment_release_j);
+    els.momentReleaseI.disabled = !canReleaseMoment;
+    els.momentReleaseJ.disabled = !canReleaseMoment;
     els.elementLength.value = `${Number(length.toFixed(4))} m`;
     const geometry = elementGeometryOf(element);
     els.selectionInfo.textContent = `${element.id}: ${element.node_i} -> ${element.node_j}, 长度=${length.toFixed(3)} m, 力学类型=${
@@ -2184,9 +2360,24 @@ function draw() {
 function resizeDynamicsCanvas() {
   if (!dynamicsCanvas) return;
   const rect = dynamicsCanvas.getBoundingClientRect();
-  dynamicsCanvas.width = Math.max(760, Math.floor(rect.width || 760));
-  dynamicsCanvas.height = Math.max(460, Math.floor(rect.height || 560));
-  state.dynamics.origin = { x: 72, y: dynamicsCanvas.height - 62 };
+  if (rect.width < 2 || rect.height < 2) return;
+  const previousWidth = dynamicsCanvas.width;
+  const previousHeight = dynamicsCanvas.height;
+  const nextWidth = Math.max(1, Math.floor(rect.width));
+  const nextHeight = Math.max(1, Math.floor(rect.height));
+  if (nextWidth === previousWidth && nextHeight === previousHeight) {
+    drawDynamicsScene();
+    return;
+  }
+  dynamicsCanvas.width = nextWidth;
+  dynamicsCanvas.height = nextHeight;
+  if (!state.dynamics.viewportInitialized) {
+    state.dynamics.origin = { x: nextWidth / 2, y: nextHeight / 2 };
+    state.dynamics.viewportInitialized = true;
+  } else {
+    state.dynamics.origin.x += (nextWidth - previousWidth) / 2;
+    state.dynamics.origin.y += (nextHeight - previousHeight) / 2;
+  }
   drawDynamicsScene();
 }
 
@@ -2194,11 +2385,393 @@ function syncDynamicsControls() {
   if (!els.dynamicsBuildKind) return;
   const isCustom = els.dynamicsBuildKind.value === "custom";
   els.dynamicsCustomMode.disabled = !isCustom;
-  els.dynamicsShapeEquation.disabled = !(isCustom && els.dynamicsCustomMode.value === "equation");
+  els.dynamicsShapeEquation.disabled = true;
+  syncDynamicsSizeLabels();
+  syncDynamicsFieldDialog();
+  syncDynamicsCanvasCursor();
+}
+
+function dynamicsObjectById(id) {
+  return state.dynamics.objects.find((object) => object.id === id) || null;
+}
+
+function selectedDynamicsObject() {
+  return dynamicsObjectById(state.dynamics.selectedObjectId);
+}
+
+function dynamicsObjectColor(index) {
+  return ["#1688c5", "#e06c3b", "#6f9f39", "#8b5fc7", "#c08b18", "#d04f7b"][index % 6];
+}
+
+function syncDynamicsSizeLabels() {
+  const kind = els.dynamicsBuildKind.value;
+  const labels = {
+    particle: ["显示尺寸", "质点半径", "厚度"],
+    rod: ["杆长", "杆宽", "厚度"],
+    circle: ["圆盘直径", "圆盘半径", "厚度"],
+    ring: ["外径", "圆环半径", "厚度"],
+    rectangle: ["矩形长度", "矩形宽度", "厚度"],
+    custom: ["包络长度", "包络宽度", "厚度"],
+  }[kind] || ["尺寸 A", "尺寸 B", "厚度"];
+  els.dynamicsSizeALabel.textContent = labels[0];
+  els.dynamicsSizeBLabel.textContent = labels[1];
+  els.dynamicsSizeCLabel.textContent = labels[2];
+}
+
+function dynamicsObjectFromControls(kind, world, path = null) {
+  const id = `D${state.dynamics.objectSeq++}`;
+  return {
+    id,
+    name: `${dynamicsKindLabel(kind)} ${id}`,
+    dynamicsModel: "particle2d",
+    kind,
+    x: world.x,
+    y: world.y,
+    vx0: dynamicsValue(els.dynamicsVx0, "m/s"),
+    vy0: dynamicsValue(els.dynamicsVy0, "m/s"),
+    mass: Math.max(dynamicsValue(els.dynamicsMass, "kg"), 1e-9),
+    density: Math.max(dynamicsValue(els.dynamicsDensity, "kg/m^3"), 0),
+    charge: dynamicsValue(els.dynamicsCharge, "C"),
+    sizeA: Math.max(Math.abs(dynamicsValue(els.dynamicsSizeA, "m")), 1e-6),
+    sizeB: Math.max(Math.abs(dynamicsValue(els.dynamicsSizeB, "m")), 1e-6),
+    sizeC: Math.max(Math.abs(dynamicsValue(els.dynamicsSizeC, "m")), 1e-6),
+    materialE: Math.max(dynamicsValue(els.dynamicsMaterialE, "Pa"), 0),
+    rigid: els.dynamicsRigidToggle.checked,
+    equation: els.dynamicsShapeEquation.value.trim(),
+    path,
+  };
+}
+
+function syncDynamicsObjectControls(object) {
+  if (!object) {
+    els.dynamicsObjectPanelTitle.textContent = "对象参数";
+    return;
+  }
+  els.dynamicsObjectPanelTitle.textContent = `对象参数 · ${object.name}`;
+  els.dynamicsBuildKind.value = object.kind;
+  els.dynamicsMass.value = `${formatNumber(object.mass)} kg`;
+  els.dynamicsDensity.value = `${formatNumber(object.density)} kg/m^3`;
+  els.dynamicsCharge.value = `${formatNumber(object.charge)} C`;
+  els.dynamicsSizeA.value = `${formatNumber(object.sizeA)} m`;
+  els.dynamicsSizeB.value = `${formatNumber(object.sizeB)} m`;
+  els.dynamicsSizeC.value = `${formatNumber(object.sizeC)} m`;
+  els.dynamicsMaterialE.value = `${formatNumber(object.materialE)} Pa`;
+  els.dynamicsShapeEquation.value = object.equation || els.dynamicsShapeEquation.value;
+  els.dynamicsRigidToggle.checked = Boolean(object.rigid);
+  els.dynamicsX0.value = `${formatNumber(object.x)} m`;
+  els.dynamicsY0.value = `${formatNumber(object.y)} m`;
+  els.dynamicsVx0.value = `${formatNumber(object.vx0)} m/s`;
+  els.dynamicsVy0.value = `${formatNumber(object.vy0)} m/s`;
+  state.dynamics.object = object;
+  syncDynamicsControls();
+}
+
+function updateSelectedDynamicsObjectFromControls() {
+  const object = selectedDynamicsObject();
+  if (!object) return;
+  recordDynamicsHistory();
+  object.mass = Math.max(dynamicsValue(els.dynamicsMass, "kg"), 1e-9);
+  object.density = Math.max(dynamicsValue(els.dynamicsDensity, "kg/m^3"), 0);
+  object.charge = dynamicsValue(els.dynamicsCharge, "C");
+  object.sizeA = Math.max(Math.abs(dynamicsValue(els.dynamicsSizeA, "m")), 1e-6);
+  object.sizeB = Math.max(Math.abs(dynamicsValue(els.dynamicsSizeB, "m")), 1e-6);
+  object.sizeC = Math.max(Math.abs(dynamicsValue(els.dynamicsSizeC, "m")), 1e-6);
+  object.materialE = Math.max(dynamicsValue(els.dynamicsMaterialE, "Pa"), 0);
+  object.rigid = els.dynamicsRigidToggle.checked;
+  object.equation = els.dynamicsShapeEquation.value.trim();
+  object.x = dynamicsValue(els.dynamicsX0, "m");
+  object.y = dynamicsValue(els.dynamicsY0, "m");
+  object.vx0 = dynamicsValue(els.dynamicsVx0, "m/s");
+  object.vy0 = dynamicsValue(els.dynamicsVy0, "m/s");
+  state.dynamics.object = object;
+  state.dynamics.result = null;
+  cancelDynamicsAnimation();
+  renderDynamicsResult();
+  renderDynamicsSceneLists();
+  drawDynamicsScene();
+}
+
+function selectDynamicsObject(id) {
+  cancelDynamicsFieldPlacement({ silent: true });
+  const object = dynamicsObjectById(id);
+  if (!object) return;
+  state.dynamics.selectedObjectId = id;
+  state.dynamics.object = object;
+  syncDynamicsObjectControls(object);
+  renderDynamicsSceneLists();
+  drawDynamicsScene();
+}
+
+function deleteDynamicsObject(id) {
+  cancelDynamicsFieldPlacement({ silent: true });
+  if (!dynamicsObjectById(id)) return;
+  recordDynamicsHistory();
+  cancelDynamicsAnimation();
+  state.dynamics.objects = state.dynamics.objects.filter((object) => object.id !== id);
+  state.dynamics.forces = state.dynamics.forces.filter((force) => force.targetId !== id);
+  if (state.dynamics.selectedObjectId === id) {
+    state.dynamics.selectedObjectId = state.dynamics.objects[0]?.id || null;
+    state.dynamics.object = state.dynamics.objects[0] || null;
+    syncDynamicsObjectControls(state.dynamics.object);
+  }
+  state.dynamics.result = null;
+  renderDynamicsResult();
+  renderDynamicsSceneLists();
+  drawDynamicsScene();
+}
+
+function deleteDynamicsField(id) {
+  cancelDynamicsFieldPlacement({ silent: true });
+  if (!state.dynamics.fields.some((field) => field.id === id)) return;
+  recordDynamicsHistory();
+  cancelDynamicsAnimation();
+  state.dynamics.fields = state.dynamics.fields.filter((field) => field.id !== id);
+  state.dynamics.field = state.dynamics.fields[state.dynamics.fields.length - 1] || null;
+  state.dynamics.result = null;
+  renderDynamicsResult();
+  updateDynamicsFieldStatus();
+  renderDynamicsSceneLists();
+  drawDynamicsScene();
+}
+
+function deleteDynamicsForce(id) {
+  cancelDynamicsFieldPlacement({ silent: true });
+  if (!state.dynamics.forces.some((force) => force.id === id)) return;
+  recordDynamicsHistory();
+  cancelDynamicsAnimation();
+  state.dynamics.forces = state.dynamics.forces.filter((force) => force.id !== id);
+  state.dynamics.result = null;
+  renderDynamicsResult();
+  renderDynamicsSceneLists();
+  drawDynamicsScene();
+}
+
+function createDynamicsSceneRow({ id, text, color, selected = false, kind }) {
+  const row = document.createElement("div");
+  row.className = `dynamics-scene-row${selected ? " selected" : ""}`;
+  row.dataset.kind = String(kind);
+  row.dataset.id = String(id);
+
+  const swatch = document.createElement("span");
+  swatch.className = "dynamics-scene-swatch";
+  swatch.style.backgroundColor = color;
+
+  const label = document.createElement("span");
+  label.className = "dynamics-scene-row-main";
+  label.textContent = text;
+
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.dataset.delete = String(kind);
+  deleteButton.setAttribute("aria-label", "删除");
+  deleteButton.textContent = "×";
+  row.append(swatch, label, deleteButton);
+  return row;
+}
+
+function replaceDynamicsSceneList(container, rows, emptyText) {
+  container.replaceChildren();
+  if (!rows.length) {
+    const empty = document.createElement("div");
+    empty.className = "dynamics-scene-empty";
+    empty.textContent = emptyText;
+    container.appendChild(empty);
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  rows.forEach((row) => fragment.appendChild(row));
+  container.appendChild(fragment);
+}
+
+function renderDynamicsSceneLists() {
+  if (!els.dynamicsObjectList) return;
+  els.dynamicsObjectCount.textContent = String(state.dynamics.objects.length);
+  els.dynamicsFieldCount.textContent = String(state.dynamics.fields.length);
+  els.dynamicsForceCount.textContent = String(state.dynamics.forces.length);
+  replaceDynamicsSceneList(
+    els.dynamicsObjectList,
+    state.dynamics.objects.map((object, index) =>
+      createDynamicsSceneRow({
+        id: object.id,
+        text: `${object.name} · m=${formatNumber(object.mass)} kg`,
+        color: dynamicsObjectColor(index),
+        selected: object.id === state.dynamics.selectedObjectId,
+        kind: "object",
+      })
+    ),
+    "暂无对象"
+  );
+  replaceDynamicsSceneList(
+    els.dynamicsFieldList,
+    state.dynamics.fields.map((field) =>
+      createDynamicsSceneRow({
+        id: field.id,
+        text: `${dynamicsFieldKindLabel(field.kind)} · ${dynamicsRangeLabel(field.rangeType)}`,
+        color: dynamicsFieldColor(field.kind),
+        kind: "field",
+      })
+    ),
+    "暂无场"
+  );
+  replaceDynamicsSceneList(
+    els.dynamicsForceList,
+    state.dynamics.forces.map((force) => {
+      const target = dynamicsObjectById(force.targetId);
+      const type = force.type === "impulse" ? "瞬时" : "持续";
+      const unit = force.type === "impulse" ? "N·s" : "N";
+      return createDynamicsSceneRow({
+        id: force.id,
+        text: `${type} · ${target?.name || force.targetId} · ${formatNumber(force.magnitude)} ${unit}`,
+        color: force.type === "impulse" ? "#8b5fc7" : "#e06c3b",
+        kind: "force",
+      });
+    }),
+    "暂无外力"
+  );
+  syncDynamicsActionUi();
 }
 
 function selectedDynamicsOptions() {
   return new Set(els.dynamicsOptionInputs.filter((input) => input.checked).map((input) => input.value));
+}
+
+function buildDynamicsProject() {
+  return {
+    schema: ProjectAdapter.DYNAMICS_SCHEMA,
+    application: ProjectAdapter.APPLICATION_ID,
+    module: "dynamics",
+    model: "independent-particle2d",
+    simulation: {
+      duration: els.dynamicsDuration.value,
+      timeStep: els.dynamicsTimeStep.value,
+    },
+    objects: JSON.parse(JSON.stringify(state.dynamics.objects)),
+    fields: JSON.parse(JSON.stringify(state.dynamics.fields)),
+    forces: JSON.parse(JSON.stringify(state.dynamics.forces)),
+  };
+}
+
+function saveDynamicsProject() {
+  try {
+    const project = ProjectAdapter.loadDynamicsProject(buildDynamicsProject());
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "mechanics-dynamics-project.json";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  } catch (error) {
+    showDynamicsToast(String(error.message || error), 3600);
+  }
+}
+
+function importDynamicsProject(rawProject) {
+  cancelDynamicsFieldPlacement({ silent: true });
+  const project = ProjectAdapter.loadDynamicsProject(rawProject);
+  const nextObjects = project.objects.map((raw, index) => {
+    const object = DynamicsCore.normalizeObject(raw);
+    return {
+      ...object,
+      id: String(raw.id || `D${index + 1}`),
+      name: String(raw.name || `${dynamicsKindLabel(object.kind)} D${index + 1}`),
+      dynamicsModel: String(raw.dynamicsModel || object.dynamicsModel || "particle2d"),
+      density: Number(raw.massProperties?.density ?? raw.density ?? 0),
+      rigid: Boolean(raw.rigid),
+      path: Array.isArray(object.path) ? object.path.map((point) => ({ x: Number(point.x), y: Number(point.y) })) : null,
+    };
+  });
+  const nextFields = JSON.parse(JSON.stringify(project.fields));
+  const nextForces = JSON.parse(JSON.stringify(project.forces));
+  const nextObjectSeq = nextSequence(nextObjects, "D");
+  const nextFieldSeq = nextSequence(nextFields, "F");
+  const nextForceSeq = nextSequence(nextForces, "A");
+  const nextDuration = quantityToText(project.simulation.duration, "s");
+  const nextTimeStep = quantityToText(project.simulation.timeStep, "s");
+
+  cancelDynamicsAnimation();
+  state.dynamics.objects = nextObjects;
+  state.dynamics.fields = nextFields;
+  state.dynamics.forces = nextForces;
+  state.dynamics.objectSeq = nextObjectSeq;
+  state.dynamics.fieldSeq = nextFieldSeq;
+  state.dynamics.forceSeq = nextForceSeq;
+  state.dynamics.selectedObjectId = nextObjects[0]?.id || null;
+  state.dynamics.object = nextObjects[0] || null;
+  state.dynamics.field = nextFields[nextFields.length - 1] || null;
+  state.dynamics.result = null;
+  state.dynamics.undoStack = [];
+  state.dynamics.redoStack = [];
+  els.dynamicsDuration.value = nextDuration;
+  els.dynamicsTimeStep.value = nextTimeStep;
+  syncDynamicsObjectControls(state.dynamics.object);
+  updateDynamicsFieldStatus();
+  renderDynamicsSceneLists();
+  renderDynamicsResult();
+  drawDynamicsScene();
+}
+
+function deleteSelectedDynamicsObject() {
+  if (!state.dynamics.selectedObjectId) return;
+  deleteDynamicsObject(state.dynamics.selectedObjectId);
+}
+
+function syncDynamicsActionUi() {
+  if (!els.dynamicsUndoButton) return;
+  els.dynamicsUndoButton.disabled = state.dynamics.undoStack.length === 0;
+  els.dynamicsRedoButton.disabled = state.dynamics.redoStack.length === 0;
+  els.dynamicsDeleteButton.disabled = !state.dynamics.selectedObjectId;
+  els.dynamicsReportButton.disabled = !state.dynamics.result;
+}
+
+function openDynamicsSolveDialog() {
+  cancelDynamicsFieldPlacement({ silent: true });
+  if (!state.dynamics.objects.length) {
+    showDynamicsToast("请先放置至少一个对象。", 2600);
+    return;
+  }
+  if (!els.dynamicsSolveDialog.open) els.dynamicsSolveDialog.showModal();
+}
+
+async function downloadDynamicsReport() {
+  if (!state.dynamics.result) {
+    showDynamicsToast("请先完成动力学求解。", 2600);
+    return;
+  }
+  els.dynamicsReportButton.disabled = true;
+  const derivation = [
+    "",
+    "计算方法",
+    "1. 所有输入先换算为 SI 单位，位置为 m、时间为 s、质量为 kg、力为 N。",
+    "2. 瞬时力按冲量 J 处理，初速度增量为 Δv=J/m；持续力在设定时间段内进入合力。",
+    "3. 重力场、电场和磁场按各自空间范围叠加，洛伦兹力采用 F=q(E+v×B)。",
+    "4. 平动方程 m·a=ΣF 采用四阶 Runge-Kutta 方法逐步积分，得到位置、速度和加速度。",
+    "5. 当前各对象独立求解，不包含碰撞、接触、约束及对象间相互作用。",
+  ].join("\n");
+  try {
+    const response = await fetch("/api/dynamics-report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        report_text: `${els.dynamicsResultText.textContent}${derivation}`,
+        report_images: { model: canvasDataUrl(dynamicsCanvas) },
+      }),
+    });
+    if (!response.ok) {
+      const payload = await response.json();
+      throw new Error(payload.error || "导出失败。");
+    }
+    const blob = await response.blob();
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "动力学计算书.pdf";
+    link.click();
+    URL.revokeObjectURL(link.href);
+    showDynamicsToast("动力学计算书已导出。", 2200);
+  } catch (error) {
+    showDynamicsToast(String(error.message || error), 3600);
+  } finally {
+    syncDynamicsActionUi();
+  }
 }
 
 function dynamicsValue(input, defaultUnit) {
@@ -2206,123 +2779,469 @@ function dynamicsValue(input, defaultUnit) {
 }
 
 function vectorFromAngle(magnitude, angleDegrees) {
-  const radians = Number(angleDegrees || 0) * (Math.PI / 180);
-  return { x: magnitude * Math.cos(radians), y: magnitude * Math.sin(radians) };
+  return DynamicsCore.vectorFromAngle(magnitude, angleDegrees);
 }
 
-function dynamicsFieldAcceleration() {
+function dynamicsFieldUnit(kind) {
+  if (kind === "electric") return "N/C";
+  if (kind === "magnetic") return "T";
+  return "m/s^2";
+}
+
+function dynamicsFieldKindLabel(kind) {
+  return {
+    zero: "零场",
+    gravity: "重力场",
+    electric: "电场",
+    magnetic: "磁场",
+  }[kind] || kind;
+}
+
+function dynamicsRangeLabel(rangeType) {
+  return {
+    global: "全局范围",
+    rectangle: "矩形范围",
+    circle: "圆形范围",
+    custom: "任意范围",
+  }[rangeType] || rangeType;
+}
+
+function dynamicsFieldColor(kind) {
+  return { gravity: "#1688c5", electric: "#e08a2e", magnetic: "#8b5fc7" }[kind] || "#1688c5";
+}
+
+function setDynamicsFieldDefaults(kind) {
+  if (kind === "gravity") {
+    els.dynamicsFieldMagnitude.value = "9.81 m/s^2";
+    els.dynamicsFieldDirectionPreset.value = "down";
+    els.dynamicsFieldAngle.value = "-90";
+  } else if (kind === "electric") {
+    els.dynamicsFieldMagnitude.value = "1 N/C";
+    els.dynamicsFieldDirectionPreset.value = "right";
+    els.dynamicsFieldAngle.value = "0";
+  } else if (kind === "magnetic") {
+    els.dynamicsFieldMagnitude.value = "1 T";
+    els.dynamicsMagneticDirection.value = "out";
+  } else {
+    els.dynamicsFieldMagnitude.value = "0";
+  }
+}
+
+function syncDynamicsFieldDialog() {
+  if (!els.dynamicsEnvironment) return;
   const kind = els.dynamicsEnvironment.value;
-  if (kind === "zero") return { x: 0, y: 0 };
-  return vectorFromAngle(dynamicsValue(els.dynamicsFieldMagnitude, "m/s^2"), Number(els.dynamicsFieldAngle.value || 0));
+  const rangeType = els.dynamicsFieldRange.value;
+  const isZero = kind === "zero";
+  const isMagnetic = kind === "magnetic";
+  const editingFieldId = state.dynamics.fieldPlacement.editingFieldId;
+  const editingField = editingFieldId ? state.dynamics.fields.find((field) => field.id === editingFieldId) : null;
+  els.dynamicsFieldMagnitude.disabled = isZero;
+  els.dynamicsVectorDirectionField.classList.toggle("hidden", isMagnetic || isZero);
+  els.dynamicsFieldAngleField.classList.toggle("hidden", isMagnetic || isZero);
+  els.dynamicsMagneticDirectionField.classList.toggle("hidden", !isMagnetic);
+  els.dynamicsFieldRange.disabled = isZero;
+  els.dynamicsFieldCenterX.disabled = isZero || rangeType === "global";
+  els.dynamicsFieldCenterY.disabled = isZero || rangeType === "global";
+  els.dynamicsRectangleRangeFields.classList.toggle("hidden", rangeType !== "rectangle" || isZero);
+  els.dynamicsCircleRangeField.classList.toggle("hidden", rangeType !== "circle" || isZero);
+  els.dynamicsFieldAngle.disabled = els.dynamicsFieldDirectionPreset.value !== "custom" || isZero;
+  const canApplyNumerically =
+    !isZero &&
+    rangeType !== "global" &&
+    (rangeType !== "custom" || (editingField?.rangeType === "custom" && Array.isArray(editingField.path)));
+  els.dynamicsFieldNumericApplyButton.classList.toggle("hidden", !canApplyNumerically);
+  els.dynamicsFieldNumericApplyButton.textContent = editingField ? "按数值更新" : "按数值添加";
+  els.dynamicsFieldApplyButton.textContent = {
+    global: "应用全局场",
+    rectangle: "在画布绘制矩形范围",
+    circle: "在画布绘制圆形范围",
+    custom: "在画布绘制任意范围",
+  }[rangeType] || "应用场";
+  if (isZero) els.dynamicsFieldApplyButton.textContent = editingField ? "删除当前场" : "应用零场";
+  if (!isMagnetic && !isZero && els.dynamicsFieldDirectionPreset.value !== "custom") {
+    const angles = { right: 0, up: 90, left: 180, down: -90 };
+    els.dynamicsFieldAngle.value = String(angles[els.dynamicsFieldDirectionPreset.value] ?? -90);
+  }
+  if (isZero) {
+    els.dynamicsFieldMessage.textContent = "零场不会在画布中绘制，也不会对对象施加外场作用。";
+  } else if (rangeType === "global") {
+    els.dynamicsFieldMessage.textContent = "全局均匀场作用于无限建模空间，可连续定义重力势能或电势能。";
+  } else if (rangeType === "custom") {
+    els.dynamicsFieldMessage.textContent = editingField?.rangeType === "custom"
+      ? "可按数值更新场参数和中心位置，或重新在画布绘制范围。"
+      : "点击主按钮后，在建模区按住鼠标左键绘制任意场范围。";
+  } else {
+    els.dynamicsFieldMessage.textContent = "可按数值精确添加，也可在建模区拖动绘制范围。";
+  }
 }
 
-function dynamicsInertia(kind, mass, sizeA, sizeB) {
-  const a = Math.max(Math.abs(sizeA), 1e-9);
-  const b = Math.max(Math.abs(sizeB), 1e-9);
-  if (kind === "particle") return mass * b * b;
-  if (kind === "rod") return (mass * a * a) / 12;
-  if (kind === "circle") return 0.5 * mass * b * b;
-  if (kind === "ring") return mass * b * b;
-  if (kind === "rectangle") return (mass * (a * a + b * b)) / 12;
-  return (mass * (a * a + b * b)) / 12;
+function openDynamicsFieldDialog(fieldId = null) {
+  cancelDynamicsFieldPlacement({ silent: true });
+  state.dynamics.placementMode = false;
+  state.dynamics.painting = false;
+  state.dynamics.paintPath = [];
+  const field = fieldId ? state.dynamics.fields.find((item) => item.id === fieldId) : null;
+  state.dynamics.fieldPlacement = DynamicsFieldPlacement.configurePlacement(field?.id || null);
+  if (field) {
+    els.dynamicsEnvironment.value = field.kind;
+    els.dynamicsFieldMagnitude.value = field.magnitudeText || `${field.magnitude} ${dynamicsFieldUnit(field.kind)}`;
+    els.dynamicsFieldDirectionPreset.value = field.directionPreset || "custom";
+    els.dynamicsFieldAngle.value = String(field.angle ?? -90);
+    els.dynamicsMagneticDirection.value = field.magneticDirection || "out";
+    els.dynamicsFieldRange.value = field.rangeType || "rectangle";
+    els.dynamicsFieldCenterX.value = `${field.centerX ?? 0} m`;
+    els.dynamicsFieldCenterY.value = `${field.centerY ?? 0} m`;
+    els.dynamicsFieldWidth.value = `${field.width ?? 8} m`;
+    els.dynamicsFieldHeight.value = `${field.height ?? 6} m`;
+    els.dynamicsFieldRadius.value = `${field.radius ?? 3} m`;
+  } else {
+    const center = DynamicsFieldGeometry.viewportWorldCenter({
+      origin: state.dynamics.origin,
+      scale: state.dynamics.scale,
+      canvasWidth: dynamicsCanvas.width,
+      canvasHeight: dynamicsCanvas.height,
+    });
+    els.dynamicsEnvironment.value = "gravity";
+    setDynamicsFieldDefaults("gravity");
+    els.dynamicsFieldRange.value = "rectangle";
+    els.dynamicsFieldCenterX.value = `${formatNumber(center.x)} m`;
+    els.dynamicsFieldCenterY.value = `${formatNumber(center.y)} m`;
+    els.dynamicsFieldWidth.value = "8 m";
+    els.dynamicsFieldHeight.value = "6 m";
+    els.dynamicsFieldRadius.value = "3 m";
+  }
+  syncDynamicsFieldDialog();
+  syncDynamicsCanvasCursor();
+  els.dynamicsFieldDialog.showModal();
+}
+
+function dynamicsFieldDraftFromDialog({ preserveCustomPath = false } = {}) {
+  const kind = els.dynamicsEnvironment.value;
+  const rangeType = els.dynamicsFieldRange.value;
+  const editingFieldId = state.dynamics.fieldPlacement.editingFieldId;
+  const existing = editingFieldId ? state.dynamics.fields.find((field) => field.id === editingFieldId) : null;
+  const field = {
+    kind,
+    magnitude: Math.abs(dynamicsValue(els.dynamicsFieldMagnitude, dynamicsFieldUnit(kind))),
+    magnitudeText: els.dynamicsFieldMagnitude.value.trim(),
+    directionPreset: els.dynamicsFieldDirectionPreset.value,
+    angle: Number(els.dynamicsFieldAngle.value || 0),
+    magneticDirection: els.dynamicsMagneticDirection.value,
+    rangeType,
+    centerX: dynamicsValue(els.dynamicsFieldCenterX, "m"),
+    centerY: dynamicsValue(els.dynamicsFieldCenterY, "m"),
+    width: Math.abs(dynamicsValue(els.dynamicsFieldWidth, "m")),
+    height: Math.abs(dynamicsValue(els.dynamicsFieldHeight, "m")),
+    radius: Math.abs(dynamicsValue(els.dynamicsFieldRadius, "m")),
+    path: null,
+  };
+  if (rangeType === "custom" && preserveCustomPath && existing?.rangeType === "custom" && Array.isArray(existing.path)) {
+    field.path = DynamicsFieldGeometry.translatePathToCenter(existing.path, {
+      x: field.centerX,
+      y: field.centerY,
+    });
+    const bounds = DynamicsFieldGeometry.polygonBounds(field.path);
+    field.centerX = bounds.centerX;
+    field.centerY = bounds.centerY;
+    field.width = bounds.width;
+    field.height = bounds.height;
+  }
+  return field;
+}
+
+function dynamicsFieldValidationMessage(field, validation) {
+  if (field.rangeType === "rectangle") return "矩形场的宽度和高度必须大于 0。";
+  if (field.rangeType === "circle") return "圆形场的半径必须大于 0。";
+  if (field.rangeType === "custom") return "任意场范围至少需要三个点，并且必须围成有效区域。";
+  return validation.error || "场范围无效。";
+}
+
+function commitDynamicsField(field, editingFieldId = null) {
+  const validation = DynamicsFieldGeometry.validateFieldGeometry(field);
+  if (!validation.valid) {
+    const message = dynamicsFieldValidationMessage(field, validation);
+    els.dynamicsFieldMessage.textContent = message;
+    showDynamicsToast(message, 3000);
+    return false;
+  }
+  const existingIndex = editingFieldId
+    ? state.dynamics.fields.findIndex((item) => item.id === editingFieldId)
+    : -1;
+  if (editingFieldId && existingIndex < 0) {
+    showDynamicsToast("要编辑的场已不存在，请重新选择。", 2800);
+    return false;
+  }
+  recordDynamicsHistory();
+  const completed = JSON.parse(JSON.stringify(field));
+  if (existingIndex >= 0) {
+    completed.id = state.dynamics.fields[existingIndex].id;
+    state.dynamics.fields[existingIndex] = completed;
+  } else {
+    completed.id = `F${state.dynamics.fieldSeq++}`;
+    state.dynamics.fields.push(completed);
+  }
+  state.dynamics.field = completed;
+  state.dynamics.fieldPlacement = DynamicsFieldPlacement.cancelPlacement();
+  state.dynamics.result = null;
+  cancelDynamicsAnimation();
+  renderDynamicsResult();
+  updateDynamicsFieldStatus();
+  renderDynamicsSceneLists();
+  syncDynamicsCanvasCursor();
+  drawDynamicsScene();
+  showDynamicsToast(`${dynamicsFieldKindLabel(completed.kind)}已${existingIndex >= 0 ? "更新" : "添加"}。`, 2200);
+  return true;
+}
+
+function applyDynamicsZeroField(editingFieldId) {
+  state.dynamics.fieldPlacement = DynamicsFieldPlacement.cancelPlacement();
+  els.dynamicsFieldDialog.close();
+  if (editingFieldId && state.dynamics.fields.some((field) => field.id === editingFieldId)) {
+    deleteDynamicsField(editingFieldId);
+    showDynamicsToast("当前场已删除，场景恢复为无该外场。", 2200);
+  } else {
+    syncDynamicsCanvasCursor();
+    showDynamicsToast("零场不产生作用，未添加新的场。", 2200);
+  }
+}
+
+function applyDynamicsField() {
+  try {
+    const editingFieldId = state.dynamics.fieldPlacement.editingFieldId;
+    const kind = els.dynamicsEnvironment.value;
+    if (kind === "zero") {
+      applyDynamicsZeroField(editingFieldId);
+      return;
+    }
+    const rangeType = els.dynamicsFieldRange.value;
+    const draft = dynamicsFieldDraftFromDialog();
+    if (rangeType === "global") {
+      if (commitDynamicsField(draft, editingFieldId)) els.dynamicsFieldDialog.close();
+      return;
+    }
+    state.dynamics.placementMode = false;
+    state.dynamics.painting = false;
+    state.dynamics.paintPath = [];
+    state.dynamics.fieldPlacement = DynamicsFieldPlacement.beginPlacement(state.dynamics.fieldPlacement, {
+      mode: rangeType,
+      draft,
+    });
+    els.dynamicsFieldDialog.close();
+    updateDynamicsFieldStatus();
+    syncDynamicsCanvasCursor();
+    drawDynamicsScene();
+    showDynamicsToast(`在建模区拖动绘制${dynamicsRangeLabel(rangeType)}；Esc 或右键取消。`, 3600);
+  } catch (error) {
+    els.dynamicsFieldMessage.textContent = String(error.message || error);
+  }
+}
+
+function applyDynamicsFieldNumerically() {
+  try {
+    const editingFieldId = state.dynamics.fieldPlacement.editingFieldId;
+    const field = dynamicsFieldDraftFromDialog({ preserveCustomPath: true });
+    if (commitDynamicsField(field, editingFieldId)) els.dynamicsFieldDialog.close();
+  } catch (error) {
+    els.dynamicsFieldMessage.textContent = String(error.message || error);
+  }
+}
+
+function cancelDynamicsFieldPlacement({ silent = false } = {}) {
+  const wasActive = Boolean(state.dynamics.fieldPlacement?.active);
+  state.dynamics.fieldPlacement = DynamicsFieldPlacement.cancelPlacement();
+  if (els.dynamicsFieldDialog?.open) els.dynamicsFieldDialog.close();
+  updateDynamicsFieldStatus();
+  syncDynamicsCanvasCursor();
+  drawDynamicsScene();
+  if (wasActive && !silent) showDynamicsToast("已取消场放置，场景未发生变化。", 2200);
+}
+
+function updateDynamicsFieldStatus() {
+  if (state.dynamics.fieldPlacement.active) {
+    els.dynamicsFieldStatus.textContent = `正在绘制${dynamicsRangeLabel(state.dynamics.fieldPlacement.mode)}`;
+    return;
+  }
+  const fields = state.dynamics.fields;
+  if (!fields.length) {
+    els.dynamicsFieldStatus.textContent = "未应用场";
+    return;
+  }
+  els.dynamicsFieldStatus.textContent = `复合场 ${fields.length}`;
+}
+
+function dynamicsFieldVector(field) {
+  return DynamicsCore.fieldVector(field);
+}
+
+function pointInDynamicsField(point, field) {
+  return DynamicsCore.pointInField(point, field);
+}
+
+function syncDynamicsForceDialog() {
+  const continuous = els.dynamicsForceType.value === "continuous";
+  els.dynamicsForceMagnitudeLabel.textContent = continuous ? "力的大小" : "冲量大小";
+  els.dynamicsForceStartField.classList.toggle("hidden", !continuous);
+  els.dynamicsForceDurationField.classList.toggle("hidden", !continuous);
+  els.dynamicsForceAngle.disabled = els.dynamicsForceDirectionPreset.value !== "custom";
+  if (els.dynamicsForceDirectionPreset.value !== "custom") {
+    const angles = { right: 0, up: 90, left: 180, down: -90 };
+    els.dynamicsForceAngle.value = String(angles[els.dynamicsForceDirectionPreset.value] ?? 0);
+  }
+  els.dynamicsForceMessage.textContent = continuous
+    ? "持续力在设定时间段内参与每一步积分；持续时间为 0 时作用到求解结束。"
+    : "瞬时力按冲量处理，只在初始瞬间改变对象速度，之后不再持续作用。";
+}
+
+function openDynamicsForceDialog() {
+  cancelDynamicsFieldPlacement({ silent: true });
+  if (!state.dynamics.objects.length) {
+    showDynamicsToast("请先放置至少一个对象。", 2400);
+    return;
+  }
+  els.dynamicsForceTarget.replaceChildren();
+  state.dynamics.objects.forEach((object) => {
+    const option = document.createElement("option");
+    option.value = String(object.id);
+    option.textContent = object.name;
+    els.dynamicsForceTarget.appendChild(option);
+  });
+  if (state.dynamics.selectedObjectId) els.dynamicsForceTarget.value = state.dynamics.selectedObjectId;
+  els.dynamicsForceType.value = "impulse";
+  els.dynamicsForceMagnitude.value = "1 N*s";
+  els.dynamicsForceDirectionPreset.value = "right";
+  els.dynamicsForceAngle.value = "0";
+  els.dynamicsForceStart.value = "0 s";
+  els.dynamicsForceDuration.value = "0 s";
+  syncDynamicsForceDialog();
+  els.dynamicsForceDialog.showModal();
+}
+
+function applyDynamicsForce() {
+  const targetId = els.dynamicsForceTarget.value;
+  if (!dynamicsObjectById(targetId)) return;
+  const type = els.dynamicsForceType.value;
+  const unit = type === "impulse" ? "N*s" : "N";
+  const magnitude = Math.abs(dynamicsValue(els.dynamicsForceMagnitude, unit));
+  const angle = Number(els.dynamicsForceAngle.value || 0);
+  const vector = vectorFromAngle(magnitude, angle);
+  recordDynamicsHistory();
+  state.dynamics.forces.push({
+    id: `A${state.dynamics.forceSeq++}`,
+    targetId,
+    type,
+    magnitude,
+    angle,
+    x: vector.x,
+    y: vector.y,
+    start: type === "continuous" ? Math.max(0, dynamicsValue(els.dynamicsForceStart, "s")) : 0,
+    duration: type === "continuous" ? Math.max(0, dynamicsValue(els.dynamicsForceDuration, "s")) : 0,
+  });
+  state.dynamics.result = null;
+  els.dynamicsForceDialog.close();
+  renderDynamicsResult();
+  renderDynamicsSceneLists();
+  drawDynamicsScene();
+  showDynamicsToast(type === "impulse" ? "瞬时冲量已添加。" : "持续力已添加。", 2000);
 }
 
 function solveDynamics() {
   if (!els.dynamicsMass) return;
-  cancelDynamicsAnimation();
-  const mass = Math.max(dynamicsValue(els.dynamicsMass, "kg"), 1e-9);
-  const x0 = dynamicsValue(els.dynamicsX0, "m");
-  const y0 = dynamicsValue(els.dynamicsY0, "m");
-  const vx0 = dynamicsValue(els.dynamicsVx0, "m/s");
-  const vy0 = dynamicsValue(els.dynamicsVy0, "m/s");
-  const fx = dynamicsValue(els.dynamicsFx, "N");
-  const fy = dynamicsValue(els.dynamicsFy, "N");
-  const duration = Math.max(dynamicsValue(els.dynamicsDuration, "s"), 0.02);
-  const timeStep = Math.min(0.2, Math.max(dynamicsValue(els.dynamicsTimeStep, "s"), 0.005));
-  const sizeA = Math.max(dynamicsValue(els.dynamicsSizeA, "m"), 1e-9);
-  const sizeB = Math.max(dynamicsValue(els.dynamicsSizeB, "m"), 1e-9);
-  const field = dynamicsFieldAcceleration();
-  const ax = fx / mass + field.x;
-  const ay = fy / mass + field.y;
-  const buildKind = els.dynamicsBuildKind.value;
-  const inertia = dynamicsInertia(buildKind, mass, sizeA, sizeB);
-  const torqueArm = buildKind === "particle" ? sizeB : Math.max(sizeA, sizeB) / 2;
-  const torque = torqueArm * Math.hypot(fx, fy);
-  const angularAcceleration = inertia > 1e-12 ? torque / inertia : 0;
-  const angularVelocity = angularAcceleration * duration;
-  const samples = [];
-  for (let t = 0; t <= duration + 1e-9; t += timeStep) {
-    const clamped = Math.min(t, duration);
-    const vx = vx0 + ax * clamped;
-    const vy = vy0 + ay * clamped;
-    samples.push({
-      t: clamped,
-      x: x0 + vx0 * clamped + 0.5 * ax * clamped * clamped,
-      y: y0 + vy0 * clamped + 0.5 * ay * clamped * clamped,
-      vx,
-      vy,
-    });
+  if (!state.dynamics.objects.length) {
+    showDynamicsToast("请先点击“放置对象”，并在建模区确定对象位置。", 3200);
+    return;
   }
-  const final = samples[samples.length - 1];
-  const speed = Math.hypot(final.vx, final.vy);
-  state.dynamics.result = {
-    mass,
-    buildKind,
-    x0,
-    y0,
-    vx0,
-    vy0,
-    ax,
-    ay,
-    fx,
-    fy,
-    duration,
-    timeStep,
-    sizeA,
-    sizeB,
-    inertia,
-    torque,
-    angularAcceleration,
-    angularVelocity,
-    final,
-    samples,
-    kineticEnergy: 0.5 * mass * speed * speed + 0.5 * inertia * angularVelocity * angularVelocity,
-    momentum: { x: mass * final.vx, y: mass * final.vy },
-    trajectoryEquation: {
-      x: `x(t) = ${formatNumber(x0)} + ${formatNumber(vx0)} t + ${formatNumber(0.5 * ax)} t^2`,
-      y: `y(t) = ${formatNumber(y0)} + ${formatNumber(vy0)} t + ${formatNumber(0.5 * ay)} t^2`,
-    },
-  };
+  cancelDynamicsAnimation();
+  const duration = dynamicsValue(els.dynamicsDuration, "s");
+  const timeStep = dynamicsValue(els.dynamicsTimeStep, "s");
+  try {
+    state.dynamics.result = DynamicsCore.simulateScene({
+      objects: state.dynamics.objects,
+      fields: state.dynamics.fields,
+      forces: state.dynamics.forces,
+      duration,
+      timeStep,
+    });
+  } catch (error) {
+    state.dynamics.result = null;
+    renderDynamicsResult();
+    showDynamicsToast(String(error.message || error), 4500);
+    return;
+  }
   renderDynamicsResult();
   drawDynamicsScene();
   if (selectedDynamicsOptions().has("trajectory")) startDynamicsAnimation();
-  showDynamicsToast("动力学求解完成。");
+  showDynamicsToast(`已完成 ${state.dynamics.result.objectResults.length} 个对象的动力学求解。`);
+}
+
+function dynamicsTrajectoryEquation(model) {
+  if (!model || model.kind !== "constant-acceleration") {
+    return {
+      x: "x(t)：由四阶 Runge-Kutta 数值积分得到",
+      y: "y(t)：分区场、磁场或分段外力使加速度变化，无单一二次解析式",
+    };
+  }
+  return {
+    x: `x(t) = ${formatNumber(model.x0)} + ${formatNumber(model.vx0)} t + ${formatNumber(0.5 * model.ax)} t^2`,
+    y: `y(t) = ${formatNumber(model.y0)} + ${formatNumber(model.vy0)} t + ${formatNumber(0.5 * model.ay)} t^2`,
+  };
 }
 
 function renderDynamicsResult() {
   const result = state.dynamics.result;
   if (!result) {
     els.dynamicsResultText.textContent = "暂无结果";
+    syncDynamicsActionUi();
     return;
   }
   const options = selectedDynamicsOptions();
-  const lines = [`求解模块：二维动力学`, `构建对象：${dynamicsKindLabel(result.buildKind)}`];
-  if (options.has("kinetic")) lines.push(`动能：${formatNumber(result.kineticEnergy)} J`);
-  if (options.has("momentum")) lines.push(`动量：px=${formatNumber(result.momentum.x)} kg·m/s, py=${formatNumber(result.momentum.y)} kg·m/s`);
-  if (options.has("velocity")) lines.push(`速度：vx=${formatNumber(result.final.vx)} m/s, vy=${formatNumber(result.final.vy)} m/s`);
-  if (options.has("acceleration")) lines.push(`加速度：ax=${formatNumber(result.ax)} m/s^2, ay=${formatNumber(result.ay)} m/s^2`);
-  if (options.has("angular_velocity")) lines.push(`角速度：ω=${formatNumber(result.angularVelocity)} rad/s`);
-  if (options.has("angular_acceleration")) lines.push(`角加速度：α=${formatNumber(result.angularAcceleration)} rad/s^2`);
-  if (options.has("torque")) lines.push(`力矩：M=${formatNumber(result.torque)} N·m`);
-  if (options.has("inertia")) lines.push(`转动惯量：I=${formatNumber(result.inertia)} kg·m^2`);
-  if (options.has("displacement")) lines.push(`位移：x=${formatNumber(result.final.x - result.x0)} m, y=${formatNumber(result.final.y - result.y0)} m`);
-  if (options.has("trajectory")) lines.push(`位移轨迹：已在建模区生成动态演示和抛物线轨迹。`);
-  if (options.has("trajectory_equation")) {
-    lines.push(`位移轨迹方程：`);
-    lines.push(`  ${result.trajectoryEquation.x}`);
-    lines.push(`  ${result.trajectoryEquation.y}`);
+  const lines = [
+    "求解模块：二维多对象独立质点动力学",
+    `场景：${result.objectResults.length} 个对象，${state.dynamics.fields.length} 个场，${state.dynamics.forces.length} 个外加作用力`,
+    `用户请求步长：${formatNumber(result.requestedTimeStep)} s`,
+    `实际采用步长：${formatNumber(result.timeStep)} s`,
+    `单对象积分步数：${result.stepCount}，总样本数：${result.totalSampleCount}`,
+  ];
+  if (options.has("kinetic")) lines.push(`系统总动能：${formatNumber(result.totals.kineticEnergy)} J`);
+  if (options.has("potential")) lines.push(`系统总势能：${formatNumber(result.totals.potentialEnergy)} J（坐标原点为零势能参考）`);
+  if (options.has("total_energy")) lines.push(`系统机械能：${formatNumber(result.totals.mechanicalEnergy)} J`);
+  if (options.has("momentum")) {
+    lines.push(`系统总动量：px=${formatNumber(result.totals.momentumX)} kg·m/s, py=${formatNumber(result.totals.momentumY)} kg·m/s`);
   }
+  if (options.has("angular_momentum")) {
+    lines.push(`系统关于全局原点的轨道角动量：Lz=${formatNumber(result.totals.orbitalAngularMomentum)} kg·m^2/s`);
+  }
+  for (const diagnostic of result.diagnostics || []) {
+    lines.push(`[${diagnostic.level === "warning" ? "警告" : "提示"}] ${diagnostic.message}`);
+  }
+  for (const item of result.objectResults) {
+    lines.push("", `${item.name}：`);
+    if (options.has("kinetic")) lines.push(`  动能：${formatNumber(item.kineticEnergy)} J`);
+    if (options.has("potential")) lines.push(`  势能：${formatNumber(item.potentialEnergy)} J`);
+    if (options.has("total_energy")) lines.push(`  机械能：${formatNumber(item.mechanicalEnergy)} J`);
+    if (options.has("momentum")) lines.push(`  动量：(${formatNumber(item.momentum.x)}, ${formatNumber(item.momentum.y)}) kg·m/s`);
+    if (options.has("angular_momentum")) {
+      lines.push(`  关于全局原点的轨道角动量 Lz：${formatNumber(item.orbitalAngularMomentum)} kg·m^2/s`);
+    }
+    if (options.has("lorentz_force")) {
+      lines.push(`  洛伦兹力：Fx=${formatNumber(item.lorentzForce.x)} N, Fy=${formatNumber(item.lorentzForce.y)} N`);
+    }
+    if (options.has("velocity")) lines.push(`  速度：vx=${formatNumber(item.final.vx)} m/s, vy=${formatNumber(item.final.vy)} m/s`);
+    if (options.has("acceleration")) lines.push(`  加速度：ax=${formatNumber(item.ax)} m/s^2, ay=${formatNumber(item.ay)} m/s^2`);
+    if (options.has("inertia")) {
+      lines.push(`  几何质心转动惯量估算：I=${formatNumber(item.inertia)} kg·m^2（不参与当前平动积分）`);
+    }
+    if (options.has("displacement")) {
+      lines.push(`  位移：Δx=${formatNumber(item.final.x - item.x0)} m, Δy=${formatNumber(item.final.y - item.y0)} m`);
+    }
+    if (options.has("trajectory_equation")) {
+      const equation = dynamicsTrajectoryEquation(item.trajectoryModel);
+      lines.push(`  ${equation.x}`);
+      lines.push(`  ${equation.y}`);
+    }
+  }
+  if (options.has("trajectory")) lines.push("", "位移轨迹：已在建模区生成多对象动态演示。");
   els.dynamicsResultText.textContent = lines.join("\n");
+  syncDynamicsActionUi();
 }
 
 function dynamicsKindLabel(kind) {
@@ -2336,43 +3255,23 @@ function dynamicsKindLabel(kind) {
   }[kind] || kind;
 }
 
-function drawDynamicsScene(sample = null) {
+function drawDynamicsScene(sampleMap = null) {
   if (!dynamicsCtx || !dynamicsCanvas) return;
-  fitDynamicsView();
   dynamicsCtx.clearRect(0, 0, dynamicsCanvas.width, dynamicsCanvas.height);
   drawDynamicsGrid();
   drawDynamicsField();
   const result = state.dynamics.result;
-  if (result) {
-    drawDynamicsTrajectory(result.samples);
-    drawDynamicsObject(sample || result.samples[0], result);
+  if (result && selectedDynamicsOptions().has("trajectory")) {
+    for (const item of result.objectResults) {
+      const sample = sampleMap?.[item.objectId] || null;
+      drawDynamicsTrajectory(item.samples, sample ? sample.t : Infinity, item.objectId);
+      drawDynamicsObject(sample || item.samples[0], item);
+    }
   } else {
-    drawDynamicsObject({ x: dynamicsValue(els.dynamicsX0, "m"), y: dynamicsValue(els.dynamicsY0, "m") }, null);
+    for (const object of state.dynamics.objects) drawDynamicsObject(object, null);
   }
-  drawDynamicsCustomPath();
-}
-
-function fitDynamicsView() {
-  const result = state.dynamics.result;
-  if (!result || result.samples.length < 2) {
-    state.dynamics.scale = 58;
-    state.dynamics.origin = { x: 72, y: dynamicsCanvas.height - 62 };
-    return;
-  }
-  const xs = result.samples.map((point) => point.x);
-  const ys = result.samples.map((point) => point.y);
-  const minX = Math.min(...xs, 0);
-  const maxX = Math.max(...xs, 1);
-  const minY = Math.min(...ys, 0);
-  const maxY = Math.max(...ys, 1);
-  const scaleX = (dynamicsCanvas.width - 140) / Math.max(maxX - minX, 1);
-  const scaleY = (dynamicsCanvas.height - 130) / Math.max(maxY - minY, 1);
-  const scale = Math.max(22, Math.min(86, scaleX, scaleY));
-  state.dynamics.scale = scale;
-  state.dynamics.origin = {
-    x: 72 - minX * scale,
-    y: dynamicsCanvas.height - 62 + minY * scale,
-  };
+  drawDynamicsAppliedForces();
+  drawDynamicsRangeDraft();
 }
 
 function dynamicsToScreen(point) {
@@ -2382,47 +3281,148 @@ function dynamicsToScreen(point) {
   };
 }
 
+function dynamicsToWorld(point) {
+  return {
+    x: (point.x - state.dynamics.origin.x) / state.dynamics.scale,
+    y: (state.dynamics.origin.y - point.y) / state.dynamics.scale,
+  };
+}
+
+function dynamicsGridStep() {
+  const desiredWorld = 62 / state.dynamics.scale;
+  const power = 10 ** Math.floor(Math.log10(desiredWorld));
+  const normalized = desiredWorld / power;
+  const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  return factor * power;
+}
+
 function drawDynamicsGrid() {
   dynamicsCtx.save();
   dynamicsCtx.fillStyle = cssColor("--canvas");
   dynamicsCtx.fillRect(0, 0, dynamicsCanvas.width, dynamicsCanvas.height);
   dynamicsCtx.strokeStyle = cssColor("--grid");
   dynamicsCtx.lineWidth = 1;
-  const step = state.dynamics.scale;
-  for (let x = state.dynamics.origin.x % step; x < dynamicsCanvas.width; x += step) lineDynamics({ x, y: 0 }, { x, y: dynamicsCanvas.height });
-  for (let y = state.dynamics.origin.y % step; y < dynamicsCanvas.height; y += step) lineDynamics({ x: 0, y }, { x: dynamicsCanvas.width, y });
+  const worldStep = dynamicsGridStep();
+  const step = worldStep * state.dynamics.scale;
+  for (let x = ((state.dynamics.origin.x % step) + step) % step; x < dynamicsCanvas.width; x += step) {
+    lineDynamics({ x, y: 0 }, { x, y: dynamicsCanvas.height });
+  }
+  for (let y = ((state.dynamics.origin.y % step) + step) % step; y < dynamicsCanvas.height; y += step) {
+    lineDynamics({ x: 0, y }, { x: dynamicsCanvas.width, y });
+  }
   dynamicsCtx.strokeStyle = cssColor("--grid-major");
   dynamicsCtx.lineWidth = 1.4;
-  lineDynamics({ x: 0, y: state.dynamics.origin.y }, { x: dynamicsCanvas.width, y: state.dynamics.origin.y });
-  lineDynamics({ x: state.dynamics.origin.x, y: 0 }, { x: state.dynamics.origin.x, y: dynamicsCanvas.height });
+  if (state.dynamics.origin.y >= 0 && state.dynamics.origin.y <= dynamicsCanvas.height) {
+    lineDynamics({ x: 0, y: state.dynamics.origin.y }, { x: dynamicsCanvas.width, y: state.dynamics.origin.y });
+  }
+  if (state.dynamics.origin.x >= 0 && state.dynamics.origin.x <= dynamicsCanvas.width) {
+    lineDynamics({ x: state.dynamics.origin.x, y: 0 }, { x: state.dynamics.origin.x, y: dynamicsCanvas.height });
+  }
   dynamicsCtx.fillStyle = cssColor("--muted");
   dynamicsCtx.font = "12px Segoe UI, Arial, sans-serif";
-  dynamicsCtx.fillText("x (m)", dynamicsCanvas.width - 54, state.dynamics.origin.y - 8);
-  dynamicsCtx.fillText("y (m)", state.dynamics.origin.x + 8, 18);
+  dynamicsCtx.fillText(`网格 ${formatNumber(worldStep)} m`, 14, 22);
+  if (state.dynamics.origin.y >= 18 && state.dynamics.origin.y <= dynamicsCanvas.height) {
+    dynamicsCtx.fillText("x (m)", dynamicsCanvas.width - 54, state.dynamics.origin.y - 8);
+  }
+  if (state.dynamics.origin.x >= 0 && state.dynamics.origin.x <= dynamicsCanvas.width - 42) {
+    dynamicsCtx.fillText("y (m)", state.dynamics.origin.x + 8, 18);
+  }
   dynamicsCtx.restore();
 }
 
 function drawDynamicsField() {
-  const field = dynamicsFieldAcceleration();
-  const start = { x: dynamicsCanvas.width - 128, y: 54 };
-  const end = { x: start.x + field.x * 4, y: start.y - field.y * 4 };
+  for (const field of state.dynamics.fields) drawSingleDynamicsField(field);
+}
+
+function drawSingleDynamicsField(field) {
+  if (field.kind === "zero" || (field.rangeType === "custom" && (!field.path || field.path.length < 3))) return;
+  const color = dynamicsFieldColor(field.kind);
   dynamicsCtx.save();
-  dynamicsCtx.strokeStyle = cssColor("--warn");
-  dynamicsCtx.fillStyle = cssColor("--warn");
-  dynamicsCtx.lineWidth = 2;
-  drawDynamicsArrow(start, end);
-  dynamicsCtx.font = "12px Segoe UI, Arial, sans-serif";
-  dynamicsCtx.fillText(els.dynamicsEnvironment.options[els.dynamicsEnvironment.selectedIndex].textContent, start.x - 8, start.y + 22);
+  traceDynamicsFieldRange(field);
+  dynamicsCtx.fillStyle = `${color}${document.body.classList.contains("dark-theme") ? "20" : "14"}`;
+  dynamicsCtx.fill();
+  dynamicsCtx.strokeStyle = color;
+  dynamicsCtx.lineWidth = 1.5;
+  dynamicsCtx.setLineDash([7, 5]);
+  dynamicsCtx.stroke();
+  dynamicsCtx.setLineDash([]);
+  traceDynamicsFieldRange(field);
+  dynamicsCtx.clip();
+  const spacing = 54;
+  for (let x = 26; x < dynamicsCanvas.width; x += spacing) {
+    for (let y = 30; y < dynamicsCanvas.height; y += spacing) {
+      const world = dynamicsToWorld({ x, y });
+      if (!pointInDynamicsField(world, field)) continue;
+      if (field.kind === "magnetic") drawDynamicsMagneticSymbol({ x, y }, field.magneticDirection, color);
+      else drawDynamicsVectorSymbol({ x, y }, dynamicsFieldVector(field), color);
+    }
+  }
   dynamicsCtx.restore();
 }
 
-function drawDynamicsTrajectory(samples) {
+function traceDynamicsFieldRange(field) {
+  dynamicsCtx.beginPath();
+  if (field.rangeType === "global") {
+    dynamicsCtx.rect(0, 0, dynamicsCanvas.width, dynamicsCanvas.height);
+    return;
+  }
+  if (field.rangeType === "circle") {
+    const center = dynamicsToScreen({ x: field.centerX, y: field.centerY });
+    dynamicsCtx.arc(center.x, center.y, field.radius * state.dynamics.scale, 0, Math.PI * 2);
+    return;
+  }
+  if (field.rangeType === "custom") {
+    field.path.forEach((point, index) => {
+      const screen = dynamicsToScreen(point);
+      if (index === 0) dynamicsCtx.moveTo(screen.x, screen.y);
+      else dynamicsCtx.lineTo(screen.x, screen.y);
+    });
+    dynamicsCtx.closePath();
+    return;
+  }
+  const topLeft = dynamicsToScreen({ x: field.centerX - field.width / 2, y: field.centerY + field.height / 2 });
+  dynamicsCtx.rect(topLeft.x, topLeft.y, field.width * state.dynamics.scale, field.height * state.dynamics.scale);
+}
+
+function drawDynamicsVectorSymbol(center, vector, color = cssColor("--blue")) {
+  const length = Math.hypot(vector.x, vector.y);
+  if (length < 1e-12) return;
+  const unit = { x: vector.x / length, y: -vector.y / length };
+  const start = { x: center.x - unit.x * 10, y: center.y - unit.y * 10 };
+  const end = { x: center.x + unit.x * 10, y: center.y + unit.y * 10 };
+  dynamicsCtx.strokeStyle = color;
+  dynamicsCtx.fillStyle = color;
+  dynamicsCtx.lineWidth = 1.6;
+  drawDynamicsArrow(start, end, 6);
+}
+
+function drawDynamicsMagneticSymbol(center, direction, color = cssColor("--blue")) {
+  dynamicsCtx.strokeStyle = color;
+  dynamicsCtx.fillStyle = color;
+  dynamicsCtx.lineWidth = 1.5;
+  dynamicsCtx.beginPath();
+  dynamicsCtx.arc(center.x, center.y, 7, 0, Math.PI * 2);
+  dynamicsCtx.stroke();
+  if (direction === "out") {
+    dynamicsCtx.beginPath();
+    dynamicsCtx.arc(center.x, center.y, 2.2, 0, Math.PI * 2);
+    dynamicsCtx.fill();
+  } else {
+    lineDynamics({ x: center.x - 4, y: center.y - 4 }, { x: center.x + 4, y: center.y + 4 });
+    lineDynamics({ x: center.x + 4, y: center.y - 4 }, { x: center.x - 4, y: center.y + 4 });
+  }
+}
+
+function drawDynamicsTrajectory(samples, endTime = Infinity, objectId = null) {
   if (!samples.length) return;
+  const visibleSamples = samples.filter((point) => point.t <= endTime + 1e-9);
+  if (!visibleSamples.length) return;
   dynamicsCtx.save();
-  dynamicsCtx.strokeStyle = cssColor("--accent");
+  const objectIndex = Math.max(0, state.dynamics.objects.findIndex((object) => object.id === objectId));
+  dynamicsCtx.strokeStyle = dynamicsObjectColor(objectIndex);
   dynamicsCtx.lineWidth = 2.2;
   dynamicsCtx.beginPath();
-  samples.forEach((point, index) => {
+  visibleSamples.forEach((point, index) => {
     const screen = dynamicsToScreen(point);
     if (index === 0) dynamicsCtx.moveTo(screen.x, screen.y);
     else dynamicsCtx.lineTo(screen.x, screen.y);
@@ -2430,30 +3430,46 @@ function drawDynamicsTrajectory(samples) {
   dynamicsCtx.stroke();
   dynamicsCtx.setLineDash([5, 5]);
   dynamicsCtx.strokeStyle = cssColor("--muted");
-  for (let index = 0; index < samples.length; index += Math.max(1, Math.floor(samples.length / 18))) {
-    const screen = dynamicsToScreen(samples[index]);
+  for (let index = 0; index < visibleSamples.length; index += Math.max(1, Math.floor(samples.length / 18))) {
+    const screen = dynamicsToScreen(visibleSamples[index]);
     lineDynamics({ x: screen.x, y: screen.y }, { x: screen.x, y: state.dynamics.origin.y });
   }
   dynamicsCtx.restore();
 }
 
 function drawDynamicsObject(point, result) {
-  const kind = result?.buildKind || els.dynamicsBuildKind.value;
+  const model = result ? dynamicsObjectById(result.objectId) : dynamicsObjectById(point.id) || point;
+  const kind = result?.buildKind || model?.kind || els.dynamicsBuildKind.value;
   const screen = dynamicsToScreen(point);
-  const sizeA = Math.max(16, Math.min(90, (result?.sizeA || dynamicsValue(els.dynamicsSizeA, "m")) * state.dynamics.scale));
-  const sizeB = Math.max(10, Math.min(62, (result?.sizeB || dynamicsValue(els.dynamicsSizeB, "m")) * state.dynamics.scale));
+  const sizeA = Math.max(16, Math.min(120, (result?.sizeA || model?.sizeA || 1) * state.dynamics.scale));
+  const rawSizeB = (result?.sizeB || model?.sizeB || 0.2) * state.dynamics.scale;
+  const sizeB = Math.max(kind === "particle" ? 4 : 10, Math.min(kind === "particle" ? 40 : 90, rawSizeB));
+  const objectIndex = Math.max(0, state.dynamics.objects.findIndex((object) => object.id === model?.id));
+  const color = dynamicsObjectColor(objectIndex);
   dynamicsCtx.save();
-  dynamicsCtx.strokeStyle = cssColor("--blue");
-  dynamicsCtx.fillStyle = document.body.classList.contains("dark-theme") ? "rgba(106, 167, 232, 0.24)" : "rgba(36, 95, 159, 0.16)";
-  dynamicsCtx.lineWidth = 2;
-  if (kind === "rod") {
+  dynamicsCtx.strokeStyle = color;
+  dynamicsCtx.fillStyle = `${color}${document.body.classList.contains("dark-theme") ? "3d" : "26"}`;
+  dynamicsCtx.lineWidth = model?.id === state.dynamics.selectedObjectId ? 3 : 2;
+  if (kind === "custom" && model?.path?.length > 1) {
+    const dx = point.x - model.x;
+    const dy = point.y - model.y;
+    dynamicsCtx.beginPath();
+    model.path.forEach((pathPoint, index) => {
+      const pathScreen = dynamicsToScreen({ x: pathPoint.x + dx, y: pathPoint.y + dy });
+      if (index === 0) dynamicsCtx.moveTo(pathScreen.x, pathScreen.y);
+      else dynamicsCtx.lineTo(pathScreen.x, pathScreen.y);
+    });
+    dynamicsCtx.closePath();
+    dynamicsCtx.fill();
+    dynamicsCtx.stroke();
+  } else if (kind === "rod") {
     lineDynamics({ x: screen.x - sizeA / 2, y: screen.y }, { x: screen.x + sizeA / 2, y: screen.y });
   } else if (kind === "rectangle") {
     dynamicsCtx.strokeRect(screen.x - sizeA / 2, screen.y - sizeB / 2, sizeA, sizeB);
     dynamicsCtx.fillRect(screen.x - sizeA / 2, screen.y - sizeB / 2, sizeA, sizeB);
   } else {
     dynamicsCtx.beginPath();
-    dynamicsCtx.arc(screen.x, screen.y, kind === "particle" ? 8 : sizeB, 0, Math.PI * 2);
+    dynamicsCtx.arc(screen.x, screen.y, sizeB, 0, Math.PI * 2);
     if (kind !== "ring") dynamicsCtx.fill();
     dynamicsCtx.stroke();
     if (kind === "ring") {
@@ -2464,22 +3480,94 @@ function drawDynamicsObject(point, result) {
   }
   dynamicsCtx.fillStyle = cssColor("--ink");
   dynamicsCtx.font = "12px Segoe UI, Arial, sans-serif";
-  dynamicsCtx.fillText(`t=${formatNumber(point.t || 0)} s`, screen.x + 12, screen.y - 12);
+  const label = result ? `${model?.name || result.name} · t=${formatNumber(point.t || 0)} s` : model?.name || dynamicsKindLabel(kind);
+  dynamicsCtx.fillText(label, screen.x + 12, screen.y - 12);
   dynamicsCtx.restore();
 }
 
-function drawDynamicsCustomPath() {
-  if (els.dynamicsBuildKind.value !== "custom" || els.dynamicsCustomMode.value !== "paint" || state.dynamics.paintPath.length < 2) return;
+function drawDynamicsAppliedForces() {
+  for (const force of state.dynamics.forces) {
+    const object = dynamicsObjectById(force.targetId);
+    if (!object) continue;
+    const point = dynamicsToScreen(object);
+    const magnitude = Math.hypot(force.x, force.y);
+    if (magnitude < 1e-12) continue;
+    const unit = { x: force.x / magnitude, y: -force.y / magnitude };
+    const length = force.type === "impulse" ? 34 : 46;
+    const start = { x: point.x - unit.x * length, y: point.y - unit.y * length };
+    dynamicsCtx.save();
+    dynamicsCtx.strokeStyle = force.type === "impulse" ? "#8b5fc7" : "#e06c3b";
+    dynamicsCtx.fillStyle = dynamicsCtx.strokeStyle;
+    dynamicsCtx.lineWidth = 2;
+    drawDynamicsArrow(start, point, 8);
+    dynamicsCtx.font = "11px Segoe UI, Arial, sans-serif";
+    dynamicsCtx.fillText(force.type === "impulse" ? "J" : "F", start.x + 4, start.y - 4);
+    dynamicsCtx.restore();
+  }
+}
+
+function drawDynamicsRangeDraft() {
+  const objectPath = state.dynamics.paintPath;
+  if (objectPath?.length > 1) {
+    dynamicsCtx.save();
+    dynamicsCtx.strokeStyle = cssColor("--select");
+    dynamicsCtx.setLineDash([6, 4]);
+    dynamicsCtx.lineWidth = 2;
+    dynamicsCtx.beginPath();
+    objectPath.forEach((point, index) => {
+      const screen = dynamicsToScreen(point);
+      if (index === 0) dynamicsCtx.moveTo(screen.x, screen.y);
+      else dynamicsCtx.lineTo(screen.x, screen.y);
+    });
+    dynamicsCtx.stroke();
+    dynamicsCtx.restore();
+  }
+
+  const placement = state.dynamics.fieldPlacement;
+  if (!placement.active || !placement.startWorld || !placement.currentWorld) return;
+  const color = dynamicsFieldColor(placement.draft?.kind);
   dynamicsCtx.save();
+  dynamicsCtx.fillStyle = `${color}${document.body.classList.contains("dark-theme") ? "42" : "28"}`;
   dynamicsCtx.strokeStyle = cssColor("--select");
-  dynamicsCtx.setLineDash([6, 4]);
+  dynamicsCtx.setLineDash([7, 5]);
   dynamicsCtx.lineWidth = 2;
   dynamicsCtx.beginPath();
-  state.dynamics.paintPath.forEach((point, index) => {
-    if (index === 0) dynamicsCtx.moveTo(point.x, point.y);
-    else dynamicsCtx.lineTo(point.x, point.y);
-  });
+  let label = "";
+  let labelPoint = dynamicsToScreen(placement.currentWorld);
+  if (placement.mode === "rectangle") {
+    const geometry = DynamicsFieldGeometry.rectangleFromDrag(placement.startWorld, placement.currentWorld);
+    const topLeft = dynamicsToScreen({
+      x: geometry.centerX - geometry.width / 2,
+      y: geometry.centerY + geometry.height / 2,
+    });
+    dynamicsCtx.rect(topLeft.x, topLeft.y, geometry.width * state.dynamics.scale, geometry.height * state.dynamics.scale);
+    label = `${formatNumber(geometry.width)} m × ${formatNumber(geometry.height)} m`;
+    labelPoint = dynamicsToScreen({ x: geometry.centerX, y: geometry.centerY });
+  } else if (placement.mode === "circle") {
+    const geometry = DynamicsFieldGeometry.circleFromDrag(placement.startWorld, placement.currentWorld);
+    const center = dynamicsToScreen({ x: geometry.centerX, y: geometry.centerY });
+    dynamicsCtx.arc(center.x, center.y, geometry.radius * state.dynamics.scale, 0, Math.PI * 2);
+    label = `r = ${formatNumber(geometry.radius)} m`;
+    labelPoint = center;
+  } else {
+    placement.path.forEach((point, index) => {
+      const screen = dynamicsToScreen(point);
+      if (index === 0) dynamicsCtx.moveTo(screen.x, screen.y);
+      else dynamicsCtx.lineTo(screen.x, screen.y);
+    });
+    if (placement.path.length >= 3) dynamicsCtx.closePath();
+  }
+  if (placement.mode !== "custom" || placement.path.length >= 3) dynamicsCtx.fill();
   dynamicsCtx.stroke();
+  dynamicsCtx.setLineDash([]);
+  if (label) {
+    dynamicsCtx.font = "12px Segoe UI, Arial, sans-serif";
+    const width = dynamicsCtx.measureText(label).width;
+    dynamicsCtx.fillStyle = cssColor("--surface");
+    dynamicsCtx.fillRect(labelPoint.x - width / 2 - 5, labelPoint.y - 10, width + 10, 20);
+    dynamicsCtx.fillStyle = cssColor("--ink");
+    dynamicsCtx.fillText(label, labelPoint.x - width / 2, labelPoint.y + 4);
+  }
   dynamicsCtx.restore();
 }
 
@@ -2491,26 +3579,16 @@ function startDynamicsAnimation() {
   const animate = (now) => {
     if (!state.dynamics.result || state.activeModule !== "dynamics") return;
     const elapsed = ((now - state.dynamics.animationStart) / 1000) % Math.max(duration, 0.01);
-    const sample = nearestDynamicsSample(elapsed);
-    drawDynamicsScene(sample);
+    const sampleMap = Object.fromEntries(
+      state.dynamics.result.objectResults.map((result) => [
+        result.objectId,
+        DynamicsCore.sampleAtTime(result.samples, elapsed, result.timeStep),
+      ])
+    );
+    drawDynamicsScene(sampleMap);
     state.dynamics.animationId = requestAnimationFrame(animate);
   };
   state.dynamics.animationId = requestAnimationFrame(animate);
-}
-
-function nearestDynamicsSample(time) {
-  const samples = state.dynamics.result?.samples || [];
-  if (!samples.length) return { x: 0, y: 0, t: 0 };
-  let best = samples[0];
-  let bestDistance = Math.abs(samples[0].t - time);
-  for (const sample of samples) {
-    const distance = Math.abs(sample.t - time);
-    if (distance < bestDistance) {
-      best = sample;
-      bestDistance = distance;
-    }
-  }
-  return best;
 }
 
 function cancelDynamicsAnimation() {
@@ -2525,23 +3603,23 @@ function lineDynamics(a, b) {
   dynamicsCtx.stroke();
 }
 
-function drawDynamicsArrow(start, end) {
+function drawDynamicsArrow(start, end, headSize = 9) {
   const angle = Math.atan2(end.y - start.y, end.x - start.x);
   lineDynamics(start, end);
   dynamicsCtx.beginPath();
   dynamicsCtx.moveTo(end.x, end.y);
-  dynamicsCtx.lineTo(end.x - 9 * Math.cos(angle - Math.PI / 7), end.y - 9 * Math.sin(angle - Math.PI / 7));
-  dynamicsCtx.lineTo(end.x - 9 * Math.cos(angle + Math.PI / 7), end.y - 9 * Math.sin(angle + Math.PI / 7));
+  dynamicsCtx.lineTo(end.x - headSize * Math.cos(angle - Math.PI / 7), end.y - headSize * Math.sin(angle - Math.PI / 7));
+  dynamicsCtx.lineTo(end.x - headSize * Math.cos(angle + Math.PI / 7), end.y - headSize * Math.sin(angle + Math.PI / 7));
   dynamicsCtx.closePath();
   dynamicsCtx.fill();
 }
 
-function showDynamicsToast(message) {
+function showDynamicsToast(message, duration = 2400) {
   if (!dynamicsToast) return;
   dynamicsToast.textContent = message;
   dynamicsToast.classList.add("visible");
   clearTimeout(showDynamicsToast.timer);
-  showDynamicsToast.timer = setTimeout(() => dynamicsToast.classList.remove("visible"), 2400);
+  showDynamicsToast.timer = setTimeout(() => dynamicsToast.classList.remove("visible"), duration);
 }
 
 function isDynamicsPaintMode() {
@@ -2555,9 +3633,138 @@ function isDynamicsPaintMode() {
 function dynamicsCanvasPoint(event) {
   const rect = dynamicsCanvas.getBoundingClientRect();
   return {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top,
+    x: (event.clientX - rect.left) * (dynamicsCanvas.width / Math.max(rect.width, 1)),
+    y: (event.clientY - rect.top) * (dynamicsCanvas.height / Math.max(rect.height, 1)),
   };
+}
+
+function syncDynamicsCanvasCursor() {
+  if (!dynamicsCanvas) return;
+  const drawingObject = state.dynamics.placementMode && isDynamicsPaintMode();
+  const drawingField = Boolean(state.dynamics.fieldPlacement.active);
+  dynamicsCanvas.classList.toggle("placing", state.dynamics.placementMode && !drawingObject);
+  dynamicsCanvas.classList.toggle("drawing-object", drawingObject);
+  dynamicsCanvas.classList.toggle("drawing-range", drawingField);
+  els.dynamicsPlaceButton.classList.toggle("active", state.dynamics.placementMode);
+  els.dynamicsFieldButton.classList.toggle("active", drawingField);
+  els.dynamicsFieldCancelButton.classList.toggle("hidden", !drawingField);
+}
+
+function beginDynamicsObjectPlacement() {
+  cancelDynamicsFieldPlacement({ silent: true });
+  cancelDynamicsAnimation();
+  state.dynamics.placementMode = true;
+  state.dynamics.result = null;
+  syncDynamicsCanvasCursor();
+  const message = isDynamicsPaintMode()
+    ? "在建模区按住鼠标左键绘制任意形状。"
+    : "在建模区单击确定对象位置。";
+  showDynamicsToast(message, 3000);
+  drawDynamicsScene();
+}
+
+function placeDynamicsObject(world) {
+  const kind = els.dynamicsBuildKind.value;
+  const object = dynamicsObjectFromControls(kind, world);
+  recordDynamicsHistory();
+  state.dynamics.objects.push(object);
+  state.dynamics.object = object;
+  state.dynamics.selectedObjectId = object.id;
+  state.dynamics.placementMode = false;
+  state.dynamics.result = null;
+  els.dynamicsX0.value = `${formatNumber(world.x)} m`;
+  els.dynamicsY0.value = `${formatNumber(world.y)} m`;
+  renderDynamicsResult();
+  renderDynamicsSceneLists();
+  syncDynamicsObjectControls(object);
+  syncDynamicsCanvasCursor();
+  drawDynamicsScene();
+  showDynamicsToast(`${dynamicsKindLabel(kind)}已放置。`, 1800);
+}
+
+function finishDynamicsPaintedObject(path) {
+  if (path.length < 3) {
+    state.dynamics.paintPath = [];
+    showDynamicsToast("绘制路径过短，请重新绘制。", 2200);
+    drawDynamicsScene();
+    return;
+  }
+  const center = path.reduce((sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y }), { x: 0, y: 0 });
+  center.x /= path.length;
+  center.y /= path.length;
+  const object = dynamicsObjectFromControls("custom", center, [...path]);
+  recordDynamicsHistory();
+  state.dynamics.objects.push(object);
+  state.dynamics.object = object;
+  state.dynamics.selectedObjectId = object.id;
+  state.dynamics.paintPath = [];
+  state.dynamics.placementMode = false;
+  state.dynamics.result = null;
+  els.dynamicsX0.value = `${formatNumber(center.x)} m`;
+  els.dynamicsY0.value = `${formatNumber(center.y)} m`;
+  renderDynamicsResult();
+  renderDynamicsSceneLists();
+  syncDynamicsObjectControls(object);
+  syncDynamicsCanvasCursor();
+  drawDynamicsScene();
+  showDynamicsToast("任意形状对象已建立。", 1800);
+}
+
+function finishDynamicsFieldPlacement() {
+  const current = state.dynamics.fieldPlacement;
+  const editingFieldId = current.editingFieldId;
+  const tooSmall =
+    current.mode === "rectangle"
+      ? Math.abs(current.currentWorld.x - current.startWorld.x) * state.dynamics.scale < 4 ||
+        Math.abs(current.currentWorld.y - current.startWorld.y) * state.dynamics.scale < 4
+      : current.mode === "circle"
+        ? Math.hypot(
+            current.currentWorld.x - current.startWorld.x,
+            current.currentWorld.y - current.startWorld.y
+          ) * state.dynamics.scale < 4
+        : false;
+  const completed = DynamicsFieldPlacement.completePlacement(current);
+  state.dynamics.fieldPlacement = completed.placement;
+  if (tooSmall || !completed.validation.valid) {
+    updateDynamicsFieldStatus();
+    syncDynamicsCanvasCursor();
+    drawDynamicsScene();
+    const message = tooSmall
+      ? "绘制范围过小，已取消且未修改场景。"
+      : dynamicsFieldValidationMessage(completed.field || { rangeType: current.mode }, completed.validation);
+    showDynamicsToast(message, 3000);
+    return;
+  }
+  commitDynamicsField(completed.field, editingFieldId);
+  updateDynamicsFieldStatus();
+  syncDynamicsCanvasCursor();
+}
+
+function clearDynamicsModel() {
+  cancelDynamicsFieldPlacement({ silent: true });
+  if (!state.dynamics.objects.length && !state.dynamics.fields.length && !state.dynamics.forces.length) return;
+  recordDynamicsHistory();
+  cancelDynamicsAnimation();
+  state.dynamics.objects = [];
+  state.dynamics.fields = [];
+  state.dynamics.forces = [];
+  state.dynamics.objectSeq = 1;
+  state.dynamics.fieldSeq = 1;
+  state.dynamics.forceSeq = 1;
+  state.dynamics.selectedObjectId = null;
+  state.dynamics.object = null;
+  state.dynamics.field = null;
+  state.dynamics.result = null;
+  state.dynamics.paintPath = [];
+  state.dynamics.placementMode = false;
+  state.dynamics.fieldPlacement = DynamicsFieldPlacement.cancelPlacement();
+  els.dynamicsResultText.textContent = "暂无结果";
+  updateDynamicsFieldStatus();
+  renderDynamicsSceneLists();
+  syncDynamicsObjectControls(null);
+  syncDynamicsCanvasCursor();
+  drawDynamicsScene();
+  showDynamicsToast("动力学建模区已清空。", 1800);
 }
 
 function drawGrid() {
@@ -2675,6 +3882,7 @@ function drawTeeElementGlyph(a, b, selected) {
 function drawNodes() {
   ctx.save();
   for (const node of state.nodes) {
+    if (node.fused) continue;
     const point = worldToScreen(node);
     const selected = isNodeSelected(node.id);
     ctx.beginPath();
@@ -2725,7 +3933,7 @@ function supportFromRestraints(restraints) {
 
 function supportDirection(node) {
   const support = node.support || {};
-  if (support.mode === "rotating" && Number.isFinite(Number(support.angle)) && support.type !== "free") {
+  if ((support.mode === "rotating" || support.orientationExplicit) && Number.isFinite(Number(support.angle)) && support.type !== "free") {
     const radians = Number(support.angle) * (Math.PI / 180);
     return { x: Math.cos(radians), y: -Math.sin(radians) };
   }
@@ -3522,9 +4730,9 @@ els.welcomeLogoutButton.addEventListener("click", logoutUser);
 els.settingsButton.addEventListener("click", openSettingsDialog);
 if (els.dynamicsSettingsButton) els.dynamicsSettingsButton.addEventListener("click", openSettingsDialog);
 if (els.dynamicsToStaticButton) els.dynamicsToStaticButton.addEventListener("click", launchStaticApplication);
+if (els.staticToDynamicsButton) els.staticToDynamicsButton.addEventListener("click", launchDynamicsApplication);
 els.fontSizeSelect.addEventListener("change", () => applyFontSize(els.fontSizeSelect.value));
 els.saveNicknameButton.addEventListener("click", saveNickname);
-els.savePasswordButton.addEventListener("click", savePassword);
 els.saveAvatarButton.addEventListener("click", saveSettingsAvatar);
 els.logoutButton.addEventListener("click", logoutUser);
 els.registerAvatar.addEventListener("change", () => {
@@ -3535,12 +4743,12 @@ els.settingsAvatar.addEventListener("change", () => {
   const file = els.settingsAvatar.files && els.settingsAvatar.files[0];
   previewSettingsAvatar(file);
 });
-for (const input of [els.loginUsername, els.loginPassword]) {
+for (const input of [els.loginUsername]) {
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter") loginUser();
   });
 }
-for (const input of [els.registerUsername, els.registerPassword, els.registerNickname]) {
+for (const input of [els.registerUsername, els.registerNickname]) {
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter") registerUser();
   });
@@ -3568,12 +4776,19 @@ els.applySupportSettingsButton.addEventListener("click", (event) => {
   applySupportSettings();
   els.supportDialog.close();
 });
+els.solidifySupportNodeButton.addEventListener("click", (event) => {
+  event.preventDefault();
+  solidifyDialogNode();
+  els.supportDialog.close();
+});
 els.solidifyNodeButton.addEventListener("click", (event) => {
   event.preventDefault();
   solidifyDialogNode();
   els.nodeDialog.close();
 });
 els.elementType.addEventListener("change", setSelectedElementType);
+els.momentReleaseI.addEventListener("change", () => setSelectedElementReleases("i"));
+els.momentReleaseJ.addEventListener("change", () => setSelectedElementReleases("j"));
 els.setElementLengthButton.addEventListener("click", setSelectedElementLength);
 els.themeButton.addEventListener("click", () => {
   document.body.classList.toggle("dark-theme");
@@ -3591,10 +4806,7 @@ els.fileInput.addEventListener("change", async () => {
   if (!file) return;
   try {
     const text = await file.text();
-    mutate(() => importProject(JSON.parse(text)));
-    state.undoStack = [];
-    state.redoStack = [];
-    syncUi();
+    importProject(JSON.parse(text));
     showToast("工程已打开。");
   } catch (error) {
     showToast(String(error.message || error));
@@ -3603,58 +4815,247 @@ els.fileInput.addEventListener("change", async () => {
   }
 });
 
-if (els.dynamicsSolveButton) els.dynamicsSolveButton.addEventListener("click", solveDynamics);
+if (els.dynamicsSolveButton) els.dynamicsSolveButton.addEventListener("click", openDynamicsSolveDialog);
+if (els.runDynamicsSolveButton) {
+  els.runDynamicsSolveButton.addEventListener("click", () => {
+    els.dynamicsSolveDialog.close();
+    solveDynamics();
+  });
+}
+if (els.dynamicsUndoButton) els.dynamicsUndoButton.addEventListener("click", undoDynamics);
+if (els.dynamicsRedoButton) els.dynamicsRedoButton.addEventListener("click", redoDynamics);
+if (els.dynamicsDeleteButton) els.dynamicsDeleteButton.addEventListener("click", deleteSelectedDynamicsObject);
+if (els.dynamicsSaveButton) els.dynamicsSaveButton.addEventListener("click", saveDynamicsProject);
+if (els.dynamicsOpenButton) els.dynamicsOpenButton.addEventListener("click", () => els.dynamicsFileInput.click());
+if (els.dynamicsReportButton) els.dynamicsReportButton.addEventListener("click", downloadDynamicsReport);
+if (els.dynamicsFileInput) {
+  els.dynamicsFileInput.addEventListener("change", async () => {
+    const file = els.dynamicsFileInput.files && els.dynamicsFileInput.files[0];
+    if (!file) return;
+    try {
+      importDynamicsProject(JSON.parse(await file.text()));
+      showDynamicsToast("动力学工程已打开。", 2200);
+    } catch (error) {
+      showDynamicsToast(String(error.message || error), 3600);
+    } finally {
+      els.dynamicsFileInput.value = "";
+    }
+  });
+}
+if (els.dynamicsPlaceButton) els.dynamicsPlaceButton.addEventListener("click", beginDynamicsObjectPlacement);
+if (els.dynamicsFieldButton) els.dynamicsFieldButton.addEventListener("click", () => openDynamicsFieldDialog());
+if (els.dynamicsForceButton) els.dynamicsForceButton.addEventListener("click", openDynamicsForceDialog);
+if (els.dynamicsClearButton) els.dynamicsClearButton.addEventListener("click", clearDynamicsModel);
+if (els.dynamicsFieldApplyButton) els.dynamicsFieldApplyButton.addEventListener("click", applyDynamicsField);
+if (els.dynamicsFieldNumericApplyButton) {
+  els.dynamicsFieldNumericApplyButton.addEventListener("click", applyDynamicsFieldNumerically);
+}
+if (els.dynamicsFieldCancelButton) {
+  els.dynamicsFieldCancelButton.addEventListener("click", () => cancelDynamicsFieldPlacement());
+}
+if (els.dynamicsFieldDialog) {
+  els.dynamicsFieldDialog.addEventListener("close", () => {
+    if (state.dynamics.fieldPlacement.phase !== "configuring") return;
+    state.dynamics.fieldPlacement = DynamicsFieldPlacement.cancelPlacement();
+    syncDynamicsCanvasCursor();
+    updateDynamicsFieldStatus();
+  });
+}
+if (els.dynamicsForceApplyButton) els.dynamicsForceApplyButton.addEventListener("click", applyDynamicsForce);
+if (els.dynamicsForceType) els.dynamicsForceType.addEventListener("change", () => {
+  els.dynamicsForceMagnitude.value = els.dynamicsForceType.value === "continuous" ? "1 N" : "1 N*s";
+  syncDynamicsForceDialog();
+});
+if (els.dynamicsForceDirectionPreset) els.dynamicsForceDirectionPreset.addEventListener("change", syncDynamicsForceDialog);
+
+if (els.dynamicsEnvironment) {
+  els.dynamicsEnvironment.addEventListener("change", () => {
+    setDynamicsFieldDefaults(els.dynamicsEnvironment.value);
+    syncDynamicsFieldDialog();
+  });
+}
+for (const control of [els.dynamicsFieldDirectionPreset, els.dynamicsFieldRange]) {
+  if (control) control.addEventListener("change", syncDynamicsFieldDialog);
+}
+
+for (const control of [els.dynamicsBuildKind, els.dynamicsCustomMode]) {
+  if (!control) continue;
+  control.addEventListener("change", () => {
+    cancelDynamicsFieldPlacement({ silent: true });
+    state.dynamics.placementMode = false;
+    if (control === els.dynamicsBuildKind && selectedDynamicsObject()?.kind !== els.dynamicsBuildKind.value) {
+      state.dynamics.selectedObjectId = null;
+      state.dynamics.object = null;
+      els.dynamicsObjectPanelTitle.textContent = "新对象参数";
+      renderDynamicsSceneLists();
+    }
+    syncDynamicsControls();
+    drawDynamicsScene();
+  });
+}
+
 for (const control of [
-  els.dynamicsBuildKind,
-  els.dynamicsCustomMode,
-  els.dynamicsEnvironment,
-  els.dynamicsFieldMagnitude,
-  els.dynamicsFieldAngle,
   els.dynamicsRigidToggle,
   els.dynamicsMass,
   els.dynamicsDensity,
+  els.dynamicsCharge,
   els.dynamicsSizeA,
   els.dynamicsSizeB,
+  els.dynamicsSizeC,
   els.dynamicsMaterialE,
   els.dynamicsShapeEquation,
-  els.dynamicsX0,
-  els.dynamicsY0,
   els.dynamicsVx0,
   els.dynamicsVy0,
-  els.dynamicsFx,
-  els.dynamicsFy,
-  els.dynamicsDuration,
-  els.dynamicsTimeStep,
-  ...els.dynamicsOptionInputs,
 ]) {
   if (!control) continue;
-  control.addEventListener("input", () => {
+  control.addEventListener("change", () => {
+    updateSelectedDynamicsObjectFromControls();
     syncDynamicsControls();
-    if (state.dynamics.result) renderDynamicsResult();
+  });
+}
+
+for (const control of [els.dynamicsX0, els.dynamicsY0, els.dynamicsDuration, els.dynamicsTimeStep]) {
+  if (!control) continue;
+  control.addEventListener("change", () => {
+    if (control === els.dynamicsX0 || control === els.dynamicsY0) updateSelectedDynamicsObjectFromControls();
+    cancelDynamicsAnimation();
+    state.dynamics.result = null;
+    renderDynamicsResult();
     drawDynamicsScene();
+  });
+}
+
+for (const list of [els.dynamicsObjectList, els.dynamicsFieldList, els.dynamicsForceList]) {
+  if (!list) continue;
+  list.addEventListener("click", (event) => {
+    const row = event.target.closest(".dynamics-scene-row");
+    if (!row) return;
+    const { kind, id } = row.dataset;
+    if (event.target.closest("button[data-delete]")) {
+      if (kind === "object") deleteDynamicsObject(id);
+      if (kind === "field") deleteDynamicsField(id);
+      if (kind === "force") deleteDynamicsForce(id);
+      return;
+    }
+    if (kind === "object") selectDynamicsObject(id);
+    if (kind === "field") openDynamicsFieldDialog(id);
+  });
+}
+
+for (const control of els.dynamicsOptionInputs) {
+  control.addEventListener("change", () => {
+    renderDynamicsResult();
+    cancelDynamicsAnimation();
+    drawDynamicsScene();
+    if (state.dynamics.result && selectedDynamicsOptions().has("trajectory")) startDynamicsAnimation();
   });
 }
 
 if (dynamicsCanvas) {
   dynamicsCanvas.addEventListener("mousedown", (event) => {
-    if (!isDynamicsPaintMode()) return;
-    state.dynamics.painting = true;
-    state.dynamics.paintPath = [dynamicsCanvasPoint(event)];
-    drawDynamicsScene();
+    if (event.button !== 0) return;
+    const screen = dynamicsCanvasPoint(event);
+    const world = dynamicsToWorld(screen);
+    if (state.dynamics.fieldPlacement.active) {
+      state.dynamics.fieldPlacement = DynamicsFieldPlacement.startPlacement(state.dynamics.fieldPlacement, world);
+      drawDynamicsScene();
+      return;
+    }
+    if (state.dynamics.placementMode && isDynamicsPaintMode()) {
+      state.dynamics.painting = true;
+      state.dynamics.paintPath = [world];
+      return;
+    }
+    if (state.dynamics.placementMode) {
+      placeDynamicsObject(world);
+      return;
+    }
+    state.dynamics.pan = {
+      start: screen,
+      originStart: { ...state.dynamics.origin },
+    };
   });
+
   dynamicsCanvas.addEventListener("mousemove", (event) => {
-    if (!state.dynamics.painting || !isDynamicsPaintMode()) return;
-    const point = dynamicsCanvasPoint(event);
-    const last = state.dynamics.paintPath[state.dynamics.paintPath.length - 1];
-    if (!last || Math.hypot(point.x - last.x, point.y - last.y) > 3) state.dynamics.paintPath.push(point);
+    const screen = dynamicsCanvasPoint(event);
+    const world = dynamicsToWorld(screen);
+    if (state.dynamics.fieldPlacement.active && state.dynamics.fieldPlacement.startWorld) {
+      state.dynamics.fieldPlacement = DynamicsFieldPlacement.updatePlacement(
+        state.dynamics.fieldPlacement,
+        world,
+        3 / state.dynamics.scale
+      );
+      drawDynamicsScene();
+      return;
+    }
+    if (state.dynamics.painting && isDynamicsPaintMode()) {
+      const last = state.dynamics.paintPath[state.dynamics.paintPath.length - 1];
+      if (!last || Math.hypot(world.x - last.x, world.y - last.y) * state.dynamics.scale > 3) state.dynamics.paintPath.push(world);
+      drawDynamicsScene();
+      return;
+    }
+    if (!state.dynamics.pan) return;
+    state.dynamics.origin = {
+      x: state.dynamics.pan.originStart.x + screen.x - state.dynamics.pan.start.x,
+      y: state.dynamics.pan.originStart.y + screen.y - state.dynamics.pan.start.y,
+    };
     drawDynamicsScene();
   });
-  dynamicsCanvas.addEventListener("mouseup", () => {
-    state.dynamics.painting = false;
-    drawDynamicsScene();
+
+  dynamicsCanvas.addEventListener("mouseup", (event) => {
+    if (state.dynamics.fieldPlacement.active && state.dynamics.fieldPlacement.startWorld) {
+      state.dynamics.fieldPlacement = DynamicsFieldPlacement.updatePlacement(
+        state.dynamics.fieldPlacement,
+        dynamicsToWorld(dynamicsCanvasPoint(event)),
+        1 / state.dynamics.scale
+      );
+      finishDynamicsFieldPlacement();
+      return;
+    }
+    if (state.dynamics.painting) {
+      state.dynamics.painting = false;
+      finishDynamicsPaintedObject(state.dynamics.paintPath);
+      return;
+    }
+    state.dynamics.pan = null;
   });
+
+  dynamicsCanvas.addEventListener(
+    "wheel",
+    (event) => {
+      event.preventDefault();
+      const screen = dynamicsCanvasPoint(event);
+      const before = dynamicsToWorld(screen);
+      const factor = Math.exp(-event.deltaY * 0.001);
+      const nextScale = Math.min(320, Math.max(12, state.dynamics.scale * factor));
+      if (Math.abs(nextScale - state.dynamics.scale) < 1e-6) return;
+      state.dynamics.scale = nextScale;
+      state.dynamics.origin = {
+        x: screen.x - before.x * nextScale,
+        y: screen.y + before.y * nextScale,
+      };
+      drawDynamicsScene();
+    },
+    { passive: false }
+  );
+
   dynamicsCanvas.addEventListener("mouseleave", () => {
-    state.dynamics.painting = false;
+    state.dynamics.pan = null;
+    if (state.dynamics.painting) {
+      state.dynamics.painting = false;
+      state.dynamics.paintPath = [];
+    }
+    if (state.dynamics.fieldPlacement.active && state.dynamics.fieldPlacement.startWorld) {
+      cancelDynamicsFieldPlacement();
+      return;
+    }
+    drawDynamicsScene();
+  });
+
+  dynamicsCanvas.addEventListener("contextmenu", (event) => {
+    if (!state.dynamics.fieldPlacement.active) return;
+    event.preventDefault();
+    cancelDynamicsFieldPlacement();
   });
 }
 
@@ -3673,16 +5074,26 @@ for (const control of [
 }
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && state.dynamics.fieldPlacement.active) {
+    event.preventDefault();
+    cancelDynamicsFieldPlacement();
+    return;
+  }
   if (isTextEditingEvent(event)) return;
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
     event.preventDefault();
-    undo();
+    if (state.activeModule === "dynamics") undoDynamics();
+    else undo();
   }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y") {
     event.preventDefault();
-    redo();
+    if (state.activeModule === "dynamics") redoDynamics();
+    else redo();
   }
-  if (event.key === "Delete" || event.key === "Backspace") deleteSelection();
+  if (event.key === "Delete" || event.key === "Backspace") {
+    if (state.activeModule === "dynamics") deleteSelectedDynamicsObject();
+    else deleteSelection();
+  }
 });
 
 function isTextEditingEvent(event) {
@@ -3696,10 +5107,19 @@ window.addEventListener("resize", () => {
   resizeCanvas();
   resizeDynamicsCanvas();
 });
+if (typeof ResizeObserver === "function" && dynamicsCanvas?.parentElement) {
+  let pendingDynamicsResize = 0;
+  const dynamicsResizeObserver = new ResizeObserver(() => {
+    cancelAnimationFrame(pendingDynamicsResize);
+    pendingDynamicsResize = requestAnimationFrame(resizeDynamicsCanvas);
+  });
+  dynamicsResizeObserver.observe(dynamicsCanvas.parentElement);
+}
 applyFontSize(localStorage.getItem(AUTH_FONT_SIZE_KEY), false);
 syncLoadPanels();
 initAuth();
 resizeCanvas();
 resizeDynamicsCanvas();
 syncDynamicsControls();
+renderDynamicsSceneLists();
 syncUi();

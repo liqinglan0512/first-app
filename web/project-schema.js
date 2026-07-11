@@ -1,0 +1,482 @@
+"use strict";
+
+(function exposeProjectSchema(root, factory) {
+  const units = typeof module === "object" && module.exports ? require("./units.js") : root.Units;
+  const api = factory(units);
+  if (typeof module === "object" && module.exports) module.exports = api;
+  root.ProjectSchema = api;
+})(typeof globalThis !== "undefined" ? globalThis : this, function createProjectSchema(Units) {
+  if (!Units || typeof Units.parseQuantity !== "function") {
+    throw new Error("ProjectSchema requires Units.parseQuantity.");
+  }
+
+  const STATIC_SCHEMA = "cms-static-project@1";
+  const DYNAMICS_SCHEMA = "cms-dynamics-project@1";
+  const APPLICATION_ID = "computational-mechanics-solver";
+  const LEGACY_DYNAMICS_SCHEMA = "mechanics-dynamics-project@1";
+  const LEGACY_GEOMETRIES = new Set(["arc", "tee", "freeform", "right_angle"]);
+  const STATIC_ELEMENT_TYPES = new Set(["frame", "truss", "rigid"]);
+  const STATIC_GEOMETRIES = new Set(["straight", "arc", "tee", "freeform", "right_angle"]);
+  const STATIC_ELEMENT_LOADS = new Set(["uniform_local", "linear_local", "polynomial_local", "point_global"]);
+  const DYNAMICS_OBJECT_KINDS = new Set(["particle", "rod", "circle", "ring", "rectangle", "custom"]);
+  const DYNAMICS_FIELD_KINDS = new Set(["gravity", "electric", "magnetic"]);
+  const DYNAMICS_RANGE_TYPES = new Set(["global", "rectangle", "circle", "custom"]);
+  const DYNAMICS_FORCE_TYPES = new Set(["impulse", "continuous"]);
+  const GEOMETRY_EPSILON = 1e-9;
+
+  function isPlainObject(value) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+  }
+
+  function deepClone(value) {
+    if (Array.isArray(value)) return value.map(deepClone);
+    if (isPlainObject(value)) {
+      return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, deepClone(item)]));
+    }
+    return value;
+  }
+
+  function assertPlainObject(value, label) {
+    if (!isPlainObject(value)) throw new Error(`${label}必须是对象。`);
+    return value;
+  }
+
+  function assertArray(value, label) {
+    if (!Array.isArray(value)) throw new Error(`${label}必须是数组。`);
+    return value;
+  }
+
+  function assertId(value, label) {
+    if (typeof value !== "string" || !value.trim()) throw new Error(`${label}必须是非空字符串。`);
+    return value;
+  }
+
+  function assertUniqueIds(items, label) {
+    const ids = new Set();
+    items.forEach((item, index) => {
+      assertPlainObject(item, `${label}第 ${index + 1} 项`);
+      const id = assertId(item.id, `${label} ID`);
+      if (ids.has(id)) throw new Error(`${label} ID ${id} 重复。`);
+      ids.add(id);
+    });
+    return ids;
+  }
+
+  function assertFiniteNumber(value, label) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) throw new Error(`${label}必须是有限数值。`);
+    return number;
+  }
+
+  function assertPositiveNumber(value, label) {
+    const number = assertFiniteNumber(value, label);
+    if (!(number > 0)) throw new Error(`${label}必须大于 0。`);
+    return number;
+  }
+
+  function assertNonNegativeNumber(value, label) {
+    const number = assertFiniteNumber(value, label);
+    if (number < 0) throw new Error(`${label}不能小于 0。`);
+    return number;
+  }
+
+  function parseQuantity(value, defaultUnit, label) {
+    let number;
+    try {
+      number = Units.parseQuantity(value, defaultUnit);
+    } catch (error) {
+      throw new Error(`${label} 无法解析：${String(error.message || error)}`);
+    }
+    if (!Number.isFinite(number)) throw new Error(`${label}必须是有限物理量。`);
+    return number;
+  }
+
+  function assertPositiveQuantity(value, defaultUnit, label) {
+    const number = parseQuantity(value, defaultUnit, label);
+    if (!(number > 0)) throw new Error(`${label}必须大于 0。`);
+    return number;
+  }
+
+  function assertPoint(point, label) {
+    assertPlainObject(point, label);
+    assertFiniteNumber(point.x, `${label}.x`);
+    assertFiniteNumber(point.y, `${label}.y`);
+  }
+
+  function polygonArea(path) {
+    let twiceArea = 0;
+    for (let index = 0; index < path.length; index += 1) {
+      const current = path[index];
+      const next = path[(index + 1) % path.length];
+      twiceArea += Number(current.x) * Number(next.y) - Number(next.x) * Number(current.y);
+    }
+    return Math.abs(twiceArea) / 2;
+  }
+
+  function migrateLegacyStaticLoads(project) {
+    const loads = isPlainObject(project.loads) ? project.loads : { nodes: [], elements: [] };
+    const nodeLoads = Array.isArray(loads.nodes) ? loads.nodes : [];
+    const elementLoads = Array.isArray(loads.elements) ? loads.elements : [];
+    const migratedNodes = [];
+    const migratedElements = elementLoads.map((load) => {
+      if (!isPlainObject(load)) return load;
+      return load.kind === "element_point" ? { ...load, kind: "point_global" } : load;
+    });
+    for (const load of nodeLoads) {
+      if (isPlainObject(load) && load.element) {
+        migratedElements.push({ ...load, kind: load.kind === "element_point" ? "point_global" : load.kind });
+      } else {
+        migratedNodes.push(load);
+      }
+    }
+    project.loads = { ...loads, nodes: migratedNodes, elements: migratedElements };
+  }
+
+  function normalizeReleaseFlags(project) {
+    if (!Array.isArray(project.elements)) return;
+    project.elements = project.elements.map((element) => {
+      if (!isPlainObject(element) || element.type === "frame") return element;
+      return { ...element, moment_release_i: false, moment_release_j: false };
+    });
+  }
+
+  function migrateStaticProject(rawProject) {
+    assertPlainObject(rawProject, "静力学工程根对象");
+    const project = deepClone(rawProject);
+    const hasSchema = project.schema !== undefined && project.schema !== null && project.schema !== "";
+    if (hasSchema && project.schema !== STATIC_SCHEMA) {
+      throw new Error(`不支持的静力学工程版本：${String(project.schema)}。`);
+    }
+    if (!hasSchema) {
+      if (project.module && project.module !== "statics") {
+        throw new Error(`工程模块 ${String(project.module)} 不能作为静力学工程打开。`);
+      }
+      project.schema = STATIC_SCHEMA;
+      project.application = APPLICATION_ID;
+      project.module = "statics";
+      project.metadata = isPlainObject(project.metadata) ? project.metadata : {};
+      project.solver = project.solver || project.metadata.solver || "frame2d";
+      project.loads = isPlainObject(project.loads) ? project.loads : { nodes: [], elements: [] };
+      project.loads.nodes = Array.isArray(project.loads.nodes) ? project.loads.nodes : [];
+      project.loads.elements = Array.isArray(project.loads.elements) ? project.loads.elements : [];
+      if (Array.isArray(project.elements)) {
+        project.elements = project.elements.map((element) => {
+          if (!isPlainObject(element)) return element;
+          const legacyType = String(element.type || "frame");
+          if (LEGACY_GEOMETRIES.has(legacyType)) {
+            return { ...element, type: "frame", geometry: element.geometry || legacyType };
+          }
+          return { ...element, type: legacyType, geometry: element.geometry || "straight" };
+        });
+      }
+      migrateLegacyStaticLoads(project);
+    }
+    normalizeReleaseFlags(project);
+    return project;
+  }
+
+  function validateStaticMaterials(materials) {
+    const ids = assertUniqueIds(materials, "材料");
+    materials.forEach((material) => {
+      if (material.E !== undefined) assertPositiveQuantity(material.E, "Pa", `材料 ${material.id} 的 E`);
+      if (material.nu !== undefined) assertFiniteNumber(material.nu, `材料 ${material.id} 的 nu`);
+    });
+    return ids;
+  }
+
+  function validateStaticSections(sections) {
+    const ids = assertUniqueIds(sections, "截面");
+    sections.forEach((section) => {
+      if (section.A !== undefined) assertPositiveQuantity(section.A, "m^2", `截面 ${section.id} 的 A`);
+      if (section.I !== undefined) assertPositiveQuantity(section.I, "m^4", `截面 ${section.id} 的 I`);
+      if (section.Ixy !== undefined) parseQuantity(section.Ixy, "m^4", `截面 ${section.id} 的 Ixy`);
+      if (section.W !== undefined) parseQuantity(section.W, "m^3", `截面 ${section.id} 的 W`);
+      if (section.Q !== undefined) parseQuantity(section.Q, "m^3", `截面 ${section.id} 的 Q`);
+    });
+    return ids;
+  }
+
+  function validateStaticNodes(nodes) {
+    const ids = assertUniqueIds(nodes, "节点");
+    nodes.forEach((node) => {
+      parseQuantity(node.x ?? 0, "m", `节点 ${node.id} 的 x`);
+      parseQuantity(node.y ?? 0, "m", `节点 ${node.id} 的 y`);
+      if (node.support !== undefined) {
+        assertPlainObject(node.support, `节点 ${node.id} 的 support`);
+        if (node.support.angle !== undefined) assertFiniteNumber(node.support.angle, `节点 ${node.id} 的 support.angle`);
+      }
+    });
+    return ids;
+  }
+
+  function validateStaticElements(elements, nodeIds, materialIds, sectionIds) {
+    const ids = assertUniqueIds(elements, "单元");
+    const byId = new Map();
+    elements.forEach((element) => {
+      const id = element.id;
+      const nodeI = assertId(element.node_i, `单元 ${id} 的 node_i`);
+      const nodeJ = assertId(element.node_j, `单元 ${id} 的 node_j`);
+      if (!nodeIds.has(nodeI)) throw new Error(`单元 ${id} 引用了不存在的节点 ${nodeI}（node_i）。`);
+      if (!nodeIds.has(nodeJ)) throw new Error(`单元 ${id} 引用了不存在的节点 ${nodeJ}（node_j）。`);
+      if (nodeI === nodeJ) throw new Error(`单元 ${id} 的 node_i 与 node_j 不能相同。`);
+      const material = assertId(element.material, `单元 ${id} 的 material`);
+      const section = assertId(element.section, `单元 ${id} 的 section`);
+      if (!materialIds.has(material)) throw new Error(`单元 ${id} 引用了不存在的材料 ${material}。`);
+      if (!sectionIds.has(section)) throw new Error(`单元 ${id} 引用了不存在的截面 ${section}。`);
+      const type = String(element.type || "");
+      if (!STATIC_ELEMENT_TYPES.has(type)) throw new Error(`单元 ${id} 的 type ${type || "(空)"} 不受支持。`);
+      const geometry = String(element.geometry || "");
+      if (!STATIC_GEOMETRIES.has(geometry)) throw new Error(`单元 ${id} 的 geometry ${geometry || "(空)"} 不受支持。`);
+      const releaseI = Boolean(element.moment_release_i);
+      const releaseJ = Boolean(element.moment_release_j);
+      if (type !== "frame" && (releaseI || releaseJ)) throw new Error(`${type} 单元 ${id} 不允许端部弯矩释放。`);
+      if (type === "frame" && releaseI && releaseJ) throw new Error(`当前版本不支持单元 ${id} 双端弯矩释放。`);
+      if (element.curvature !== undefined) assertFiniteNumber(element.curvature, `单元 ${id} 的 curvature`);
+      if (element.arcAngle !== undefined) assertFiniteNumber(element.arcAngle, `单元 ${id} 的 arcAngle`);
+      if (element.teeDepth !== undefined) parseQuantity(element.teeDepth, "m", `单元 ${id} 的 teeDepth`);
+      if (element.sectionParams !== undefined) {
+        assertPlainObject(element.sectionParams, `单元 ${id} 的 sectionParams`);
+        const quantityFields = [
+          ["sectionRadius", "m"],
+          ["inertia", "m^4"],
+          ["inertiaProduct", "m^4"],
+          ["staticMoment", "m^3"],
+          ["teeDepth", "m"],
+        ];
+        for (const [field, unit] of quantityFields) {
+          if (element.sectionParams[field] !== undefined) {
+            parseQuantity(element.sectionParams[field], unit, `单元 ${id} 的 sectionParams.${field}`);
+          }
+        }
+      }
+      if (element.path !== undefined && element.path !== null) {
+        assertArray(element.path, `单元 ${id} 的 path`);
+        element.path.forEach((point, index) => assertPoint(point, `单元 ${id} 的 path[${index}]`));
+      }
+      byId.set(id, element);
+    });
+    return { ids, byId };
+  }
+
+  function validateNodalLoad(load, index, nodeIds) {
+    assertPlainObject(load, `节点荷载第 ${index + 1} 项`);
+    const node = assertId(load.node, `节点荷载第 ${index + 1} 项的 node`);
+    if (!nodeIds.has(node)) throw new Error(`节点荷载引用了不存在的节点 ${node}。`);
+    if (load.fx !== undefined) parseQuantity(load.fx, "N", `节点 ${node} 荷载的 fx`);
+    if (load.fy !== undefined) parseQuantity(load.fy, "N", `节点 ${node} 荷载的 fy`);
+    if (load.mz !== undefined) parseQuantity(load.mz, "N*m", `节点 ${node} 荷载的 mz`);
+  }
+
+  function validateDistributedLoadQuantities(load, elementId) {
+    if (load.kind === "uniform_local") {
+      if (load.qx !== undefined) parseQuantity(load.qx, "N/m", `单元 ${elementId} 荷载的 qx`);
+      if (load.qy !== undefined) parseQuantity(load.qy, "N/m", `单元 ${elementId} 荷载的 qy`);
+      return;
+    }
+    if (load.kind === "linear_local") {
+      for (const field of ["qx_i", "qx_j", "qy_i", "qy_j"]) {
+        if (load[field] !== undefined) parseQuantity(load[field], "N/m", `单元 ${elementId} 荷载的 ${field}`);
+      }
+      return;
+    }
+    for (const field of ["qx_coefficients", "qy_coefficients"]) {
+      const coefficients = load[field] ?? [];
+      assertArray(coefficients, `单元 ${elementId} 荷载的 ${field}`);
+      coefficients.forEach((value, index) => parseQuantity(value, "N/m", `单元 ${elementId} 荷载的 ${field}[${index}]`));
+    }
+  }
+
+  function validateElementLoad(load, index, elementById) {
+    assertPlainObject(load, `单元荷载第 ${index + 1} 项`);
+    const elementId = assertId(load.element, `单元荷载第 ${index + 1} 项的 element`);
+    const element = elementById.get(elementId);
+    if (!element) throw new Error(`单元荷载引用了不存在的单元 ${elementId}。`);
+    const kind = String(load.kind || "");
+    if (kind === "uniform_moment_local") throw new Error(`当前版本不支持单元 ${elementId} 的均布力偶 uniform_moment_local。`);
+    if (!STATIC_ELEMENT_LOADS.has(kind)) throw new Error(`单元 ${elementId} 的荷载类型 ${kind || "(空)"} 不受支持。`);
+    if (kind === "point_global") {
+      const ratio = assertFiniteNumber(load.ratio, `单元 ${elementId} 集中荷载的 ratio`);
+      if (ratio < 0 || ratio > 1) throw new Error(`单元 ${elementId} 集中荷载的 ratio 必须在 [0, 1] 内。`);
+      if (element.type === "truss") throw new Error(`桁架单元 ${elementId} 不允许杆件中间集中荷载 point_global。`);
+      if (load.fx !== undefined) parseQuantity(load.fx, "N", `单元 ${elementId} 集中荷载的 fx`);
+      if (load.fy !== undefined) parseQuantity(load.fy, "N", `单元 ${elementId} 集中荷载的 fy`);
+      if (load.mz !== undefined) parseQuantity(load.mz, "N*m", `单元 ${elementId} 集中荷载的 mz`);
+      return;
+    }
+    validateDistributedLoadQuantities(load, elementId);
+  }
+
+  function validateStaticProject(project) {
+    assertPlainObject(project, "静力学工程根对象");
+    if (project.schema !== STATIC_SCHEMA) throw new Error(`静力学工程 schema 必须是 ${STATIC_SCHEMA}，实际为 ${String(project.schema)}。`);
+    if (project.application !== APPLICATION_ID) {
+      throw new Error(`静力学工程 application 必须是 ${APPLICATION_ID}，实际为 ${String(project.application)}。`);
+    }
+    if (project.module !== "statics") throw new Error(`静力学工程 module 必须是 statics，实际为 ${String(project.module)}。`);
+    if (project.metadata !== undefined) assertPlainObject(project.metadata, "静力学工程 metadata");
+    assertArray(project.materials, "静力学工程 materials");
+    assertArray(project.sections, "静力学工程 sections");
+    assertArray(project.nodes, "静力学工程 nodes");
+    assertArray(project.elements, "静力学工程 elements");
+    assertPlainObject(project.loads, "静力学工程 loads");
+    assertArray(project.loads.nodes, "静力学工程 loads.nodes");
+    assertArray(project.loads.elements, "静力学工程 loads.elements");
+    const materialIds = validateStaticMaterials(project.materials);
+    const sectionIds = validateStaticSections(project.sections);
+    const nodeIds = validateStaticNodes(project.nodes);
+    const { byId: elementById } = validateStaticElements(project.elements, nodeIds, materialIds, sectionIds);
+    project.loads.nodes.forEach((load, index) => validateNodalLoad(load, index, nodeIds));
+    project.loads.elements.forEach((load, index) => validateElementLoad(load, index, elementById));
+    return project;
+  }
+
+  function migrateDynamicsProject(rawProject) {
+    assertPlainObject(rawProject, "动力学工程根对象");
+    const project = deepClone(rawProject);
+    const schema = project.schema;
+    const legacy = schema === undefined || schema === null || schema === "" || schema === LEGACY_DYNAMICS_SCHEMA;
+    if (!legacy && schema !== DYNAMICS_SCHEMA) throw new Error(`不支持的动力学工程版本：${String(schema)}。`);
+    if (legacy) {
+      if (project.module !== "dynamics") {
+        throw new Error(`旧动力学工程 module 必须是 dynamics，实际为 ${String(project.module)}。`);
+      }
+      project.schema = DYNAMICS_SCHEMA;
+      project.application = APPLICATION_ID;
+      project.model = project.model || "independent-particle2d";
+    }
+    return project;
+  }
+
+  function dynamicsObjectValue(object, nestedGroup, nestedField, flatField) {
+    const nested = isPlainObject(object[nestedGroup]) ? object[nestedGroup][nestedField] : undefined;
+    return nested ?? object[flatField];
+  }
+
+  function validateDynamicsObject(object, index) {
+    assertPlainObject(object, `动力学对象第 ${index + 1} 项`);
+    const id = assertId(object.id, `动力学对象第 ${index + 1} 项的 ID`);
+    const kind = String(dynamicsObjectValue(object, "geometry", "kind", "kind") || "");
+    if (!DYNAMICS_OBJECT_KINDS.has(kind)) throw new Error(`动力学对象 ${id} 的 kind ${kind || "(空)"} 不受支持。`);
+    const mass = dynamicsObjectValue(object, "massProperties", "mass", "mass");
+    assertPositiveNumber(mass, `动力学对象 ${id} 的 mass`);
+    const density = dynamicsObjectValue(object, "massProperties", "density", "density");
+    const charge = dynamicsObjectValue(object, "massProperties", "charge", "charge");
+    if (density !== undefined) assertNonNegativeNumber(density, `动力学对象 ${id} 的 density`);
+    if (charge !== undefined) assertFiniteNumber(charge, `动力学对象 ${id} 的 charge`);
+    for (const [nestedField, flatField] of [["x", "x"], ["y", "y"], ["vx", "vx0"], ["vy", "vy0"]]) {
+      const value = dynamicsObjectValue(object, "initialState", nestedField, flatField);
+      assertFiniteNumber(value, `动力学对象 ${id} 的 ${flatField}`);
+    }
+    for (const field of ["sizeA", "sizeB", "sizeC"]) {
+      const value = dynamicsObjectValue(object, "geometry", field, field);
+      if (value !== undefined) assertPositiveNumber(value, `动力学对象 ${id} 的 ${field}`);
+    }
+    const path = dynamicsObjectValue(object, "geometry", "path", "path");
+    if (path !== undefined && path !== null) {
+      assertArray(path, `动力学对象 ${id} 的 path`);
+      path.forEach((point, pointIndex) => assertPoint(point, `动力学对象 ${id} 的 path[${pointIndex}]`));
+    }
+    if (object.name !== undefined && typeof object.name !== "string") throw new Error(`动力学对象 ${id} 的 name 必须是字符串。`);
+    if (object.materialE !== undefined) assertNonNegativeNumber(object.materialE, `动力学对象 ${id} 的 materialE`);
+    if (object.equation !== undefined && typeof object.equation !== "string") {
+      throw new Error(`动力学对象 ${id} 的 equation 必须是字符串。`);
+    }
+  }
+
+  function validateDynamicsField(field, index) {
+    assertPlainObject(field, `动力场第 ${index + 1} 项`);
+    const id = assertId(field.id, `动力场第 ${index + 1} 项的 ID`);
+    const kind = String(field.kind || "");
+    if (!DYNAMICS_FIELD_KINDS.has(kind)) throw new Error(`动力场 ${id} 的 kind ${kind || "(空)"} 不受支持。`);
+    assertNonNegativeNumber(field.magnitude, `动力场 ${id} 的 magnitude`);
+    if (field.angle !== undefined) assertFiniteNumber(field.angle, `动力场 ${id} 的 angle`);
+    const rangeType = String(field.rangeType || "");
+    if (!DYNAMICS_RANGE_TYPES.has(rangeType)) throw new Error(`动力场 ${id} 的 rangeType ${rangeType || "(空)"} 不受支持。`);
+    if (rangeType !== "global") {
+      assertFiniteNumber(field.centerX ?? 0, `动力场 ${id} 的 centerX`);
+      assertFiniteNumber(field.centerY ?? 0, `动力场 ${id} 的 centerY`);
+    }
+    if (rangeType === "rectangle") {
+      assertPositiveNumber(field.width, `动力场 ${id} 的 width`);
+      assertPositiveNumber(field.height, `动力场 ${id} 的 height`);
+    } else if (rangeType === "circle") {
+      assertPositiveNumber(field.radius, `动力场 ${id} 的 radius`);
+    } else if (rangeType === "custom") {
+      assertArray(field.path, `动力场 ${id} 的 path`);
+      if (field.path.length < 3) throw new Error(`动力场 ${id} 的 custom path 至少需要 3 个点。`);
+      field.path.forEach((point, pointIndex) => assertPoint(point, `动力场 ${id} 的 path[${pointIndex}]`));
+      if (!(polygonArea(field.path) > GEOMETRY_EPSILON)) {
+        throw new Error(`动力场 ${id} 的 custom path 必须围成非零面积的有效区域。`);
+      }
+    }
+    if (kind === "magnetic" && field.magneticDirection !== undefined && !["in", "out"].includes(field.magneticDirection)) {
+      throw new Error(`动力场 ${id} 的 magneticDirection 必须是 in 或 out。`);
+    }
+  }
+
+  function validateDynamicsForce(force, index, objectIds) {
+    assertPlainObject(force, `外力第 ${index + 1} 项`);
+    const id = assertId(force.id, `外力第 ${index + 1} 项的 ID`);
+    const targetId = assertId(force.targetId, `外力 ${id} 的 targetId`);
+    if (!objectIds.has(targetId)) throw new Error(`外力 ${id} 引用了不存在的对象 ${targetId}。`);
+    const type = String(force.type || "");
+    if (!DYNAMICS_FORCE_TYPES.has(type)) throw new Error(`外力 ${id} 的 type ${type || "(空)"} 不受支持。`);
+    assertFiniteNumber(force.x, `外力 ${id} 的 x`);
+    assertFiniteNumber(force.y, `外力 ${id} 的 y`);
+    if (type === "continuous") {
+      assertNonNegativeNumber(force.start ?? 0, `外力 ${id} 的 start`);
+      assertNonNegativeNumber(force.duration ?? 0, `外力 ${id} 的 duration`);
+    }
+  }
+
+  function validateDynamicsProject(project) {
+    assertPlainObject(project, "动力学工程根对象");
+    if (project.schema !== DYNAMICS_SCHEMA) throw new Error(`动力学工程 schema 必须是 ${DYNAMICS_SCHEMA}，实际为 ${String(project.schema)}。`);
+    if (project.application !== APPLICATION_ID) {
+      throw new Error(`动力学工程 application 必须是 ${APPLICATION_ID}，实际为 ${String(project.application)}。`);
+    }
+    if (project.module !== "dynamics") throw new Error(`动力学工程 module 必须是 dynamics，实际为 ${String(project.module)}。`);
+    if (project.model !== "independent-particle2d") {
+      throw new Error(`动力学工程 model ${String(project.model)} 不受支持，当前仅支持 independent-particle2d。`);
+    }
+    assertPlainObject(project.simulation, "动力学工程 simulation");
+    assertPositiveQuantity(project.simulation.duration, "s", "动力学工程 simulation.duration");
+    assertPositiveQuantity(project.simulation.timeStep, "s", "动力学工程 simulation.timeStep");
+    assertArray(project.objects, "动力学工程 objects");
+    assertArray(project.fields, "动力学工程 fields");
+    assertArray(project.forces, "动力学工程 forces");
+    const objectIds = assertUniqueIds(project.objects, "动力学对象");
+    project.objects.forEach(validateDynamicsObject);
+    assertUniqueIds(project.fields, "动力场");
+    project.fields.forEach(validateDynamicsField);
+    assertUniqueIds(project.forces, "外力");
+    project.forces.forEach((force, index) => validateDynamicsForce(force, index, objectIds));
+    return project;
+  }
+
+  function loadStaticProject(rawProject) {
+    const migrated = migrateStaticProject(deepClone(rawProject));
+    validateStaticProject(migrated);
+    return migrated;
+  }
+
+  function loadDynamicsProject(rawProject) {
+    const migrated = migrateDynamicsProject(deepClone(rawProject));
+    validateDynamicsProject(migrated);
+    return migrated;
+  }
+
+  return {
+    STATIC_SCHEMA,
+    DYNAMICS_SCHEMA,
+    APPLICATION_ID,
+    migrateStaticProject,
+    migrateDynamicsProject,
+    validateStaticProject,
+    validateDynamicsProject,
+    loadStaticProject,
+    loadDynamicsProject,
+  };
+});
