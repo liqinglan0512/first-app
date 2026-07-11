@@ -168,7 +168,7 @@
               <span>求解器</span>
               <select id="solverBackend">
                 <option value="frame2d">Frame2D</option>
-                <option value="pinn">PINN 预留接口</option>
+                <option value="pinn" disabled>PINN 求解器（开发中）</option>
               </select>
             </label>
             <label class="wide-field">
@@ -176,7 +176,7 @@
               <select id="elementType">
                 <option value="frame">普通梁柱</option>
                 <option value="truss">平面桁架杆</option>
-                <option value="rigid">刚体杆件</option>
+                <option value="rigid">高刚度近似杆（试验）</option>
               </select>
             </label>
             <div class="element-release-grid" aria-label="杆件端部弯矩释放">
@@ -189,6 +189,7 @@
             </div>
             <p id="elementCapabilityNote" class="capability-note">
               弧形、T 形、直角和任意形状当前用于建模显示；求解时按两端节点间的二维直梁柱单元处理。
+              高刚度近似杆通过放大轴向与弯曲刚度近似刚性杆件，结果可能受到条件数和刚度倍率影响。
             </p>
             <div class="field-row">
               <label class="wide-field">
@@ -267,6 +268,13 @@
           <button id="dynamicsFieldButton" class="dynamics-command" type="button">环境场</button>
           <button id="dynamicsForceButton" class="dynamics-command" type="button">外加作用力</button>
           <span id="dynamicsFieldStatus" class="dynamics-field-status">未应用场</span>
+          <button
+            id="dynamicsFieldCancelButton"
+            class="icon-button dynamics-placement-cancel hidden"
+            type="button"
+            title="取消场放置"
+            aria-label="取消场放置"
+          >×</button>
           <label class="inline-toggle" title="二维刚体转动方程尚未接入">
             <input id="dynamicsRigidToggle" type="checkbox" disabled>刚体（开发中）
           </label>
@@ -508,7 +516,8 @@
         <p id="dynamicsFieldMessage" class="modal-copy dynamics-field-message"></p>
         <footer class="modal-actions">
           <button type="submit" value="cancel">取消</button>
-          <button id="dynamicsFieldApplyButton" class="primary" type="button">添加到建模区</button>
+          <button id="dynamicsFieldNumericApplyButton" type="button">按数值添加</button>
+          <button id="dynamicsFieldApplyButton" class="primary" type="button">在画布绘制矩形范围</button>
         </footer>
       </form>
     </dialog>
@@ -737,17 +746,20 @@
     <dialog id="supportDialog" class="modal">
       <form method="dialog">
         <header class="modal-header">
-          <h2>铰支座设置</h2>
+          <h2>支座显示与接地设置</h2>
           <button value="cancel" class="icon-button" title="关闭">×</button>
         </header>
         <div class="segmented">
-          <label><input type="radio" name="supportMode" value="fixed" checked>固定接地</label>
-          <label><input type="radio" name="supportMode" value="rotating">旋转支座</label>
+          <label><input type="radio" name="supportMode" value="fixed" checked>固定接地（全局约束）</label>
+          <label><input type="radio" name="supportMode" value="rotating">旋转图形（仅显示）</label>
         </div>
         <label class="wide-field">
-          <span>旋转角度</span>
+          <span>支座图形角度（仅显示）</span>
           <input id="supportAngle" type="number" step="1" value="0">
         </label>
+        <p class="capability-note">
+          当前旋转只改变支座图形，不改变全局 ux/uy/rz 约束；斜向滚动约束求解仍在开发中。
+        </p>
         <footer class="modal-actions">
           <button id="solidifySupportNodeButton" type="button">固化节点</button>
           <button value="cancel">取消</button>
@@ -847,7 +859,10 @@
     </dialog>
 
     <script src="/static/units.js"></script>
+    <script src="/static/project-schema.js"></script>
     <script src="/static/project-adapter.js"></script>
+    <script src="/static/dynamics-field-geometry.js"></script>
+    <script src="/static/dynamics-field-placement.js"></script>
     <script src="/static/dynamics-core.js"></script>
     <script src="/static/app.js"></script>
   </body>

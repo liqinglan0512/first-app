@@ -1,10 +1,12 @@
 "use strict";
 
 (function exposeProjectAdapter(root, factory) {
-  const api = factory();
+  const projectSchema = typeof module === "object" && module.exports ? require("./project-schema.js") : root.ProjectSchema;
+  const api = factory(projectSchema);
   if (typeof module === "object" && module.exports) module.exports = api;
   root.ProjectAdapter = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createProjectAdapter() {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createProjectAdapter(ProjectSchema) {
+  if (!ProjectSchema) throw new Error("ProjectAdapter requires ProjectSchema.");
   const SOLVER_ELEMENT_TYPES = new Set(["frame", "rigid", "truss"]);
 
   function solverElementType(element) {
@@ -26,5 +28,5 @@
     };
   }
 
-  return { solverElementType, solverElement };
+  return { ...ProjectSchema, solverElementType, solverElement };
 });

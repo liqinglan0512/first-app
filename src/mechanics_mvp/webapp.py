@@ -6,6 +6,9 @@ import argparse
 import json
 import mimetypes
 import os
+import platform
+import subprocess
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -15,7 +18,70 @@ from .project_io import project_from_dict
 from .report import build_report_pdf, build_text_report_pdf
 
 
-WEB_ROOT = Path(__file__).resolve().parents[2] / "web"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+WEB_ROOT = PROJECT_ROOT / "web"
+APPLICATION_ID = "computational-mechanics-solver"
+APPLICATION_VERSION = os.environ.get("MECHANICS_VERSION", "1.3.2-beta.1")
+STATIC_PROJECT_SCHEMA = "cms-static-project@1"
+DYNAMICS_PROJECT_SCHEMA = "cms-dynamics-project@1"
+STARTED_AT = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def _git_short_commit() -> str:
+    configured_commit = os.environ.get("MECHANICS_GIT_COMMIT", "").strip()
+    if configured_commit:
+        if 7 <= len(configured_commit) <= 40 and all(character in "0123456789abcdefABCDEF" for character in configured_commit):
+            return configured_commit.lower()
+        return "unknown"
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=PROJECT_ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    commit = completed.stdout.strip()
+    return commit if completed.returncode == 0 and commit else "unknown"
+
+
+def _git_is_dirty() -> bool:
+    configured_dirty = os.environ.get("MECHANICS_GIT_DIRTY")
+    if configured_dirty is not None:
+        normalized = configured_dirty.strip().lower()
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        return True
+    try:
+        completed = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=normal"],
+            cwd=PROJECT_ROOT,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return True
+    return completed.returncode != 0 or bool(completed.stdout.strip())
+
+
+def runtime_version_payload() -> dict[str, str | bool]:
+    return {
+        "application": APPLICATION_ID,
+        "version": APPLICATION_VERSION,
+        "git_commit": _git_short_commit(),
+        "git_dirty": _git_is_dirty(),
+        "started_at": STARTED_AT,
+        "python_version": platform.python_version(),
+        "schema_static": STATIC_PROJECT_SCHEMA,
+        "schema_dynamics": DYNAMICS_PROJECT_SCHEMA,
+    }
 
 
 def solve_project_payload(raw: dict[str, Any]) -> dict[str, Any]:
@@ -57,9 +123,13 @@ def _solver_backend(raw: dict[str, Any]) -> str:
 
 
 class MechanicsWebHandler(BaseHTTPRequestHandler):
-    server_version = "MechanicsMVP/0.2"
+    server_version = "MechanicsMVP/1.3.2-beta.1"
 
     def do_GET(self) -> None:
+        if self.path == "/api/version":
+            self._send_json(runtime_version_payload())
+            return
+
         if self.path in ("", "/"):
             self._serve_static("index.html")
             return

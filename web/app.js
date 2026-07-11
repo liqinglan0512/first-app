@@ -47,6 +47,7 @@ const els = {
   dynamicsFieldButton: document.getElementById("dynamicsFieldButton"),
   dynamicsForceButton: document.getElementById("dynamicsForceButton"),
   dynamicsFieldStatus: document.getElementById("dynamicsFieldStatus"),
+  dynamicsFieldCancelButton: document.getElementById("dynamicsFieldCancelButton"),
   dynamicsClearButton: document.getElementById("dynamicsClearButton"),
   dynamicsUndoButton: document.getElementById("dynamicsUndoButton"),
   dynamicsRedoButton: document.getElementById("dynamicsRedoButton"),
@@ -75,6 +76,7 @@ const els = {
   dynamicsCircleRangeField: document.getElementById("dynamicsCircleRangeField"),
   dynamicsFieldRadius: document.getElementById("dynamicsFieldRadius"),
   dynamicsFieldMessage: document.getElementById("dynamicsFieldMessage"),
+  dynamicsFieldNumericApplyButton: document.getElementById("dynamicsFieldNumericApplyButton"),
   dynamicsFieldApplyButton: document.getElementById("dynamicsFieldApplyButton"),
   dynamicsForceDialog: document.getElementById("dynamicsForceDialog"),
   dynamicsForceTarget: document.getElementById("dynamicsForceTarget"),
@@ -223,6 +225,9 @@ const state = {
   result: null,
   lastProject: null,
   lastScope: "whole",
+  projectMetadata: { name: "canvas_project" },
+  projectMaterials: [{ id: "steel", E: "200 GPa", nu: 0.3 }],
+  projectSections: [{ id: "default", A: "10000 mm^2", I: "80000000 mm^4" }],
   nodeSeq: 1,
   elementSeq: 1,
   undoStack: [],
@@ -255,7 +260,6 @@ const state = {
     fieldSeq: 1,
     forceSeq: 1,
     selectedObjectId: null,
-    editingFieldId: null,
     object: null,
     field: null,
     result: null,
@@ -265,9 +269,7 @@ const state = {
     painting: false,
     placementMode: false,
     pan: null,
-    fieldRangeDrawing: false,
-    fieldRangePath: [],
-    fieldRangeDraft: null,
+    fieldPlacement: DynamicsFieldPlacement.createPlacementState(),
     undoStack: [],
     redoStack: [],
     scale: 58,
@@ -335,7 +337,7 @@ function showDefaultAvatar(target) {
 
 function showAvatar(target, avatarData) {
   target.replaceChildren();
-  target.classList.toggle("default-avatar", !avatarData);
+  target.classList.add("default-avatar");
   if (avatarData) {
     const image = document.createElement("img");
     image.src = avatarData;
@@ -532,6 +534,7 @@ function saveSettingsAvatar() {
 }
 
 function logoutUser() {
+  cancelDynamicsFieldPlacement({ silent: true });
   state.currentUser = null;
   localStorage.removeItem(AUTH_CURRENT_KEY);
   if (els.settingsDialog.open) els.settingsDialog.close();
@@ -541,6 +544,7 @@ function logoutUser() {
   els.startPanel.classList.add("hidden");
   if (els.moduleChoicePanel) els.moduleChoicePanel.classList.add("hidden");
   state.activeModule = "welcome";
+  document.body.classList.remove("dynamics-active");
   resetAuthChoice();
   showDefaultAvatar(els.registerAvatarPreview);
   refreshCurrentUserDisplay(null);
@@ -563,7 +567,9 @@ function launchStaticApplication() {
     initAuth();
     return;
   }
+  cancelDynamicsFieldPlacement({ silent: true });
   state.activeModule = "static";
+  document.body.classList.remove("dynamics-active");
   cancelDynamicsAnimation();
   els.welcomeScreen.classList.add("hidden");
   els.appShell.classList.remove("app-hidden");
@@ -578,6 +584,7 @@ function launchDynamicsApplication() {
     return;
   }
   state.activeModule = "dynamics";
+  document.body.classList.add("dynamics-active");
   els.welcomeScreen.classList.add("hidden");
   els.appShell.classList.add("app-hidden");
   els.dynamicsShell.classList.remove("app-hidden");
@@ -655,6 +662,7 @@ function recordDynamicsHistory() {
 }
 
 function restoreDynamics(serialized) {
+  cancelDynamicsFieldPlacement({ silent: true });
   cancelDynamicsAnimation();
   const data = JSON.parse(serialized);
   state.dynamics.objects = data.objects || [];
@@ -675,12 +683,20 @@ function restoreDynamics(serialized) {
 }
 
 function undoDynamics() {
+  if (state.dynamics.fieldPlacement.active) {
+    cancelDynamicsFieldPlacement();
+    return;
+  }
   if (!state.dynamics.undoStack.length) return;
   state.dynamics.redoStack.push(dynamicsSnapshot());
   restoreDynamics(state.dynamics.undoStack.pop());
 }
 
 function redoDynamics() {
+  if (state.dynamics.fieldPlacement.active) {
+    cancelDynamicsFieldPlacement();
+    return;
+  }
   if (!state.dynamics.redoStack.length) return;
   state.dynamics.undoStack.push(dynamicsSnapshot());
   restoreDynamics(state.dynamics.redoStack.pop());
@@ -973,8 +989,8 @@ function addElement(nodeI, nodeJ) {
     id: `E${state.elementSeq++}`,
     node_i: nodeI,
     node_j: nodeJ,
-    material: "steel",
-    section: "default",
+    material: state.projectMaterials[0]?.id || "steel",
+    section: state.projectSections[0]?.id || "default",
     type: els.elementType.value || "frame",
     geometry: state.elementGeometry,
     curvature: Number(state.elementDefaults.curvature || 0),
@@ -1029,7 +1045,10 @@ function isElementSelected(id) {
 
 function canvasPoint(event) {
   const rect = canvas.getBoundingClientRect();
-  return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / Math.max(rect.width, 1)),
+    y: (event.clientY - rect.top) * (canvas.height / Math.max(rect.height, 1)),
+  };
 }
 
 function handlePointAction(point, event) {
@@ -1240,6 +1259,9 @@ function buildProject(options = {}) {
   const scope = options.scope || "whole";
   const model = scopedModel(scope);
   return {
+    schema: ProjectAdapter.STATIC_SCHEMA,
+    application: ProjectAdapter.APPLICATION_ID,
+    module: "statics",
     metadata: {
       name: scope === "selection" ? "isolated_body" : "canvas_project",
       solve_options: state.solveOptions.join(","),
@@ -1343,8 +1365,9 @@ function scopedModel(scope) {
   };
 }
 
-function importProject(project) {
-  state.nodes = (project.nodes || []).map((node, index) => ({
+function importProject(rawProject) {
+  const project = ProjectAdapter.loadStaticProject(rawProject);
+  const nextNodes = project.nodes.map((node, index) => ({
     id: String(node.id || `N${index + 1}`),
     x: quantityToNumber(node.x ?? 0, "m"),
     y: quantityToNumber(node.y ?? 0, "m"),
@@ -1352,25 +1375,23 @@ function importProject(project) {
     support: parseSupport(node.support, node.restraints),
     fused: Boolean(node.fused),
   }));
-  state.elements = (project.elements || []).map((element, index) => ({
+  const nextElements = project.elements.map((element, index) => ({
     id: String(element.id || `E${index + 1}`),
     node_i: String(element.node_i),
     node_j: String(element.node_j),
-    material: "steel",
-    section: "default",
-    type: ["arc", "tee", "freeform", "right_angle"].includes(String(element.type)) ? "frame" : String(element.type || "frame"),
-    geometry: String(element.geometry || (["arc", "tee", "freeform", "right_angle"].includes(String(element.type)) ? element.type : "straight")),
+    material: String(element.material),
+    section: String(element.section),
+    type: String(element.type),
+    geometry: String(element.geometry),
     curvature: Number(element.curvature || 0),
     arcAngle: Number(element.arcAngle || 45),
     teeDepth: element.teeDepth == null ? "0.35 m" : quantityToText(element.teeDepth, "m"),
-    path: (element.path || []).map((point) => ({ x: Number(point.x || 0), y: Number(point.y || 0) })),
-    sectionParams: element.sectionParams || {},
+    path: (element.path || []).map((point) => ({ x: Number(point.x), y: Number(point.y) })),
+    sectionParams: JSON.parse(JSON.stringify(element.sectionParams || {})),
     moment_release_i: Boolean(element.moment_release_i),
     moment_release_j: Boolean(element.moment_release_j),
   }));
-  const rawNodeLoads = (project.loads && project.loads.nodes) || [];
-  const rawElementLoads = (project.loads && project.loads.elements) || [];
-  state.loads = rawNodeLoads.map((load) => {
+  const nextLoads = project.loads.nodes.map((load) => {
     const imported = {
       kind: load.kind ? String(load.kind) : "node",
       fx: quantityToText(load.fx, "N"),
@@ -1385,35 +1406,58 @@ function importProject(project) {
     }
     return imported;
   });
-  for (const load of rawElementLoads.filter((item) => ["point_global", "element_point"].includes(String(item.kind)))) {
-    state.loads.push({
+  for (const load of project.loads.elements.filter((item) => String(item.kind) === "point_global")) {
+    nextLoads.push({
       kind: "element_point",
       element: String(load.element),
-      ratio: load.ratio == null ? 0.5 : Number(load.ratio),
+      ratio: Number(load.ratio),
       fx: quantityToText(load.fx, "N"),
       fy: quantityToText(load.fy, "N"),
       mz: quantityToText(load.mz, "N*m"),
     });
   }
-  state.elementLoads = rawElementLoads.filter((load) => !["point_global", "element_point"].includes(String(load.kind))).map((load) => ({
-    element: String(load.element),
-    kind: String(load.kind || "uniform_local"),
-    qx: quantityToText(load.qx, "N/m"),
-    qy: quantityToText(load.qy, "N/m"),
-    qx_i: quantityToText(load.qx_i, "N/m"),
-    qx_j: quantityToText(load.qx_j, "N/m"),
-    qy_i: quantityToText(load.qy_i, "N/m"),
-    qy_j: quantityToText(load.qy_j, "N/m"),
-    qx_coefficients: (load.qx_coefficients || []).map((item) => quantityToText(item, "N/m")),
-    qy_coefficients: (load.qy_coefficients || []).map((item) => quantityToText(item, "N/m")),
-    mz: quantityToText(load.mz, "N*m/m"),
-  }));
-  els.solverBackend.value = String(project.solver || (project.metadata && project.metadata.solver) || "frame2d");
-  state.nodeSeq = nextSequence(state.nodes, "N");
-  state.elementSeq = nextSequence(state.elements, "E");
-  clearSelection();
+  const nextElementLoads = project.loads.elements
+    .filter((load) => String(load.kind) !== "point_global")
+    .map((load) => ({
+      element: String(load.element),
+      kind: String(load.kind),
+      qx: quantityToText(load.qx, "N/m"),
+      qy: quantityToText(load.qy, "N/m"),
+      qx_i: quantityToText(load.qx_i, "N/m"),
+      qx_j: quantityToText(load.qx_j, "N/m"),
+      qy_i: quantityToText(load.qy_i, "N/m"),
+      qy_j: quantityToText(load.qy_j, "N/m"),
+      qx_coefficients: (load.qx_coefficients || []).map((item) => quantityToText(item, "N/m")),
+      qy_coefficients: (load.qy_coefficients || []).map((item) => quantityToText(item, "N/m")),
+    }));
+  const nextMetadata = JSON.parse(JSON.stringify(project.metadata || {}));
+  const nextMaterials = JSON.parse(JSON.stringify(project.materials));
+  const nextSections = JSON.parse(JSON.stringify(project.sections));
+  const nextSolver = String(project.solver || project.metadata?.solver || "frame2d");
+  const nextMaterialE = nextMaterials[0]?.E;
+  const nextSectionA = nextSections[0]?.A;
+  const nextSectionI = nextSections[0]?.I;
+
+  state.nodes = nextNodes;
+  state.elements = nextElements;
+  state.loads = nextLoads;
+  state.elementLoads = nextElementLoads;
+  state.projectMetadata = nextMetadata;
+  state.projectMaterials = nextMaterials;
+  state.projectSections = nextSections;
+  state.nodeSeq = nextSequence(nextNodes, "N");
+  state.elementSeq = nextSequence(nextElements, "E");
+  state.selected = null;
+  state.selection = { nodes: [], elements: [] };
   state.pendingNode = null;
   state.result = null;
+  state.undoStack = [];
+  state.redoStack = [];
+  els.solverBackend.value = nextSolver;
+  if (!els.solverBackend.value) els.solverBackend.value = "frame2d";
+  if (nextMaterialE !== undefined) els.materialE.value = quantityToText(nextMaterialE, "Pa");
+  if (nextSectionA !== undefined) els.sectionA.value = quantityToText(nextSectionA, "m^2");
+  if (nextSectionI !== undefined) els.sectionI.value = quantityToText(nextSectionI, "m^4");
   syncUi();
   draw();
 }
@@ -1457,23 +1501,38 @@ function formatQuantity(value, unit) {
 }
 
 function saveProject() {
-  const blob = new Blob([JSON.stringify(buildEditableProject(), null, 2)], { type: "application/json" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "mechanics-project.json";
-  link.click();
-  URL.revokeObjectURL(link.href);
+  try {
+    const project = ProjectAdapter.loadStaticProject(buildEditableProject());
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "mechanics-project.json";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  } catch (error) {
+    showToast(String(error.message || error));
+  }
 }
 
 function buildEditableProject() {
+  const materials = JSON.parse(JSON.stringify(state.projectMaterials));
+  const sections = JSON.parse(JSON.stringify(state.projectSections));
+  if (!materials.length) materials.push({ id: "steel", E: els.materialE.value, nu: 0.3 });
+  if (!sections.length) sections.push({ id: "default", A: els.sectionA.value, I: els.sectionI.value });
+  materials[0] = { ...materials[0], E: els.materialE.value };
+  sections[0] = { ...sections[0], A: els.sectionA.value, I: els.sectionI.value };
   return {
+    schema: ProjectAdapter.STATIC_SCHEMA,
+    application: ProjectAdapter.APPLICATION_ID,
+    module: "statics",
     metadata: {
-      name: "canvas_project",
+      ...JSON.parse(JSON.stringify(state.projectMetadata || {})),
+      name: state.projectMetadata?.name || "canvas_project",
       solve_options: state.solveOptions.join(","),
     },
     solver: els.solverBackend.value,
-    materials: [{ id: "steel", E: els.materialE.value, nu: 0.3 }],
-    sections: [{ id: "default", A: els.sectionA.value, I: els.sectionI.value }],
+    materials,
+    sections,
     nodes: state.nodes.map((node) => ({
       id: node.id,
       x: `${node.x} m`,
@@ -1486,8 +1545,8 @@ function buildEditableProject() {
       id: element.id,
       node_i: element.node_i,
       node_j: element.node_j,
-      material: "steel",
-      section: "default",
+      material: element.material || materials[0].id,
+      section: element.section || sections[0].id,
       type: element.type || "frame",
       geometry: elementGeometryOf(element),
       curvature: Number(element.curvature || 0),
@@ -2301,10 +2360,15 @@ function draw() {
 function resizeDynamicsCanvas() {
   if (!dynamicsCanvas) return;
   const rect = dynamicsCanvas.getBoundingClientRect();
+  if (rect.width < 2 || rect.height < 2) return;
   const previousWidth = dynamicsCanvas.width;
   const previousHeight = dynamicsCanvas.height;
-  const nextWidth = Math.max(760, Math.floor(rect.width || 760));
-  const nextHeight = Math.max(460, Math.floor(rect.height || 560));
+  const nextWidth = Math.max(1, Math.floor(rect.width));
+  const nextHeight = Math.max(1, Math.floor(rect.height));
+  if (nextWidth === previousWidth && nextHeight === previousHeight) {
+    drawDynamicsScene();
+    return;
+  }
   dynamicsCanvas.width = nextWidth;
   dynamicsCanvas.height = nextHeight;
   if (!state.dynamics.viewportInitialized) {
@@ -2428,6 +2492,7 @@ function updateSelectedDynamicsObjectFromControls() {
 }
 
 function selectDynamicsObject(id) {
+  cancelDynamicsFieldPlacement({ silent: true });
   const object = dynamicsObjectById(id);
   if (!object) return;
   state.dynamics.selectedObjectId = id;
@@ -2438,6 +2503,7 @@ function selectDynamicsObject(id) {
 }
 
 function deleteDynamicsObject(id) {
+  cancelDynamicsFieldPlacement({ silent: true });
   if (!dynamicsObjectById(id)) return;
   recordDynamicsHistory();
   cancelDynamicsAnimation();
@@ -2455,6 +2521,7 @@ function deleteDynamicsObject(id) {
 }
 
 function deleteDynamicsField(id) {
+  cancelDynamicsFieldPlacement({ silent: true });
   if (!state.dynamics.fields.some((field) => field.id === id)) return;
   recordDynamicsHistory();
   cancelDynamicsAnimation();
@@ -2468,6 +2535,7 @@ function deleteDynamicsField(id) {
 }
 
 function deleteDynamicsForce(id) {
+  cancelDynamicsFieldPlacement({ silent: true });
   if (!state.dynamics.forces.some((force) => force.id === id)) return;
   recordDynamicsHistory();
   cancelDynamicsAnimation();
@@ -2569,7 +2637,8 @@ function selectedDynamicsOptions() {
 
 function buildDynamicsProject() {
   return {
-    schema: "mechanics-dynamics-project@1",
+    schema: ProjectAdapter.DYNAMICS_SCHEMA,
+    application: ProjectAdapter.APPLICATION_ID,
     module: "dynamics",
     model: "independent-particle2d",
     simulation: {
@@ -2583,46 +2652,57 @@ function buildDynamicsProject() {
 }
 
 function saveDynamicsProject() {
-  const blob = new Blob([JSON.stringify(buildDynamicsProject(), null, 2)], { type: "application/json" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "mechanics-dynamics-project.json";
-  link.click();
-  URL.revokeObjectURL(link.href);
+  try {
+    const project = ProjectAdapter.loadDynamicsProject(buildDynamicsProject());
+    const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "mechanics-dynamics-project.json";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  } catch (error) {
+    showDynamicsToast(String(error.message || error), 3600);
+  }
 }
 
-function importDynamicsProject(project) {
-  if (!project || project.module !== "dynamics" || !Array.isArray(project.objects)) {
-    throw new Error("这不是有效的动力学工程文件。");
-  }
-  cancelDynamicsAnimation();
-  state.dynamics.objects = project.objects.map((raw, index) => {
+function importDynamicsProject(rawProject) {
+  cancelDynamicsFieldPlacement({ silent: true });
+  const project = ProjectAdapter.loadDynamicsProject(rawProject);
+  const nextObjects = project.objects.map((raw, index) => {
     const object = DynamicsCore.normalizeObject(raw);
     return {
       ...object,
       id: String(raw.id || `D${index + 1}`),
       name: String(raw.name || `${dynamicsKindLabel(object.kind)} D${index + 1}`),
-      dynamicsModel: "particle2d",
-      rigid: false,
+      dynamicsModel: String(raw.dynamicsModel || object.dynamicsModel || "particle2d"),
+      density: Number(raw.massProperties?.density ?? raw.density ?? 0),
+      rigid: Boolean(raw.rigid),
       path: Array.isArray(object.path) ? object.path.map((point) => ({ x: Number(point.x), y: Number(point.y) })) : null,
     };
   });
-  const objectIds = new Set(state.dynamics.objects.map((object) => object.id));
-  state.dynamics.fields = Array.isArray(project.fields) ? JSON.parse(JSON.stringify(project.fields)) : [];
-  state.dynamics.forces = Array.isArray(project.forces)
-    ? JSON.parse(JSON.stringify(project.forces)).filter((force) => objectIds.has(force.targetId))
-    : [];
-  state.dynamics.objectSeq = nextSequence(state.dynamics.objects, "D");
-  state.dynamics.fieldSeq = nextSequence(state.dynamics.fields, "F");
-  state.dynamics.forceSeq = nextSequence(state.dynamics.forces, "A");
-  state.dynamics.selectedObjectId = state.dynamics.objects[0]?.id || null;
-  state.dynamics.object = state.dynamics.objects[0] || null;
-  state.dynamics.field = state.dynamics.fields[state.dynamics.fields.length - 1] || null;
+  const nextFields = JSON.parse(JSON.stringify(project.fields));
+  const nextForces = JSON.parse(JSON.stringify(project.forces));
+  const nextObjectSeq = nextSequence(nextObjects, "D");
+  const nextFieldSeq = nextSequence(nextFields, "F");
+  const nextForceSeq = nextSequence(nextForces, "A");
+  const nextDuration = quantityToText(project.simulation.duration, "s");
+  const nextTimeStep = quantityToText(project.simulation.timeStep, "s");
+
+  cancelDynamicsAnimation();
+  state.dynamics.objects = nextObjects;
+  state.dynamics.fields = nextFields;
+  state.dynamics.forces = nextForces;
+  state.dynamics.objectSeq = nextObjectSeq;
+  state.dynamics.fieldSeq = nextFieldSeq;
+  state.dynamics.forceSeq = nextForceSeq;
+  state.dynamics.selectedObjectId = nextObjects[0]?.id || null;
+  state.dynamics.object = nextObjects[0] || null;
+  state.dynamics.field = nextFields[nextFields.length - 1] || null;
   state.dynamics.result = null;
   state.dynamics.undoStack = [];
   state.dynamics.redoStack = [];
-  els.dynamicsDuration.value = project.simulation?.duration || "3 s";
-  els.dynamicsTimeStep.value = project.simulation?.timeStep || "0.02 s";
+  els.dynamicsDuration.value = nextDuration;
+  els.dynamicsTimeStep.value = nextTimeStep;
   syncDynamicsObjectControls(state.dynamics.object);
   updateDynamicsFieldStatus();
   renderDynamicsSceneLists();
@@ -2644,6 +2724,7 @@ function syncDynamicsActionUi() {
 }
 
 function openDynamicsSolveDialog() {
+  cancelDynamicsFieldPlacement({ silent: true });
   if (!state.dynamics.objects.length) {
     showDynamicsToast("请先放置至少一个对象。", 2600);
     return;
@@ -2752,6 +2833,8 @@ function syncDynamicsFieldDialog() {
   const rangeType = els.dynamicsFieldRange.value;
   const isZero = kind === "zero";
   const isMagnetic = kind === "magnetic";
+  const editingFieldId = state.dynamics.fieldPlacement.editingFieldId;
+  const editingField = editingFieldId ? state.dynamics.fields.find((field) => field.id === editingFieldId) : null;
   els.dynamicsFieldMagnitude.disabled = isZero;
   els.dynamicsVectorDirectionField.classList.toggle("hidden", isMagnetic || isZero);
   els.dynamicsFieldAngleField.classList.toggle("hidden", isMagnetic || isZero);
@@ -2762,6 +2845,19 @@ function syncDynamicsFieldDialog() {
   els.dynamicsRectangleRangeFields.classList.toggle("hidden", rangeType !== "rectangle" || isZero);
   els.dynamicsCircleRangeField.classList.toggle("hidden", rangeType !== "circle" || isZero);
   els.dynamicsFieldAngle.disabled = els.dynamicsFieldDirectionPreset.value !== "custom" || isZero;
+  const canApplyNumerically =
+    !isZero &&
+    rangeType !== "global" &&
+    (rangeType !== "custom" || (editingField?.rangeType === "custom" && Array.isArray(editingField.path)));
+  els.dynamicsFieldNumericApplyButton.classList.toggle("hidden", !canApplyNumerically);
+  els.dynamicsFieldNumericApplyButton.textContent = editingField ? "按数值更新" : "按数值添加";
+  els.dynamicsFieldApplyButton.textContent = {
+    global: "应用全局场",
+    rectangle: "在画布绘制矩形范围",
+    circle: "在画布绘制圆形范围",
+    custom: "在画布绘制任意范围",
+  }[rangeType] || "应用场";
+  if (isZero) els.dynamicsFieldApplyButton.textContent = editingField ? "删除当前场" : "应用零场";
   if (!isMagnetic && !isZero && els.dynamicsFieldDirectionPreset.value !== "custom") {
     const angles = { right: 0, up: 90, left: 180, down: -90 };
     els.dynamicsFieldAngle.value = String(angles[els.dynamicsFieldDirectionPreset.value] ?? -90);
@@ -2771,15 +2867,21 @@ function syncDynamicsFieldDialog() {
   } else if (rangeType === "global") {
     els.dynamicsFieldMessage.textContent = "全局均匀场作用于无限建模空间，可连续定义重力势能或电势能。";
   } else if (rangeType === "custom") {
-    els.dynamicsFieldMessage.textContent = "应用后，在建模区按住鼠标左键绘制任意场范围。";
+    els.dynamicsFieldMessage.textContent = editingField?.rangeType === "custom"
+      ? "可按数值更新场参数和中心位置，或重新在画布绘制范围。"
+      : "点击主按钮后，在建模区按住鼠标左键绘制任意场范围。";
   } else {
-    els.dynamicsFieldMessage.textContent = "场参数只有点击“应用到建模区”后才会生效。";
+    els.dynamicsFieldMessage.textContent = "可按数值精确添加，也可在建模区拖动绘制范围。";
   }
 }
 
 function openDynamicsFieldDialog(fieldId = null) {
+  cancelDynamicsFieldPlacement({ silent: true });
+  state.dynamics.placementMode = false;
+  state.dynamics.painting = false;
+  state.dynamics.paintPath = [];
   const field = fieldId ? state.dynamics.fields.find((item) => item.id === fieldId) : null;
-  state.dynamics.editingFieldId = field?.id || null;
+  state.dynamics.fieldPlacement = DynamicsFieldPlacement.configurePlacement(field?.id || null);
   if (field) {
     els.dynamicsEnvironment.value = field.kind;
     els.dynamicsFieldMagnitude.value = field.magnitudeText || `${field.magnitude} ${dynamicsFieldUnit(field.kind)}`;
@@ -2787,51 +2889,40 @@ function openDynamicsFieldDialog(fieldId = null) {
     els.dynamicsFieldAngle.value = String(field.angle ?? -90);
     els.dynamicsMagneticDirection.value = field.magneticDirection || "out";
     els.dynamicsFieldRange.value = field.rangeType || "rectangle";
-    els.dynamicsFieldCenterX.value = `${field.centerX || 0} m`;
-    els.dynamicsFieldCenterY.value = `${field.centerY || 0} m`;
-    els.dynamicsFieldWidth.value = `${field.width || 8} m`;
-    els.dynamicsFieldHeight.value = `${field.height || 6} m`;
-    els.dynamicsFieldRadius.value = `${field.radius || 3} m`;
-    els.dynamicsFieldApplyButton.textContent = "更新场";
+    els.dynamicsFieldCenterX.value = `${field.centerX ?? 0} m`;
+    els.dynamicsFieldCenterY.value = `${field.centerY ?? 0} m`;
+    els.dynamicsFieldWidth.value = `${field.width ?? 8} m`;
+    els.dynamicsFieldHeight.value = `${field.height ?? 6} m`;
+    els.dynamicsFieldRadius.value = `${field.radius ?? 3} m`;
   } else {
+    const center = DynamicsFieldGeometry.viewportWorldCenter({
+      origin: state.dynamics.origin,
+      scale: state.dynamics.scale,
+      canvasWidth: dynamicsCanvas.width,
+      canvasHeight: dynamicsCanvas.height,
+    });
     els.dynamicsEnvironment.value = "gravity";
     setDynamicsFieldDefaults("gravity");
     els.dynamicsFieldRange.value = "rectangle";
-    els.dynamicsFieldCenterX.value = "0 m";
-    els.dynamicsFieldCenterY.value = "0 m";
+    els.dynamicsFieldCenterX.value = `${formatNumber(center.x)} m`;
+    els.dynamicsFieldCenterY.value = `${formatNumber(center.y)} m`;
     els.dynamicsFieldWidth.value = "8 m";
     els.dynamicsFieldHeight.value = "6 m";
     els.dynamicsFieldRadius.value = "3 m";
-    els.dynamicsFieldApplyButton.textContent = "添加到建模区";
   }
   syncDynamicsFieldDialog();
+  syncDynamicsCanvasCursor();
   els.dynamicsFieldDialog.showModal();
 }
 
-function applyDynamicsField() {
-  cancelDynamicsAnimation();
+function dynamicsFieldDraftFromDialog({ preserveCustomPath = false } = {}) {
   const kind = els.dynamicsEnvironment.value;
-  if (kind === "zero") {
-    if (state.dynamics.editingFieldId) deleteDynamicsField(state.dynamics.editingFieldId);
-    state.dynamics.field = state.dynamics.fields[state.dynamics.fields.length - 1] || null;
-    state.dynamics.fieldRangeDrawing = false;
-    state.dynamics.result = null;
-    els.dynamicsFieldDialog.close();
-    updateDynamicsFieldStatus();
-    renderDynamicsSceneLists();
-    syncDynamicsCanvasCursor();
-    drawDynamicsScene();
-    showDynamicsToast("零场不产生作用，未添加新的场。", 2200);
-    return;
-  }
-  const magnitude = Math.abs(dynamicsValue(els.dynamicsFieldMagnitude, dynamicsFieldUnit(kind)));
   const rangeType = els.dynamicsFieldRange.value;
-  const existingIndex = state.dynamics.fields.findIndex((field) => field.id === state.dynamics.editingFieldId);
-  recordDynamicsHistory();
+  const editingFieldId = state.dynamics.fieldPlacement.editingFieldId;
+  const existing = editingFieldId ? state.dynamics.fields.find((field) => field.id === editingFieldId) : null;
   const field = {
-    id: existingIndex >= 0 ? state.dynamics.fields[existingIndex].id : `F${state.dynamics.fieldSeq++}`,
     kind,
-    magnitude,
+    magnitude: Math.abs(dynamicsValue(els.dynamicsFieldMagnitude, dynamicsFieldUnit(kind))),
     magnitudeText: els.dynamicsFieldMagnitude.value.trim(),
     directionPreset: els.dynamicsFieldDirectionPreset.value,
     angle: Number(els.dynamicsFieldAngle.value || 0),
@@ -2839,40 +2930,143 @@ function applyDynamicsField() {
     rangeType,
     centerX: dynamicsValue(els.dynamicsFieldCenterX, "m"),
     centerY: dynamicsValue(els.dynamicsFieldCenterY, "m"),
-    width: Math.max(Math.abs(dynamicsValue(els.dynamicsFieldWidth, "m")), 0.01),
-    height: Math.max(Math.abs(dynamicsValue(els.dynamicsFieldHeight, "m")), 0.01),
-    radius: Math.max(Math.abs(dynamicsValue(els.dynamicsFieldRadius, "m")), 0.01),
-    path: rangeType === "custom" ? [] : null,
+    width: Math.abs(dynamicsValue(els.dynamicsFieldWidth, "m")),
+    height: Math.abs(dynamicsValue(els.dynamicsFieldHeight, "m")),
+    radius: Math.abs(dynamicsValue(els.dynamicsFieldRadius, "m")),
+    path: null,
   };
-  if (existingIndex >= 0) state.dynamics.fields[existingIndex] = field;
-  else state.dynamics.fields.push(field);
-  state.dynamics.field = field;
-  state.dynamics.editingFieldId = null;
-  state.dynamics.result = null;
-  els.dynamicsFieldDialog.close();
-  if (rangeType === "custom") {
-    state.dynamics.fieldRangeDrawing = true;
-    state.dynamics.fieldRangePath = [];
-    showDynamicsToast("按住鼠标左键绘制任意场范围。", 3200);
-  } else {
-    state.dynamics.fieldRangeDrawing = false;
-    showDynamicsToast(`${dynamicsFieldKindLabel(kind)}已应用到建模区。`, 2200);
+  if (rangeType === "custom" && preserveCustomPath && existing?.rangeType === "custom" && Array.isArray(existing.path)) {
+    field.path = DynamicsFieldGeometry.translatePathToCenter(existing.path, {
+      x: field.centerX,
+      y: field.centerY,
+    });
+    const bounds = DynamicsFieldGeometry.polygonBounds(field.path);
+    field.centerX = bounds.centerX;
+    field.centerY = bounds.centerY;
+    field.width = bounds.width;
+    field.height = bounds.height;
   }
+  return field;
+}
+
+function dynamicsFieldValidationMessage(field, validation) {
+  if (field.rangeType === "rectangle") return "矩形场的宽度和高度必须大于 0。";
+  if (field.rangeType === "circle") return "圆形场的半径必须大于 0。";
+  if (field.rangeType === "custom") return "任意场范围至少需要三个点，并且必须围成有效区域。";
+  return validation.error || "场范围无效。";
+}
+
+function commitDynamicsField(field, editingFieldId = null) {
+  const validation = DynamicsFieldGeometry.validateFieldGeometry(field);
+  if (!validation.valid) {
+    const message = dynamicsFieldValidationMessage(field, validation);
+    els.dynamicsFieldMessage.textContent = message;
+    showDynamicsToast(message, 3000);
+    return false;
+  }
+  const existingIndex = editingFieldId
+    ? state.dynamics.fields.findIndex((item) => item.id === editingFieldId)
+    : -1;
+  if (editingFieldId && existingIndex < 0) {
+    showDynamicsToast("要编辑的场已不存在，请重新选择。", 2800);
+    return false;
+  }
+  recordDynamicsHistory();
+  const completed = JSON.parse(JSON.stringify(field));
+  if (existingIndex >= 0) {
+    completed.id = state.dynamics.fields[existingIndex].id;
+    state.dynamics.fields[existingIndex] = completed;
+  } else {
+    completed.id = `F${state.dynamics.fieldSeq++}`;
+    state.dynamics.fields.push(completed);
+  }
+  state.dynamics.field = completed;
+  state.dynamics.fieldPlacement = DynamicsFieldPlacement.cancelPlacement();
+  state.dynamics.result = null;
+  cancelDynamicsAnimation();
+  renderDynamicsResult();
   updateDynamicsFieldStatus();
   renderDynamicsSceneLists();
   syncDynamicsCanvasCursor();
-  renderDynamicsResult();
   drawDynamicsScene();
+  showDynamicsToast(`${dynamicsFieldKindLabel(completed.kind)}已${existingIndex >= 0 ? "更新" : "添加"}。`, 2200);
+  return true;
+}
+
+function applyDynamicsZeroField(editingFieldId) {
+  state.dynamics.fieldPlacement = DynamicsFieldPlacement.cancelPlacement();
+  els.dynamicsFieldDialog.close();
+  if (editingFieldId && state.dynamics.fields.some((field) => field.id === editingFieldId)) {
+    deleteDynamicsField(editingFieldId);
+    showDynamicsToast("当前场已删除，场景恢复为无该外场。", 2200);
+  } else {
+    syncDynamicsCanvasCursor();
+    showDynamicsToast("零场不产生作用，未添加新的场。", 2200);
+  }
+}
+
+function applyDynamicsField() {
+  try {
+    const editingFieldId = state.dynamics.fieldPlacement.editingFieldId;
+    const kind = els.dynamicsEnvironment.value;
+    if (kind === "zero") {
+      applyDynamicsZeroField(editingFieldId);
+      return;
+    }
+    const rangeType = els.dynamicsFieldRange.value;
+    const draft = dynamicsFieldDraftFromDialog();
+    if (rangeType === "global") {
+      if (commitDynamicsField(draft, editingFieldId)) els.dynamicsFieldDialog.close();
+      return;
+    }
+    state.dynamics.placementMode = false;
+    state.dynamics.painting = false;
+    state.dynamics.paintPath = [];
+    state.dynamics.fieldPlacement = DynamicsFieldPlacement.beginPlacement(state.dynamics.fieldPlacement, {
+      mode: rangeType,
+      draft,
+    });
+    els.dynamicsFieldDialog.close();
+    updateDynamicsFieldStatus();
+    syncDynamicsCanvasCursor();
+    drawDynamicsScene();
+    showDynamicsToast(`在建模区拖动绘制${dynamicsRangeLabel(rangeType)}；Esc 或右键取消。`, 3600);
+  } catch (error) {
+    els.dynamicsFieldMessage.textContent = String(error.message || error);
+  }
+}
+
+function applyDynamicsFieldNumerically() {
+  try {
+    const editingFieldId = state.dynamics.fieldPlacement.editingFieldId;
+    const field = dynamicsFieldDraftFromDialog({ preserveCustomPath: true });
+    if (commitDynamicsField(field, editingFieldId)) els.dynamicsFieldDialog.close();
+  } catch (error) {
+    els.dynamicsFieldMessage.textContent = String(error.message || error);
+  }
+}
+
+function cancelDynamicsFieldPlacement({ silent = false } = {}) {
+  const wasActive = Boolean(state.dynamics.fieldPlacement?.active);
+  state.dynamics.fieldPlacement = DynamicsFieldPlacement.cancelPlacement();
+  if (els.dynamicsFieldDialog?.open) els.dynamicsFieldDialog.close();
+  updateDynamicsFieldStatus();
+  syncDynamicsCanvasCursor();
+  drawDynamicsScene();
+  if (wasActive && !silent) showDynamicsToast("已取消场放置，场景未发生变化。", 2200);
 }
 
 function updateDynamicsFieldStatus() {
+  if (state.dynamics.fieldPlacement.active) {
+    els.dynamicsFieldStatus.textContent = `正在绘制${dynamicsRangeLabel(state.dynamics.fieldPlacement.mode)}`;
+    return;
+  }
   const fields = state.dynamics.fields;
   if (!fields.length) {
     els.dynamicsFieldStatus.textContent = "未应用场";
     return;
   }
-  const pending = fields.some((field) => field.rangeType === "custom" && (!field.path || field.path.length < 3));
-  els.dynamicsFieldStatus.textContent = pending ? `复合场 ${fields.length} · 待绘制` : `复合场 ${fields.length}`;
+  els.dynamicsFieldStatus.textContent = `复合场 ${fields.length}`;
 }
 
 function dynamicsFieldVector(field) {
@@ -2899,6 +3093,7 @@ function syncDynamicsForceDialog() {
 }
 
 function openDynamicsForceDialog() {
+  cancelDynamicsFieldPlacement({ silent: true });
   if (!state.dynamics.objects.length) {
     showDynamicsToast("请先放置至少一个对象。", 2400);
     return;
@@ -3312,19 +3507,67 @@ function drawDynamicsAppliedForces() {
 }
 
 function drawDynamicsRangeDraft() {
-  const path = state.dynamics.fieldRangeDraft?.path || state.dynamics.paintPath;
-  if (!path || path.length < 2) return;
+  const objectPath = state.dynamics.paintPath;
+  if (objectPath?.length > 1) {
+    dynamicsCtx.save();
+    dynamicsCtx.strokeStyle = cssColor("--select");
+    dynamicsCtx.setLineDash([6, 4]);
+    dynamicsCtx.lineWidth = 2;
+    dynamicsCtx.beginPath();
+    objectPath.forEach((point, index) => {
+      const screen = dynamicsToScreen(point);
+      if (index === 0) dynamicsCtx.moveTo(screen.x, screen.y);
+      else dynamicsCtx.lineTo(screen.x, screen.y);
+    });
+    dynamicsCtx.stroke();
+    dynamicsCtx.restore();
+  }
+
+  const placement = state.dynamics.fieldPlacement;
+  if (!placement.active || !placement.startWorld || !placement.currentWorld) return;
+  const color = dynamicsFieldColor(placement.draft?.kind);
   dynamicsCtx.save();
+  dynamicsCtx.fillStyle = `${color}${document.body.classList.contains("dark-theme") ? "42" : "28"}`;
   dynamicsCtx.strokeStyle = cssColor("--select");
-  dynamicsCtx.setLineDash([6, 4]);
+  dynamicsCtx.setLineDash([7, 5]);
   dynamicsCtx.lineWidth = 2;
   dynamicsCtx.beginPath();
-  path.forEach((point, index) => {
-    const screen = dynamicsToScreen(point);
-    if (index === 0) dynamicsCtx.moveTo(screen.x, screen.y);
-    else dynamicsCtx.lineTo(screen.x, screen.y);
-  });
+  let label = "";
+  let labelPoint = dynamicsToScreen(placement.currentWorld);
+  if (placement.mode === "rectangle") {
+    const geometry = DynamicsFieldGeometry.rectangleFromDrag(placement.startWorld, placement.currentWorld);
+    const topLeft = dynamicsToScreen({
+      x: geometry.centerX - geometry.width / 2,
+      y: geometry.centerY + geometry.height / 2,
+    });
+    dynamicsCtx.rect(topLeft.x, topLeft.y, geometry.width * state.dynamics.scale, geometry.height * state.dynamics.scale);
+    label = `${formatNumber(geometry.width)} m × ${formatNumber(geometry.height)} m`;
+    labelPoint = dynamicsToScreen({ x: geometry.centerX, y: geometry.centerY });
+  } else if (placement.mode === "circle") {
+    const geometry = DynamicsFieldGeometry.circleFromDrag(placement.startWorld, placement.currentWorld);
+    const center = dynamicsToScreen({ x: geometry.centerX, y: geometry.centerY });
+    dynamicsCtx.arc(center.x, center.y, geometry.radius * state.dynamics.scale, 0, Math.PI * 2);
+    label = `r = ${formatNumber(geometry.radius)} m`;
+    labelPoint = center;
+  } else {
+    placement.path.forEach((point, index) => {
+      const screen = dynamicsToScreen(point);
+      if (index === 0) dynamicsCtx.moveTo(screen.x, screen.y);
+      else dynamicsCtx.lineTo(screen.x, screen.y);
+    });
+    if (placement.path.length >= 3) dynamicsCtx.closePath();
+  }
+  if (placement.mode !== "custom" || placement.path.length >= 3) dynamicsCtx.fill();
   dynamicsCtx.stroke();
+  dynamicsCtx.setLineDash([]);
+  if (label) {
+    dynamicsCtx.font = "12px Segoe UI, Arial, sans-serif";
+    const width = dynamicsCtx.measureText(label).width;
+    dynamicsCtx.fillStyle = cssColor("--surface");
+    dynamicsCtx.fillRect(labelPoint.x - width / 2 - 5, labelPoint.y - 10, width + 10, 20);
+    dynamicsCtx.fillStyle = cssColor("--ink");
+    dynamicsCtx.fillText(label, labelPoint.x - width / 2, labelPoint.y + 4);
+  }
   dynamicsCtx.restore();
 }
 
@@ -3390,24 +3633,27 @@ function isDynamicsPaintMode() {
 function dynamicsCanvasPoint(event) {
   const rect = dynamicsCanvas.getBoundingClientRect();
   return {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top,
+    x: (event.clientX - rect.left) * (dynamicsCanvas.width / Math.max(rect.width, 1)),
+    y: (event.clientY - rect.top) * (dynamicsCanvas.height / Math.max(rect.height, 1)),
   };
 }
 
 function syncDynamicsCanvasCursor() {
   if (!dynamicsCanvas) return;
   const drawingObject = state.dynamics.placementMode && isDynamicsPaintMode();
+  const drawingField = Boolean(state.dynamics.fieldPlacement.active);
   dynamicsCanvas.classList.toggle("placing", state.dynamics.placementMode && !drawingObject);
   dynamicsCanvas.classList.toggle("drawing-object", drawingObject);
-  dynamicsCanvas.classList.toggle("drawing-range", state.dynamics.fieldRangeDrawing);
+  dynamicsCanvas.classList.toggle("drawing-range", drawingField);
   els.dynamicsPlaceButton.classList.toggle("active", state.dynamics.placementMode);
+  els.dynamicsFieldButton.classList.toggle("active", drawingField);
+  els.dynamicsFieldCancelButton.classList.toggle("hidden", !drawingField);
 }
 
 function beginDynamicsObjectPlacement() {
+  cancelDynamicsFieldPlacement({ silent: true });
   cancelDynamicsAnimation();
   state.dynamics.placementMode = true;
-  state.dynamics.fieldRangeDrawing = false;
   state.dynamics.result = null;
   syncDynamicsCanvasCursor();
   const message = isDynamicsPaintMode()
@@ -3464,26 +3710,38 @@ function finishDynamicsPaintedObject(path) {
   showDynamicsToast("任意形状对象已建立。", 1800);
 }
 
-function finishDynamicsFieldRange(path) {
-  if (!state.dynamics.field || path.length < 3) {
-    state.dynamics.fieldRangeDraft = null;
-    showDynamicsToast("范围路径过短，请重新绘制。", 2200);
+function finishDynamicsFieldPlacement() {
+  const current = state.dynamics.fieldPlacement;
+  const editingFieldId = current.editingFieldId;
+  const tooSmall =
+    current.mode === "rectangle"
+      ? Math.abs(current.currentWorld.x - current.startWorld.x) * state.dynamics.scale < 4 ||
+        Math.abs(current.currentWorld.y - current.startWorld.y) * state.dynamics.scale < 4
+      : current.mode === "circle"
+        ? Math.hypot(
+            current.currentWorld.x - current.startWorld.x,
+            current.currentWorld.y - current.startWorld.y
+          ) * state.dynamics.scale < 4
+        : false;
+  const completed = DynamicsFieldPlacement.completePlacement(current);
+  state.dynamics.fieldPlacement = completed.placement;
+  if (tooSmall || !completed.validation.valid) {
+    updateDynamicsFieldStatus();
+    syncDynamicsCanvasCursor();
     drawDynamicsScene();
+    const message = tooSmall
+      ? "绘制范围过小，已取消且未修改场景。"
+      : dynamicsFieldValidationMessage(completed.field || { rangeType: current.mode }, completed.validation);
+    showDynamicsToast(message, 3000);
     return;
   }
-  recordDynamicsHistory();
-  state.dynamics.field.path = [...path];
-  state.dynamics.fieldRangePath = [];
-  state.dynamics.fieldRangeDraft = null;
-  state.dynamics.fieldRangeDrawing = false;
+  commitDynamicsField(completed.field, editingFieldId);
   updateDynamicsFieldStatus();
-  renderDynamicsSceneLists();
   syncDynamicsCanvasCursor();
-  drawDynamicsScene();
-  showDynamicsToast(`${dynamicsFieldKindLabel(state.dynamics.field.kind)}任意范围已建立。`, 2200);
 }
 
 function clearDynamicsModel() {
+  cancelDynamicsFieldPlacement({ silent: true });
   if (!state.dynamics.objects.length && !state.dynamics.fields.length && !state.dynamics.forces.length) return;
   recordDynamicsHistory();
   cancelDynamicsAnimation();
@@ -3494,15 +3752,12 @@ function clearDynamicsModel() {
   state.dynamics.fieldSeq = 1;
   state.dynamics.forceSeq = 1;
   state.dynamics.selectedObjectId = null;
-  state.dynamics.editingFieldId = null;
   state.dynamics.object = null;
   state.dynamics.field = null;
   state.dynamics.result = null;
   state.dynamics.paintPath = [];
   state.dynamics.placementMode = false;
-  state.dynamics.fieldRangeDrawing = false;
-  state.dynamics.fieldRangePath = [];
-  state.dynamics.fieldRangeDraft = null;
+  state.dynamics.fieldPlacement = DynamicsFieldPlacement.cancelPlacement();
   els.dynamicsResultText.textContent = "暂无结果";
   updateDynamicsFieldStatus();
   renderDynamicsSceneLists();
@@ -4551,10 +4806,7 @@ els.fileInput.addEventListener("change", async () => {
   if (!file) return;
   try {
     const text = await file.text();
-    mutate(() => importProject(JSON.parse(text)));
-    state.undoStack = [];
-    state.redoStack = [];
-    syncUi();
+    importProject(JSON.parse(text));
     showToast("工程已打开。");
   } catch (error) {
     showToast(String(error.message || error));
@@ -4595,6 +4847,20 @@ if (els.dynamicsFieldButton) els.dynamicsFieldButton.addEventListener("click", (
 if (els.dynamicsForceButton) els.dynamicsForceButton.addEventListener("click", openDynamicsForceDialog);
 if (els.dynamicsClearButton) els.dynamicsClearButton.addEventListener("click", clearDynamicsModel);
 if (els.dynamicsFieldApplyButton) els.dynamicsFieldApplyButton.addEventListener("click", applyDynamicsField);
+if (els.dynamicsFieldNumericApplyButton) {
+  els.dynamicsFieldNumericApplyButton.addEventListener("click", applyDynamicsFieldNumerically);
+}
+if (els.dynamicsFieldCancelButton) {
+  els.dynamicsFieldCancelButton.addEventListener("click", () => cancelDynamicsFieldPlacement());
+}
+if (els.dynamicsFieldDialog) {
+  els.dynamicsFieldDialog.addEventListener("close", () => {
+    if (state.dynamics.fieldPlacement.phase !== "configuring") return;
+    state.dynamics.fieldPlacement = DynamicsFieldPlacement.cancelPlacement();
+    syncDynamicsCanvasCursor();
+    updateDynamicsFieldStatus();
+  });
+}
 if (els.dynamicsForceApplyButton) els.dynamicsForceApplyButton.addEventListener("click", applyDynamicsForce);
 if (els.dynamicsForceType) els.dynamicsForceType.addEventListener("change", () => {
   els.dynamicsForceMagnitude.value = els.dynamicsForceType.value === "continuous" ? "1 N" : "1 N*s";
@@ -4615,6 +4881,7 @@ for (const control of [els.dynamicsFieldDirectionPreset, els.dynamicsFieldRange]
 for (const control of [els.dynamicsBuildKind, els.dynamicsCustomMode]) {
   if (!control) continue;
   control.addEventListener("change", () => {
+    cancelDynamicsFieldPlacement({ silent: true });
     state.dynamics.placementMode = false;
     if (control === els.dynamicsBuildKind && selectedDynamicsObject()?.kind !== els.dynamicsBuildKind.value) {
       state.dynamics.selectedObjectId = null;
@@ -4689,8 +4956,9 @@ if (dynamicsCanvas) {
     if (event.button !== 0) return;
     const screen = dynamicsCanvasPoint(event);
     const world = dynamicsToWorld(screen);
-    if (state.dynamics.fieldRangeDrawing) {
-      state.dynamics.fieldRangeDraft = { path: [world] };
+    if (state.dynamics.fieldPlacement.active) {
+      state.dynamics.fieldPlacement = DynamicsFieldPlacement.startPlacement(state.dynamics.fieldPlacement, world);
+      drawDynamicsScene();
       return;
     }
     if (state.dynamics.placementMode && isDynamicsPaintMode()) {
@@ -4711,10 +4979,12 @@ if (dynamicsCanvas) {
   dynamicsCanvas.addEventListener("mousemove", (event) => {
     const screen = dynamicsCanvasPoint(event);
     const world = dynamicsToWorld(screen);
-    if (state.dynamics.fieldRangeDraft) {
-      const path = state.dynamics.fieldRangeDraft.path;
-      const last = path[path.length - 1];
-      if (!last || Math.hypot(world.x - last.x, world.y - last.y) * state.dynamics.scale > 3) path.push(world);
+    if (state.dynamics.fieldPlacement.active && state.dynamics.fieldPlacement.startWorld) {
+      state.dynamics.fieldPlacement = DynamicsFieldPlacement.updatePlacement(
+        state.dynamics.fieldPlacement,
+        world,
+        3 / state.dynamics.scale
+      );
       drawDynamicsScene();
       return;
     }
@@ -4732,10 +5002,14 @@ if (dynamicsCanvas) {
     drawDynamicsScene();
   });
 
-  dynamicsCanvas.addEventListener("mouseup", () => {
-    if (state.dynamics.fieldRangeDraft) {
-      const path = state.dynamics.fieldRangeDraft.path;
-      finishDynamicsFieldRange(path);
+  dynamicsCanvas.addEventListener("mouseup", (event) => {
+    if (state.dynamics.fieldPlacement.active && state.dynamics.fieldPlacement.startWorld) {
+      state.dynamics.fieldPlacement = DynamicsFieldPlacement.updatePlacement(
+        state.dynamics.fieldPlacement,
+        dynamicsToWorld(dynamicsCanvasPoint(event)),
+        1 / state.dynamics.scale
+      );
+      finishDynamicsFieldPlacement();
       return;
     }
     if (state.dynamics.painting) {
@@ -4771,8 +5045,17 @@ if (dynamicsCanvas) {
       state.dynamics.painting = false;
       state.dynamics.paintPath = [];
     }
-    if (state.dynamics.fieldRangeDraft) state.dynamics.fieldRangeDraft = null;
+    if (state.dynamics.fieldPlacement.active && state.dynamics.fieldPlacement.startWorld) {
+      cancelDynamicsFieldPlacement();
+      return;
+    }
     drawDynamicsScene();
+  });
+
+  dynamicsCanvas.addEventListener("contextmenu", (event) => {
+    if (!state.dynamics.fieldPlacement.active) return;
+    event.preventDefault();
+    cancelDynamicsFieldPlacement();
   });
 }
 
@@ -4791,6 +5074,11 @@ for (const control of [
 }
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && state.dynamics.fieldPlacement.active) {
+    event.preventDefault();
+    cancelDynamicsFieldPlacement();
+    return;
+  }
   if (isTextEditingEvent(event)) return;
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
     event.preventDefault();
@@ -4819,6 +5107,14 @@ window.addEventListener("resize", () => {
   resizeCanvas();
   resizeDynamicsCanvas();
 });
+if (typeof ResizeObserver === "function" && dynamicsCanvas?.parentElement) {
+  let pendingDynamicsResize = 0;
+  const dynamicsResizeObserver = new ResizeObserver(() => {
+    cancelAnimationFrame(pendingDynamicsResize);
+    pendingDynamicsResize = requestAnimationFrame(resizeDynamicsCanvas);
+  });
+  dynamicsResizeObserver.observe(dynamicsCanvas.parentElement);
+}
 applyFontSize(localStorage.getItem(AUTH_FONT_SIZE_KEY), false);
 syncLoadPanels();
 initAuth();
