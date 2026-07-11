@@ -1,0 +1,73 @@
+{
+  "browser": "Edge 150.0.4078.48",
+  "homepage": {
+    "title": "Computational Mechanics Solver",
+    "version": "v1.3.2",
+    "versionAnimation": "rainbowFlow",
+    "announcementLabel": "查看 v1.3.2 更新公告",
+    "horizontalOverflow": false,
+    "viewport": [
+      1692,
+      960
+    ]
+  },
+  "announcement": {
+    "open": true,
+    "activeElement": "announcementCloseButton",
+    "hasDynamics": true,
+    "hasLimits": true,
+    "rect": [
+      466,
+      142.578125,
+      760,
+      674.8359375
+    ]
+  },
+  "announcementClosed": {
+    "open": false,
+    "activeElement": "announcementButton"
+  },
+  "statics": {
+    "visible": true,
+    "cardCount": 1,
+    "cardHref": "/downloads/computational-mechanics-solver-v1.3.2-manual.pdf",
+    "cardVisible": true,
+    "horizontalOverflow": false
+  },
+  "dynamics": {
+    "visible": true,
+    "cardCount": 1,
+    "cardHref": "/downloads/computational-mechanics-solver-v1.3.2-manual.pdf",
+    "cardVisible": true,
+    "horizontalOverflow": false,
+    "sideScrollable": true
+  },
+  "mobile": {
+    "viewport": [
+      390,
+      844
+    ],
+    "horizontalOverflow": false,
+    "triggerTitleOverlap": false,
+    "versionAnimation": "none",
+    "orbitAnimation": "none"
+  },
+  "download": {
+    "endpointStatus": 200,
+    "contentType": "application/pdf",
+    "contentDisposition": "attachment; filename=\"computational-mechanics-solver-v1.3.2-manual.pdf\"",
+    "bytes": 8581850,
+    "navigationRecognizedAsDownload": true,
+    "navigationErrorText": "net::ERR_ABORTED",
+    "sha256MatchesRelease": true,
+    "note": "Edge created and opened a downloaded PDF; its exact SHA-256 matched the release manual. The QA copy was removed after verification."
+  },
+  "consoleErrors": [],
+  "outputs": {
+    "homepage": "release/v1.3.2/screenshots/homepage-v1.3.2.png",
+    "announcement": "release/v1.3.2/screenshots/announcement-v1.3.2.png",
+    "statics": "release/v1.3.2/screenshots/static-manual-download.png",
+    "dynamics": "release/v1.3.2/screenshots/dynamics-manual-download.png",
+    "mobile": "release/v1.3.2/screenshots/homepage-v1.3.2-mobile.png"
+  }
+}

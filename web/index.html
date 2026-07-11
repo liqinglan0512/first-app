@@ -4,15 +4,33 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Computational Mechanics Solver</title>
+    <link rel="icon" href="/static/brand-avatar.png" type="image/png">
     <link rel="stylesheet" href="/static/app.css">
   </head>
   <body>
     <section id="welcomeScreen" class="welcome-screen">
+      <button
+        id="announcementButton"
+        class="announcement-trigger"
+        type="button"
+        aria-label="查看 v1.3.2 更新公告"
+        aria-haspopup="dialog"
+        aria-controls="announcementDialog"
+      >
+        <span class="li-atom" aria-hidden="true">
+          <span class="li-nucleus">Li<sup>+</sup></span>
+          <span class="atom-orbit atom-orbit-one"><span class="atom-electron"></span></span>
+          <span class="atom-orbit atom-orbit-two"><span class="atom-electron"></span></span>
+          <span class="atom-orbit atom-orbit-three"><span class="atom-electron"></span></span>
+        </span>
+        <span class="announcement-label">公告</span>
+      </button>
       <div class="welcome-content">
         <h1 class="welcome-title rainbow-animated">
           <span>欢迎使用</span>
           <span>Computational Mechanics Solver</span>
         </h1>
+        <p id="releaseVersion" class="welcome-version rainbow-animated">v1.3.2</p>
         <p class="welcome-subtitle studio-credit"><span class="li-ion">Li<sup>+</sup></span>工作室出品</p>
         <p class="welcome-contact">
           如有任何错误、bug、请联系：620026600@qq.com 或202402040108@stu.bucea.edu.cn
@@ -93,6 +111,17 @@
         </div>
 
         <div class="user-settings">
+          <a
+            class="manual-download-card"
+            href="/downloads/computational-mechanics-solver-v1.3.2-manual.pdf"
+            download
+            aria-label="下载 Computational Mechanics Solver v1.3.2 用户与技术说明书"
+            title="下载用户与技术说明书"
+          >
+            <span class="manual-book-icon" aria-hidden="true"></span>
+            <span class="manual-download-title">用户与技术说明书</span>
+            <small>v1.3.2 PDF</small>
+          </a>
           <span id="mainUserAvatar" class="default-avatar main-avatar">CM</span>
           <span id="mainUserName" class="main-user-name">未登录</span>
           <button id="settingsButton" class="settings-button" title="设置">设置</button>
@@ -240,6 +269,17 @@
         </div>
 
         <div class="user-settings">
+          <a
+            class="manual-download-card"
+            href="/downloads/computational-mechanics-solver-v1.3.2-manual.pdf"
+            download
+            aria-label="下载 Computational Mechanics Solver v1.3.2 用户与技术说明书"
+            title="下载用户与技术说明书"
+          >
+            <span class="manual-book-icon" aria-hidden="true"></span>
+            <span class="manual-download-title">用户与技术说明书</span>
+            <small>v1.3.2 PDF</small>
+          </a>
           <span id="dynamicsUserAvatar" class="default-avatar main-avatar">CM</span>
           <span id="dynamicsUserName" class="main-user-name">未登录</span>
           <button id="dynamicsSettingsButton" class="settings-button" title="设置">设置</button>
@@ -397,6 +437,51 @@
         </aside>
       </main>
     </div>
+
+    <dialog id="announcementDialog" class="modal announcement-modal" aria-labelledby="announcementTitle">
+      <form method="dialog">
+        <header class="modal-header">
+          <div>
+            <p class="announcement-kicker">Li<sup>+</sup> Studio Release Notes</p>
+            <h2 id="announcementTitle">Computational Mechanics Solver v1.3.2 更新公告</h2>
+          </div>
+          <button id="announcementCloseButton" value="close" class="icon-button" aria-label="关闭更新公告">×</button>
+        </header>
+        <div class="announcement-body">
+          <section>
+            <h3>动力学模块现已开放</h3>
+            <p>本版本提供二维多对象独立质点动力学。每个对象分别积分，可叠加重力场、电场和垂直平面的磁场，并支持全局、矩形、圆形和任意多边形范围。</p>
+            <ul>
+              <li>初始冲量和分段持续力。</li>
+              <li>经典四阶 Runge-Kutta 固定步长积分。</li>
+              <li>速度、加速度、位移、轨迹、能量、动量、轨道角动量和洛伦兹力结果。</li>
+              <li>轨迹动画与可搜索的中文动力学计算书。</li>
+            </ul>
+          </section>
+          <section>
+            <h3>静力学可靠性改进</h3>
+            <ul>
+              <li>平面桁架单元和普通梁柱单端弯矩释放。</li>
+              <li>杆中集中力、集中力偶和同一杆件多个集中作用累加。</li>
+              <li>模型诊断接入正式求解流程。</li>
+              <li>静力学计算书补充输入、公式、推导、结果和结论。</li>
+            </ul>
+          </section>
+          <section>
+            <h3>文档与版本追踪</h3>
+            <p>《Computational Mechanics Solver v1.3.2 用户与技术说明书》现已提供下载。运行实例可通过 <code>/api/version</code> 核对版本、Git 提交、工作区状态和启动时间。</p>
+          </section>
+          <aside class="announcement-limitations" aria-label="当前限制">
+            <strong>当前限制</strong>
+            <p>多个动力学对象彼此独立，暂不发生碰撞、接触或相互作用；当前不是完整刚体动力学。旋转支座只改变图形，不改变斜向约束。计算结果不应用于未经独立复核的工程安全决策。</p>
+          </aside>
+        </div>
+        <footer class="modal-actions announcement-actions">
+          <a class="announcement-manual-link" href="/downloads/computational-mechanics-solver-v1.3.2-manual.pdf" download>下载用户与技术说明书</a>
+          <button value="close" class="primary">我已了解</button>
+        </footer>
+      </form>
+    </dialog>
 
     <dialog id="dynamicsSolveDialog" class="modal solve-modal dynamics-solve-modal">
       <form method="dialog">

@@ -11,6 +11,9 @@ const dynamicsToast = document.getElementById("dynamicsToast");
 
 const els = {
   welcomeScreen: document.getElementById("welcomeScreen"),
+  announcementButton: document.getElementById("announcementButton"),
+  announcementDialog: document.getElementById("announcementDialog"),
+  announcementCloseButton: document.getElementById("announcementCloseButton"),
   appShell: document.getElementById("appShell"),
   authChoicePanel: document.getElementById("authChoicePanel"),
   showLoginButton: document.getElementById("showLoginButton"),
@@ -282,6 +285,23 @@ const AUTH_USERS_KEY = "cms_users";
 const AUTH_CURRENT_KEY = "cms_current_user";
 const AUTH_FONT_SIZE_KEY = "cms_font_size";
 const DEFAULT_USER_AVATAR = "/static/brand-avatar.png";
+let announcementReturnFocus = null;
+
+function openAnnouncement() {
+  if (!els.announcementDialog || els.announcementDialog.open) return;
+  announcementReturnFocus = document.activeElement;
+  els.announcementDialog.showModal();
+  requestAnimationFrame(() => els.announcementCloseButton?.focus());
+}
+
+function closeAnnouncement() {
+  if (els.announcementDialog?.open) els.announcementDialog.close();
+}
+
+function restoreAnnouncementFocus() {
+  if (announcementReturnFocus instanceof HTMLElement) announcementReturnFocus.focus();
+  announcementReturnFocus = null;
+}
 
 function loadUsers() {
   try {
@@ -4663,6 +4683,13 @@ canvas.addEventListener("dblclick", (event) => {
 });
 
 els.showLoginButton.addEventListener("click", () => showAuthMode("login"));
+if (els.announcementButton) els.announcementButton.addEventListener("click", openAnnouncement);
+if (els.announcementDialog) {
+  els.announcementDialog.addEventListener("click", (event) => {
+    if (event.target === els.announcementDialog) closeAnnouncement();
+  });
+  els.announcementDialog.addEventListener("close", restoreAnnouncementFocus);
+}
 els.showRegisterButton.addEventListener("click", () => showAuthMode("register"));
 els.loginSubmit.addEventListener("click", loginUser);
 els.registerSubmit.addEventListener("click", registerUser);
@@ -5017,6 +5044,11 @@ for (const control of [
 }
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && els.announcementDialog?.open) {
+    event.preventDefault();
+    closeAnnouncement();
+    return;
+  }
   if (event.key === "Escape" && state.dynamics.fieldPlacement.active) {
     event.preventDefault();
     cancelDynamicsFieldPlacement();

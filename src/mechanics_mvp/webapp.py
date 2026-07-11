@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from .engine import solve_with_backend
 from .project_io import project_from_dict
@@ -25,6 +26,9 @@ APPLICATION_VERSION = os.environ.get("MECHANICS_VERSION", "1.3.2-beta.1")
 STATIC_PROJECT_SCHEMA = "cms-static-project@1"
 DYNAMICS_PROJECT_SCHEMA = "cms-dynamics-project@1"
 STARTED_AT = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+MANUAL_FILENAME = "computational-mechanics-solver-v1.3.2-manual.pdf"
+MANUAL_DOWNLOAD_PATH = f"/downloads/{MANUAL_FILENAME}"
+MANUAL_FILE = WEB_ROOT / "downloads" / MANUAL_FILENAME
 
 
 def _git_short_commit() -> str:
@@ -126,16 +130,25 @@ class MechanicsWebHandler(BaseHTTPRequestHandler):
     server_version = "MechanicsMVP/1.3.2-beta.1"
 
     def do_GET(self) -> None:
-        if self.path == "/api/version":
+        request_path = urlsplit(self.path).path
+        if request_path == "/api/version":
             self._send_json(runtime_version_payload())
             return
 
-        if self.path in ("", "/"):
+        if request_path == MANUAL_DOWNLOAD_PATH:
+            self._serve_manual()
+            return
+
+        if request_path.startswith("/downloads/"):
+            self.send_error(404, "Not found")
+            return
+
+        if request_path in ("", "/"):
             self._serve_static("index.html")
             return
 
-        if self.path.startswith("/static/"):
-            self._serve_static(self.path.removeprefix("/static/"))
+        if request_path.startswith("/static/"):
+            self._serve_static(request_path.removeprefix("/static/"))
             return
 
         self.send_error(404, "Not found")
@@ -187,6 +200,16 @@ class MechanicsWebHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
+    def _serve_manual(self) -> None:
+        if not MANUAL_FILE.is_file():
+            self.send_error(404, "Manual not found")
+            return
+        self._send_bytes(
+            MANUAL_FILE.read_bytes(),
+            content_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{MANUAL_FILENAME}"'},
+        )
 
     def _send_json(self, payload: dict[str, Any], *, status: int = 200) -> None:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
