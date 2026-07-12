@@ -17,7 +17,7 @@ function check(callback) {
 }
 
 check(() => {
-  assert.match(html, /id="releaseVersion"[^>]*class="[^"]*rainbow-animated[^"]*"[^>]*>v1\.4\.0-beta\.1</);
+  assert.match(html, /id="releaseVersion"[^>]*class="[^"]*rainbow-animated[^"]*"[^>]*>v1\.5\.0-alpha\.1</);
   assert.match(css, /\.rainbow-animated\s*\{[^}]*animation:\s*rainbowFlow/s);
 });
 
