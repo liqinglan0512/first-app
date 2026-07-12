@@ -3,55 +3,97 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Computational Mechanics Solver</title>
+    <title>Computational Mechanics Solver v1.5.0</title>
+    <link rel="icon" href="/static/brand-avatar.png" type="image/png">
     <link rel="stylesheet" href="/static/app.css">
   </head>
-  <body>
+  <body class="dark-theme">
     <section id="welcomeScreen" class="welcome-screen">
+      <button
+        id="announcementButton"
+        class="announcement-trigger"
+        type="button"
+        aria-label="查看 v1.5.0 更新公告"
+        aria-haspopup="dialog"
+        aria-controls="announcementDialog"
+      >
+        <span class="li-atom" aria-hidden="true">
+          <span class="li-nucleus">Li<sup>+</sup></span>
+          <span class="atom-orbit atom-orbit-one"><span class="atom-electron"></span></span>
+          <span class="atom-orbit atom-orbit-two"><span class="atom-electron"></span></span>
+          <span class="atom-orbit atom-orbit-three"><span class="atom-electron"></span></span>
+        </span>
+        <span class="announcement-label">公告</span>
+      </button>
       <div class="welcome-content">
         <h1 class="welcome-title rainbow-animated">
           <span>欢迎使用</span>
           <span>Computational Mechanics Solver</span>
         </h1>
-        <p class="welcome-subtitle studio-credit"><span class="li-ion">Li<sup>+</sup></span>工作室出品</p>
+        <p id="releaseVersion" class="welcome-version rainbow-animated">v1.5.0</p>
+        <p class="welcome-subtitle studio-credit">Leo <span class="li-ion">Li<sup>+</sup></span> Studio出品</p>
         <p class="welcome-contact">
           如有任何错误、bug、请联系：620026600@qq.com 或202402040108@stu.bucea.edu.cn
         </p>
-        <p class="local-profile-note">用户配置仅保存在当前浏览器，不是云端账户；更换设备或清理浏览器数据后不会同步。</p>
+        <p class="local-profile-note">账户由服务器安全保存；密码仅以不可逆哈希形式存储。</p>
+        <p id="legacyProfileNotice" class="migration-notice hidden">
+          检测到旧版本地配置。请注册服务器账户完成迁移；旧密码不会被读取或上传。
+        </p>
 
         <div id="authChoicePanel" class="auth-choice-panel">
-          <button id="showLoginButton" class="auth-choice-button">使用本地配置</button>
-          <button id="showRegisterButton" class="auth-choice-button">创建本地配置</button>
+          <button id="showLoginButton" class="auth-choice-button" type="button">登录</button>
+          <button id="showRegisterButton" class="auth-choice-button" type="button">注册</button>
         </div>
 
         <div id="authPanel" class="auth-panel hidden">
           <section id="loginCard" class="auth-card hidden">
-            <h2>使用本地配置</h2>
+            <h2>登录</h2>
             <label class="auth-field">
               <span>账户名</span>
-              <input id="loginUsername" autocomplete="username">
+              <input id="loginUsername" autocomplete="username" maxlength="32" required>
             </label>
-            <button id="loginSubmit" class="auth-action">进入</button>
+            <label class="auth-field">
+              <span>密码</span>
+              <input id="loginPassword" type="password" autocomplete="current-password" maxlength="128" required>
+            </label>
+            <button id="loginSubmit" class="auth-action" type="button">登录</button>
+            <button id="internalLoginEntry" class="auth-secondary" type="button">内部测试通道</button>
           </section>
 
           <section id="registerCard" class="auth-card hidden">
-            <h2>创建本地配置</h2>
+            <h2>注册</h2>
             <label class="auth-field">
               <span>账户名</span>
-              <input id="registerUsername" autocomplete="username">
+              <input id="registerUsername" autocomplete="username" maxlength="32" required>
+            </label>
+            <label class="auth-field">
+              <span>密码</span>
+              <input id="registerPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" required>
+            </label>
+            <label class="auth-field">
+              <span>确认密码</span>
+              <input id="registerPasswordConfirm" type="password" autocomplete="new-password" minlength="10" maxlength="128" required>
             </label>
             <label class="auth-field">
               <span>昵称</span>
-              <input id="registerNickname">
+              <input id="registerNickname" autocomplete="nickname" maxlength="40" required>
             </label>
             <div class="avatar-upload-row">
               <span id="registerAvatarPreview" class="default-avatar">CM</span>
               <label class="avatar-upload">
                 <span>上传头像</span>
-                <input id="registerAvatar" type="file" accept="image/*">
+                <input id="registerAvatar" type="file" accept="image/png,image/jpeg,image/webp">
               </label>
             </div>
-            <button id="registerSubmit" class="auth-action">创建并进入</button>
+            <label class="auth-agreement">
+              <input id="acceptTerms" type="checkbox">
+              <span>我已阅读并同意<a href="/static/terms.html" target="_blank" rel="noopener">用户协议</a></span>
+            </label>
+            <label class="auth-agreement">
+              <input id="acceptPrivacy" type="checkbox">
+              <span>我已阅读并同意<a href="/static/privacy.html" target="_blank" rel="noopener">隐私说明</a></span>
+            </label>
+            <button id="registerSubmit" class="auth-action" type="button">注册并登录</button>
           </section>
         </div>
 
@@ -76,7 +118,7 @@
         <div class="brand">
           <span class="brand-copy">
             <span class="brand-title rainbow-title">Computational Mechanics Solver</span>
-            <span class="brand-subtitle studio-credit"><span class="li-ion">Li<sup>+</sup></span>工作室出品</span>
+            <span class="brand-subtitle studio-credit">Leo <span class="li-ion">Li<sup>+</sup></span> Studio出品</span>
           </span>
           <div class="module-switch static-module-switch" role="toolbar" aria-label="力学模块切换">
             <button id="staticActiveButton" class="active" type="button">静力学</button>
@@ -93,8 +135,27 @@
         </div>
 
         <div class="user-settings">
+          <a
+            class="manual-download-card"
+            href="/downloads/computational-mechanics-solver-v1.3.2-manual.pdf"
+            download
+            aria-label="下载适用于 v1.3.2 的历史版本用户与技术说明书"
+            title="下载适用于 v1.3.2 的历史版本说明书"
+          >
+            <span class="manual-cube-icon" aria-hidden="true">
+              <span class="cube-edge edge-1"></span><span class="cube-edge edge-2"></span>
+              <span class="cube-edge edge-3"></span><span class="cube-edge edge-4"></span>
+              <span class="cube-edge edge-5"></span><span class="cube-edge edge-6"></span>
+              <span class="cube-edge edge-7"></span><span class="cube-edge edge-8"></span>
+              <span class="cube-edge edge-9"></span>
+            </span>
+            <span class="manual-download-title">用户与技术说明书</span>
+            <small>v1.3.2 · 历史版本</small>
+          </a>
           <span id="mainUserAvatar" class="default-avatar main-avatar">CM</span>
           <span id="mainUserName" class="main-user-name">未登录</span>
+          <span id="mainUserTier" class="user-tier hidden"></span>
+          <button id="benefitsButton" class="benefits-button" type="button">获得更多权益</button>
           <button id="settingsButton" class="settings-button" title="设置">设置</button>
         </div>
 
@@ -120,7 +181,7 @@
           <label class="inline-toggle"><input id="gridToggle" type="checkbox" checked>网格</label>
           <label class="inline-toggle"><input id="snapToggle" type="checkbox" checked>捕捉</label>
           <label class="inline-toggle"><input id="orthogonalToggle" type="checkbox">正交</label>
-          <button id="themeButton" title="切换黑白背景">黑底</button>
+          <button id="themeButton" title="切换黑白背景">白底</button>
         </div>
 
         <div class="action-strip">
@@ -230,7 +291,7 @@
         <div class="brand">
           <span class="brand-copy">
             <span class="brand-title rainbow-title">Computational Mechanics Solver</span>
-            <span class="brand-subtitle studio-credit"><span class="li-ion">Li<sup>+</sup></span>工作室出品</span>
+            <span class="brand-subtitle studio-credit">Leo <span class="li-ion">Li<sup>+</sup></span> Studio出品</span>
           </span>
         </div>
 
@@ -240,8 +301,27 @@
         </div>
 
         <div class="user-settings">
+          <a
+            class="manual-download-card"
+            href="/downloads/computational-mechanics-solver-v1.3.2-manual.pdf"
+            download
+            aria-label="下载适用于 v1.3.2 的历史版本用户与技术说明书"
+            title="下载适用于 v1.3.2 的历史版本说明书"
+          >
+            <span class="manual-cube-icon" aria-hidden="true">
+              <span class="cube-edge edge-1"></span><span class="cube-edge edge-2"></span>
+              <span class="cube-edge edge-3"></span><span class="cube-edge edge-4"></span>
+              <span class="cube-edge edge-5"></span><span class="cube-edge edge-6"></span>
+              <span class="cube-edge edge-7"></span><span class="cube-edge edge-8"></span>
+              <span class="cube-edge edge-9"></span>
+            </span>
+            <span class="manual-download-title">用户与技术说明书</span>
+            <small>v1.3.2 · 历史版本</small>
+          </a>
           <span id="dynamicsUserAvatar" class="default-avatar main-avatar">CM</span>
           <span id="dynamicsUserName" class="main-user-name">未登录</span>
+          <span id="dynamicsUserTier" class="user-tier hidden"></span>
+          <button id="dynamicsBenefitsButton" class="benefits-button" type="button">获得更多权益</button>
           <button id="dynamicsSettingsButton" class="settings-button" title="设置">设置</button>
         </div>
 
@@ -275,8 +355,11 @@
             title="取消场放置"
             aria-label="取消场放置"
           >×</button>
-          <label class="inline-toggle" title="二维刚体转动方程尚未接入">
-            <input id="dynamicsRigidToggle" type="checkbox" disabled>刚体（开发中）
+          <label class="inline-toggle" title="启用平动与转动状态；圆和带半径质点同时参与接触求解">
+            <input id="dynamicsRigidToggle" type="checkbox">刚体 / 接触
+          </label>
+          <label class="inline-toggle" title="在世界坐标 y=0 处添加带摩擦的水平地面">
+            <input id="dynamicsGroundToggle" type="checkbox">地面 y=0
           </label>
           <button id="dynamicsClearButton" type="button">清空</button>
         </div>
@@ -306,6 +389,7 @@
               <span>对象 <strong id="dynamicsObjectCount">0</strong></span>
               <span>场 <strong id="dynamicsFieldCount">0</strong></span>
               <span>外力 <strong id="dynamicsForceCount">0</strong></span>
+              <span>轨道 <strong id="dynamicsTrackCount">0</strong></span>
             </div>
             <h3>对象</h3>
             <div id="dynamicsObjectList" class="dynamics-scene-list"></div>
@@ -313,6 +397,8 @@
             <div id="dynamicsFieldList" class="dynamics-scene-list"></div>
             <h3>外加作用力</h3>
             <div id="dynamicsForceList" class="dynamics-scene-list"></div>
+            <h3>轨道约束</h3>
+            <div id="dynamicsTrackList" class="dynamics-scene-list"></div>
           </section>
 
           <section class="panel">
@@ -353,7 +439,7 @@
               <span>任意形状函数（开发中）</span>
               <input id="dynamicsShapeEquation" value="y=0.2*sin(2*pi*x)" disabled>
             </label>
-            <p class="capability-note">当前求解模型：二维多对象独立质点动力学。密度和材料 E 仅随工程保存，不参与平动积分。</p>
+            <p class="capability-note">普通对象保持独立质点积分；启用刚体、接触、变化场或打开 v2 轨道工程时，自动切换同步二维物理世界。密度和材料 E 仅随工程保存。</p>
           </section>
 
           <section class="panel">
@@ -380,6 +466,16 @@
             </div>
             <div class="field-row two">
               <label class="wide-field">
+                <span>初始角度 θ0（rad）</span>
+                <input id="dynamicsTheta0" type="number" value="0" step="0.01">
+              </label>
+              <label class="wide-field">
+                <span>初始角速度 ω0（rad/s）</span>
+                <input id="dynamicsOmega0" type="number" value="0" step="0.01">
+              </label>
+            </div>
+            <div class="field-row two">
+              <label class="wide-field">
                 <span>总时长</span>
                 <input id="dynamicsDuration" value="3 s">
               </label>
@@ -398,13 +494,69 @@
       </main>
     </div>
 
+    <dialog id="announcementDialog" class="modal announcement-modal" aria-labelledby="announcementTitle">
+      <form method="dialog">
+        <header class="modal-header">
+          <div>
+            <p class="announcement-kicker">Leo Li<sup>+</sup> Studio Release Notes</p>
+            <h2 id="announcementTitle">Computational Mechanics Solver v1.5.0 更新公告</h2>
+          </div>
+          <button id="announcementCloseButton" value="close" class="icon-button" aria-label="关闭更新公告">×</button>
+        </header>
+        <div class="announcement-body">
+          <section>
+            <h3>同步二维动力学世界</h3>
+            <p>本次 Alpha 更新加入真实平动与转动状态，并将需要接触求解的对象放入同一二维物理世界。</p>
+            <ul>
+              <li>真实计算角度、角速度、角加速度、质心惯量和力矩。</li>
+              <li>支持质心、局部偏移和世界坐标作用点；偏心力与冲量同时改变平动和转动。</li>
+              <li>支持圆—圆、圆—地面接触，以及恢复、静/动摩擦、阻尼、多接触迭代和穿透修正。</li>
+              <li>自适应子步会把强外部加速度纳入防穿透估计；超过计算上限时安全停止。</li>
+            </ul>
+          </section>
+          <section>
+            <h3>轨道、滚动与安全变化场</h3>
+            <ul>
+              <li>支持直线、斜坡、折线、圆弧和三次 Bezier 平滑轨道。</li>
+              <li>支持质点滑动、实心圆盘无滑动滚动、滑动转滚动、端点停止/反弹/释放和离轨状态。</li>
+              <li>重力、电场和二维垂直磁场支持常量、时间、空间和时间—空间表达式。</li>
+              <li>表达式使用受控 AST 与白名单求值，不执行工程文件中的 JavaScript 或 Python 代码。</li>
+            </ul>
+          </section>
+          <section>
+            <h3>工程、界面与账户权益</h3>
+            <ul>
+              <li>动力学工程升级到 <code>cms-dynamics-project@2</code>，打开 v1 工程时自动迁移，旧力与冲量默认作用于质心。</li>
+              <li>保存、打开和撤销会保留角状态、接触材料、作用点、地面、轨道、约束和变化场。</li>
+              <li>报告新增角运动、接触和轨道信息，并提供碰撞、轨道滚动、变化场三个 v1.5 示例。</li>
+              <li>账户与 Free、Plus、Pro、Internal Tester、Admin 权益改由服务器管理；Internal Tester 不继承 Admin。</li>
+              <li>Plus/Pro 暂不提供购买，PINN 仍为等待名单且不会解锁求解器。</li>
+            </ul>
+          </section>
+          <section>
+            <h3>验证与发布状态</h3>
+            <p>Python、JavaScript、数据库、HTTP、安全和物理验证均已通过发布前回归。当前仓库已统一为 v1.5.0，但本次清理不会自动推送 GitHub，也不会连接或更新云端正式服务。</p>
+            <p>v1.5.0 新功能请参考本更新公告和 <code>RELEASE_NOTES_v1.5.0.md</code>。《Computational Mechanics Solver v1.3.2 用户与技术说明书》仅作为历史版本说明书继续提供下载，不完整覆盖云账户、权益、碰撞、刚体转动、约束轨道和变化场。</p>
+          </section>
+          <aside class="announcement-limitations" aria-label="当前限制">
+            <strong>当前限制</strong>
+            <p>轨道对象尚未与自由/接触对象进入同一碰撞世界；离轨或开放端点停在事件状态，不继续剩余时长的自由飞行。碰撞仅支持圆和显式正碰撞半径的质点；变化场未声明势函数时不提供势能或机械能结论。Alpha 结果不应用于未经独立复核的工程安全决策。</p>
+          </aside>
+        </div>
+        <footer class="modal-actions announcement-actions">
+          <a class="announcement-manual-link" href="/downloads/computational-mechanics-solver-v1.3.2-manual.pdf" download>下载 v1.3.2 历史说明书</a>
+          <button value="close" class="primary">我已了解</button>
+        </footer>
+      </form>
+    </dialog>
+
     <dialog id="dynamicsSolveDialog" class="modal solve-modal dynamics-solve-modal">
       <form method="dialog">
         <header class="modal-header">
           <h2>选择动力学求解内容</h2>
           <button value="cancel" class="icon-button" title="关闭">×</button>
         </header>
-        <p class="modal-copy">当前按二维多对象独立质点模型求解，各对象之间暂不发生碰撞、约束或相互作用。</p>
+        <p class="modal-copy">求解器按工程模型自动选择独立质点或同步刚体世界，并支持圆形接触、摩擦、轨道约束、滚动和安全变化场。</p>
         <div class="solve-grid dynamics-option-grid">
           <label><input name="dynamicsOption" type="checkbox" value="kinetic" checked>动能</label>
           <label><input name="dynamicsOption" type="checkbox" value="potential" checked>势能</label>
@@ -414,10 +566,10 @@
           <label><input name="dynamicsOption" type="checkbox" value="lorentz_force">洛伦兹力</label>
           <label><input name="dynamicsOption" type="checkbox" value="velocity" checked>速度</label>
           <label><input name="dynamicsOption" type="checkbox" value="acceleration" checked>加速度</label>
-          <label title="刚体转动方程尚未接入"><input name="dynamicsOption" type="checkbox" value="angular_velocity" disabled>角速度（开发中）</label>
-          <label title="刚体转动方程尚未接入"><input name="dynamicsOption" type="checkbox" value="angular_acceleration" disabled>角加速度（开发中）</label>
-          <label title="外力作用点和刚体转动方程尚未接入"><input name="dynamicsOption" type="checkbox" value="torque" disabled>力矩（开发中）</label>
-          <label><input name="dynamicsOption" type="checkbox" value="inertia">几何质心转动惯量估算</label>
+          <label><input name="dynamicsOption" type="checkbox" value="angular_velocity">角速度</label>
+          <label><input name="dynamicsOption" type="checkbox" value="angular_acceleration">角加速度</label>
+          <label><input name="dynamicsOption" type="checkbox" value="torque">力矩</label>
+          <label><input name="dynamicsOption" type="checkbox" value="inertia">质心转动惯量</label>
           <label><input name="dynamicsOption" type="checkbox" value="displacement" checked>位移</label>
           <label><input name="dynamicsOption" type="checkbox" value="trajectory">位移轨迹</label>
           <label><input name="dynamicsOption" type="checkbox" value="trajectory_equation">位移轨迹方程</label>
@@ -445,6 +597,27 @@
             <option value="magnetic">磁场</option>
           </select>
         </label>
+
+        <label class="wide-field">
+          <span>变化模式</span>
+          <select id="dynamicsFieldMode">
+            <option value="constant">常量</option>
+            <option value="time">时间 t</option>
+            <option value="space">空间 x, y</option>
+            <option value="time-space">时间－空间 t, x, y, vx, vy</option>
+          </select>
+        </label>
+
+        <div id="dynamicsFieldExpressionFields" class="field-row two hidden">
+          <label class="wide-field">
+            <span id="dynamicsFieldExpressionXLabel">x 分量表达式</span>
+            <input id="dynamicsFieldExpressionX" value="0">
+          </label>
+          <label id="dynamicsFieldExpressionYField" class="wide-field">
+            <span>y 分量表达式</span>
+            <input id="dynamicsFieldExpressionY" value="-9.81">
+          </label>
+        </div>
 
         <div class="field-row two">
           <label class="wide-field">
@@ -571,6 +744,24 @@
           <span>持续时间（0 表示至求解结束）</span>
           <input id="dynamicsForceDuration" value="0 s">
         </label>
+        <div class="field-row three">
+          <label class="wide-field">
+            <span>作用点</span>
+            <select id="dynamicsForcePointFrame">
+              <option value="center">质心</option>
+              <option value="local">物体局部坐标</option>
+              <option value="world">世界坐标</option>
+            </select>
+          </label>
+          <label class="wide-field">
+            <span>作用点 x（m）</span>
+            <input id="dynamicsForcePointX" type="number" value="0" step="0.01" disabled>
+          </label>
+          <label class="wide-field">
+            <span>作用点 y（m）</span>
+            <input id="dynamicsForcePointY" type="number" value="0" step="0.01" disabled>
+          </label>
+        </div>
         <p id="dynamicsForceMessage" class="modal-copy dynamics-field-message"></p>
         <footer class="modal-actions">
           <button type="submit" value="cancel">取消</button>
@@ -802,7 +993,7 @@
           <div class="field-row">
             <label class="wide-field">
               <span>新昵称</span>
-              <input id="settingsNickname">
+              <input id="settingsNickname" autocomplete="nickname" maxlength="40">
             </label>
             <button id="saveNicknameButton" type="button">保存</button>
           </div>
@@ -813,14 +1004,78 @@
             <span id="settingsAvatarPreview" class="default-avatar settings-avatar-preview">CM</span>
             <label class="avatar-upload">
               <span>上传头像</span>
-              <input id="settingsAvatar" type="file" accept="image/*">
+              <input id="settingsAvatar" type="file" accept="image/png,image/jpeg,image/webp">
             </label>
           </div>
           <button id="saveAvatarButton" type="button">保存头像</button>
         </div>
+        <div class="settings-section">
+          <h3>修改密码</h3>
+          <label class="wide-field">
+            <span>原密码</span>
+            <input id="settingsCurrentPassword" type="password" autocomplete="current-password" maxlength="128">
+          </label>
+          <div class="field-row">
+            <label class="wide-field">
+              <span>新密码</span>
+              <input id="settingsNewPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128">
+            </label>
+            <label class="wide-field">
+              <span>确认新密码</span>
+              <input id="settingsNewPasswordConfirm" type="password" autocomplete="new-password" minlength="10" maxlength="128">
+            </label>
+          </div>
+          <button id="savePasswordButton" type="button">更新密码</button>
+        </div>
         <p id="settingsMessage" class="settings-message" role="status"></p>
         <footer class="modal-actions">
           <button id="logoutButton" type="button" class="danger-button">退出登录</button>
+          <button value="cancel" class="primary">完成</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="entitlementsDialog" class="modal entitlements-modal" aria-labelledby="entitlementsTitle">
+      <form method="dialog">
+        <header class="modal-header">
+          <div>
+            <p class="modal-kicker">ACCOUNT &amp; ACCESS</p>
+            <h2 id="entitlementsTitle">账户与权益</h2>
+          </div>
+          <button value="cancel" class="icon-button" title="关闭权益面板">×</button>
+        </header>
+        <div class="entitlements-content">
+          <section class="entitlement-current">
+            <span>当前身份</span>
+            <strong id="entitlementCurrentLabel">正在读取……</strong>
+            <p id="entitlementExpiry" class="entitlement-muted"></p>
+          </section>
+          <section>
+            <h3>套餐权益</h3>
+            <div id="entitlementPlanList" class="entitlement-plan-list" aria-live="polite"></div>
+          </section>
+          <section id="internalAccessSection" class="entitlement-action-section">
+            <h3>Internal Tester</h3>
+            <p>内部测试身份不包含管理员权限。凭据只提交到服务器，本页不会保存。</p>
+            <div class="entitlement-action-row">
+              <label class="wide-field">
+                <span>内部测试凭据</span>
+                <input id="internalInviteCode" type="password" autocomplete="off" maxlength="256">
+              </label>
+              <button id="redeemInternalButton" type="button">验证并启用</button>
+            </div>
+          </section>
+          <section class="entitlement-action-section">
+            <h3>PINN 求解器</h3>
+            <p>仍在开发与验证中。加入等待名单不会开启 PINN 求解能力。</p>
+            <div class="entitlement-action-row">
+              <span id="pinnWaitlistStatus" class="entitlement-muted">尚未加入等待名单</span>
+              <button id="joinPinnWaitlistButton" type="button">加入等待名单</button>
+            </div>
+          </section>
+        </div>
+        <p id="entitlementsMessage" class="settings-message" role="status"></p>
+        <footer class="modal-actions">
           <button value="cancel" class="primary">完成</button>
         </footer>
       </form>
@@ -863,7 +1118,17 @@
     <script src="/static/project-adapter.js"></script>
     <script src="/static/dynamics-field-geometry.js"></script>
     <script src="/static/dynamics-field-placement.js"></script>
+    <script src="/static/dynamics-expression.js"></script>
+    <script src="/static/dynamics-fields.js"></script>
+    <script src="/static/dynamics-rigid-body.js"></script>
+    <script src="/static/dynamics-contact.js"></script>
+    <script src="/static/dynamics-tracks.js"></script>
     <script src="/static/dynamics-core.js"></script>
+    <script src="/static/dynamics-world.js"></script>
+    <script src="/static/dynamics-controller.js"></script>
+    <script src="/static/dynamics-renderer.js"></script>
+    <script src="/static/dynamics-report.js"></script>
+    <script src="/static/auth-client.js"></script>
     <script src="/static/app.js"></script>
   </body>
 </html>

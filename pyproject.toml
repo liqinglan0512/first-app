@@ -1,9 +1,16 @@
 [project]
 name = "mechanics-mvp"
-version = "0.1.0"
+dynamic = ["version"]
 description = "MVP backend solver for 2D frame mechanics projects."
 requires-python = ">=3.10"
-dependencies = ["numpy>=1.24"]
+dependencies = [
+    "numpy>=1.24",
+    "reportlab>=4.0",
+    "pypdf>=5.0",
+    "argon2-cffi>=23.1,<26",
+    "Pillow>=10.0",
+    "psycopg[binary]>=3.2,<4",
+]
 
 [project.scripts]
 mechanics-mvp = "mechanics_mvp.cli:main"
@@ -15,3 +22,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+mechanics_mvp = ["migrations/*.sql"]
+
+[tool.setuptools.dynamic]
+version = {attr = "mechanics_mvp.version.__version__"}

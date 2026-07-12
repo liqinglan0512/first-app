@@ -12,6 +12,7 @@ from .models import (
 )
 from .solver import Frame2DSolver, SolverError
 from .engine import available_solver_backends, solve_with_backend
+from .version import __version__
 
 __all__ = [
     "AnalysisResult",
@@ -26,4 +27,5 @@ __all__ = [
     "SolverError",
     "available_solver_backends",
     "solve_with_backend",
+    "__version__",
 ]

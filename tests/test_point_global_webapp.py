@@ -125,11 +125,11 @@ class PointGlobalWebAppTests(unittest.TestCase):
 
         self.assertEqual(status, 200)
         self.assertEqual(payload["application"], "computational-mechanics-solver")
-        self.assertEqual(payload["version"], "1.3.2-beta.1")
+        self.assertEqual(payload["version"], "1.5.0")
         self.assertIsInstance(payload["git_dirty"], bool)
         self.assertRegex(payload["started_at"], r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
         self.assertEqual(payload["schema_static"], "cms-static-project@1")
-        self.assertEqual(payload["schema_dynamics"], "cms-dynamics-project@1")
+        self.assertEqual(payload["schema_dynamics"], "cms-dynamics-project@2")
         self.assertTrue(payload["python_version"])
         self.assertTrue(payload["git_commit"])
         self.assertNotIn(str(Path.home()), json.dumps(payload))

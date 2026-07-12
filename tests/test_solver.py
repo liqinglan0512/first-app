@@ -1,7 +1,10 @@
 import math
 import sys
 import unittest
+from io import BytesIO
 from pathlib import Path
+
+from pypdf import PdfReader
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -131,10 +134,14 @@ class SolverTests(unittest.TestCase):
         result = Frame2DSolver().solve(project)
 
         report = build_report_pdf(project, result)
+        reader = PdfReader(BytesIO(report))
+        extracted = "\n".join(page.extract_text() or "" for page in reader.pages)
 
-        self.assertTrue(report.startswith(b"%PDF-1.4"))
-        self.assertIn(b"/STSong-Light", report)
-        self.assertIn("计算力学求解计算书".encode("utf-16-be").hex().upper().encode("ascii"), report)
+        self.assertTrue(report.startswith(b"%PDF-"))
+        self.assertGreater(len(reader.pages), 0)
+        self.assertIn("计算力学求解计算书", extracted)
+        self.assertIn("计算结论", extracted)
+        self.assertNotIn("�", extracted)
 
     def test_unstable_model_raises_solver_error(self):
         project = Project(

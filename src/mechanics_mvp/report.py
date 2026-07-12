@@ -6,11 +6,25 @@ import base64
 import binascii
 import math
 import re
-import textwrap
 from datetime import datetime
-from typing import Any, Iterable
+from io import BytesIO
+from pathlib import Path
+from typing import Any
+from xml.sax.saxutils import escape
 
-from .models import AnalysisResult, Project
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import mm
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import Image as ReportImage
+from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer
+
+from .models import AnalysisResult, ElementLoad, Project
 
 
 OPTION_LABELS = {
@@ -42,6 +56,30 @@ DIAGNOSTIC_MESSAGES = {
     "roughly_indeterminate": "静定指数为正，拓扑估算可能为超静定结构。",
 }
 
+REPORT_SECTION_HEADINGS = {
+    "求解结果",
+    "模型概况",
+    "模型输入",
+    "模型诊断",
+    "节点位移与转角",
+    "支座反力",
+    "杆端内力",
+    "内力图极值",
+    "应力与应变",
+    "危险截面",
+    "柔度",
+    "控制方程与符号",
+    "计算推导过程",
+    "计算结论",
+    "对象定义",
+    "场定义",
+    "外力定义",
+    "数值积分过程",
+    "适用范围与限制",
+}
+
+_REPORT_FONT_NAMES: tuple[str, str] | None = None
+
 
 def build_report_text(project: Project, result: AnalysisResult, *, options: list[str] | None = None) -> str:
     """Build a concise engineering report without exposing raw JSON."""
@@ -57,6 +95,7 @@ def build_report_text(project: Project, result: AnalysisResult, *, options: list
         "计算力学求解计算书",
         f"生成时间：{datetime.now().astimezone().strftime('%Y-%m-%d %H:%M:%S %z')}",
         f"工程名称：{project_name}",
+        "求解模块：二维线弹性梁柱/桁架矩阵位移法",
         "",
         "求解结果",
         f"求解范围：{scope}",
@@ -70,6 +109,8 @@ def build_report_text(project: Project, result: AnalysisResult, *, options: list
         f"- 杆件荷载数：{len(project.element_loads)}",
         "",
     ]
+
+    _append_static_model_inputs(lines, project)
 
     _append_diagnostics(lines, result.summary.get("diagnostics"))
 
@@ -161,6 +202,12 @@ def build_report_text(project: Project, result: AnalysisResult, *, options: list
 
     lines.extend(
         [
+            "控制方程与符号",
+            "- 总体平衡方程：[K]{u}={P}",
+            "- 单元坐标变换：[k_e]=[T]^T[k'_e][T]",
+            "- 支座反力：{R}=[K]{u}-{P}",
+            "- 杆端内力：{f'_e}=[k'_e]{u'_e}-{p'_e}",
+            "",
             "计算推导过程",
             "1. 将界面输入统一换算到 SI 单位：力 N、长度 m、弹性模量 Pa、截面面积 m²、惯性矩 m⁴。",
             "2. 普通梁柱建立二维梁柱单元局部刚度矩阵；桁架杆只保留轴向刚度；端部铰接通过静力凝聚释放弯矩自由度。",
@@ -172,6 +219,7 @@ def build_report_text(project: Project, result: AnalysisResult, *, options: list
     )
     if enabled("stress") or enabled("strain") or enabled("stress_strain"):
         lines.append("7. 组合正应力按 σ=N/A+M·c/I 估算，应变按 ε=σ/E 计算；当前 c 采用等效截面值 sqrt(A)/2。")
+    _append_static_conclusion(lines, result)
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -191,56 +239,337 @@ def build_text_report_pdf(
     images: dict[str, Any] | None = None,
     title: str = "计算力学求解计算书",
 ) -> bytes:
-    """Build a Unicode Chinese PDF from already formatted report text."""
+    """Build a readable Chinese PDF with structured sections and optional figures."""
 
-    source_lines = _wrap_report_lines(text.splitlines())
-    pages = [source_lines[index : index + 46] for index in range(0, len(source_lines), 46)] or [[]]
-    ascii_widths = " ".join(str(width) for width in _ascii_cid_widths())
-    objects: dict[int, bytes] = {
-        1: b"<< /Type /Catalog /Pages 2 0 R >>",
-        3: b"<< /Type /Font /Subtype /Type0 /BaseFont /STSong-Light /Encoding /UniGB-UCS2-H /DescendantFonts [4 0 R] >>",
-        4: (
-            "<< /Type /Font /Subtype /CIDFontType0 /BaseFont /STSong-Light "
-            "/CIDSystemInfo << /Registry (Adobe) /Ordering (GB1) /Supplement 4 >> "
-            f"/DW 1000 /W [1 [{ascii_widths}]] >>"
-        ).encode("ascii"),
+    regular_font, bold_font = _register_report_fonts()
+    styles = _report_styles(regular_font, bold_font)
+    buffer = BytesIO()
+    document = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        leftMargin=20 * mm,
+        rightMargin=20 * mm,
+        topMargin=20 * mm,
+        bottomMargin=18 * mm,
+        title=title,
+        author="Li+ Studio",
+        subject="Computational Mechanics Solver calculation report",
+        pageCompression=1,
+    )
+    story = _report_story(text, styles)
+    for image_title, data in _report_images(images):
+        story.extend([PageBreak(), Paragraph(escape(image_title), styles["heading"]), Spacer(1, 4 * mm)])
+        reader = ImageReader(BytesIO(data))
+        width, height = reader.getSize()
+        scale = min((A4[0] - 40 * mm) / width, (A4[1] - 62 * mm) / height)
+        story.append(ReportImage(BytesIO(data), width=width * scale, height=height * scale))
+        story.append(Spacer(1, 3 * mm))
+        story.append(Paragraph("图示为求解时的画布视图，仅用于结果说明。", styles["caption"]))
+
+    def draw_page(canvas: Any, doc: Any) -> None:
+        canvas.saveState()
+        canvas.setTitle(title)
+        canvas.setAuthor("Li+ Studio")
+        canvas.setFont(regular_font, 8)
+        canvas.setFillColor(colors.HexColor("#5B6472"))
+        canvas.drawString(20 * mm, 10 * mm, "Computational Mechanics Solver")
+        canvas.drawRightString(A4[0] - 20 * mm, 10 * mm, f"第 {doc.page} 页")
+        canvas.restoreState()
+
+    document.build(story, onFirstPage=draw_page, onLaterPages=draw_page)
+    return buffer.getvalue()
+
+
+def _append_static_model_inputs(lines: list[str], project: Project) -> None:
+    lines.append("模型输入")
+    for material in project.materials:
+        lines.append(
+            f"- 材料 {material.id}: E={_fmt(material.elastic_modulus / 1e9)} GPa，"
+            f"泊松比={_fmt(material.poisson_ratio)}"
+        )
+    for section in project.sections:
+        lines.append(
+            f"- 截面 {section.id}: A={_fmt(section.area * 1e6)} mm²，"
+            f"I={_fmt(section.inertia * 1e12)} mm⁴"
+        )
+    for node in project.nodes:
+        restrained = [name for name, active in zip(("ux", "uy", "rz"), node.restraints) if active]
+        lines.append(
+            f"- 节点 {node.id}: x={_fmt(node.x)} m，y={_fmt(node.y)} m，"
+            f"约束={','.join(restrained) if restrained else '无'}"
+        )
+    for element in project.elements:
+        releases = []
+        if element.moment_release_i:
+            releases.append("i 端弯矩释放")
+        if element.moment_release_j:
+            releases.append("j 端弯矩释放")
+        lines.append(
+            f"- 杆件 {element.id}: {element.node_i}->{element.node_j}，类型={element.type}，"
+            f"材料={element.material}，截面={element.section}，端部释放={'、'.join(releases) if releases else '无'}"
+        )
+    for load in project.nodal_loads:
+        lines.append(
+            f"- 节点荷载 {load.node}: Fx={_fmt(load.fx / 1000)} kN，"
+            f"Fy={_fmt(load.fy / 1000)} kN，Mz={_fmt(load.mz / 1000)} kN·m"
+        )
+    for load in project.element_loads:
+        lines.append(f"- 杆件荷载 {load.element}: {_element_load_description(load)}")
+    lines.append("")
+
+
+def _element_load_description(load: ElementLoad) -> str:
+    if load.kind == "point_global":
+        return (
+            f"类型=杆中集中作用，位置比例={_fmt(load.ratio)}，"
+            f"Fx={_fmt(load.fx / 1000)} kN，Fy={_fmt(load.fy / 1000)} kN，"
+            f"Mz={_fmt(load.mz / 1000)} kN·m"
+        )
+    if load.kind == "uniform_local":
+        return (
+            f"类型=局部坐标均布荷载，qx={_fmt(load.qx / 1000)} kN/m，"
+            f"qy={_fmt(load.qy / 1000)} kN/m"
+        )
+    if load.kind == "linear_local":
+        qx_i = load.qx if load.qx_i is None else load.qx_i
+        qx_j = qx_i if load.qx_j is None else load.qx_j
+        qy_i = load.qy if load.qy_i is None else load.qy_i
+        qy_j = qy_i if load.qy_j is None else load.qy_j
+        return (
+            f"类型=局部坐标线性分布荷载，qx(i/j)={_fmt(qx_i / 1000)}/{_fmt(qx_j / 1000)} kN/m，"
+            f"qy(i/j)={_fmt(qy_i / 1000)}/{_fmt(qy_j / 1000)} kN/m"
+        )
+    if load.kind == "polynomial_local":
+        qx = ", ".join(_fmt(value / 1000) for value in load.qx_coefficients) or "0"
+        qy = ", ".join(_fmt(value / 1000) for value in load.qy_coefficients) or "0"
+        return f"类型=局部坐标多项式分布荷载，qx 系数=[{qx}] kN/m，qy 系数=[{qy}] kN/m"
+    return f"类型={load.kind}"
+
+
+def _append_static_conclusion(lines: list[str], result: AnalysisResult) -> None:
+    displacements: list[tuple[str, float, dict[str, float]]] = []
+    for node_id, values in result.displacements.items():
+        magnitude = math.hypot(float(values.get("ux", 0.0)), float(values.get("uy", 0.0)))
+        displacements.append((node_id, magnitude, values))
+    diagram_points: list[tuple[str, dict[str, float]]] = []
+    for element_id, rows in result.element_diagrams.items():
+        diagram_points.extend((element_id, row) for row in rows)
+
+    lines.extend(["", "计算结论"])
+    if displacements:
+        node_id, magnitude, values = max(displacements, key=lambda item: item[1])
+        lines.append(
+            f"- 最大节点平动位移出现在 {node_id}: |u|={_fmt(magnitude * 1000)} mm，"
+            f"ux={_fmt(values.get('ux', 0.0) * 1000)} mm，uy={_fmt(values.get('uy', 0.0) * 1000)} mm。"
+        )
+    if diagram_points:
+        moment_element, moment_row = max(diagram_points, key=lambda item: abs(float(item[1].get("m", 0.0))))
+        shear_element, shear_row = max(diagram_points, key=lambda item: abs(float(item[1].get("v", 0.0))))
+        axial_element, axial_row = max(diagram_points, key=lambda item: abs(float(item[1].get("n", 0.0))))
+        lines.append(
+            f"- 最大绝对弯矩：|M|={_fmt(abs(float(moment_row.get('m', 0.0))) / 1000)} kN·m，"
+            f"位于 {moment_element} 的 x={_fmt(moment_row.get('x', 0.0))} m。"
+        )
+        lines.append(
+            f"- 最大绝对剪力：|V|={_fmt(abs(float(shear_row.get('v', 0.0))) / 1000)} kN；"
+            f"最大绝对轴力：|N|={_fmt(abs(float(axial_row.get('n', 0.0))) / 1000)} kN。"
+        )
+    lines.append("- 以上结论基于当前二维线弹性、小变形模型；工程使用前应以解析解或成熟软件独立复核。")
+
+
+def _register_report_fonts() -> tuple[str, str]:
+    global _REPORT_FONT_NAMES
+    if _REPORT_FONT_NAMES is not None:
+        return _REPORT_FONT_NAMES
+
+    candidates = [
+        (Path("C:/Windows/Fonts/Deng.ttf"), Path("C:/Windows/Fonts/Dengb.ttf")),
+        (Path("C:/Windows/Fonts/msyh.ttc"), Path("C:/Windows/Fonts/msyhbd.ttc")),
+        (Path("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"), None),
+        (Path("/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"), None),
+        (Path("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"), None),
+    ]
+    for regular_path, bold_path in candidates:
+        if not regular_path.is_file():
+            continue
+        try:
+            pdfmetrics.registerFont(TTFont("CMSReportCJK", str(regular_path)))
+            bold_name = "CMSReportCJK"
+            if bold_path is not None and bold_path.is_file():
+                pdfmetrics.registerFont(TTFont("CMSReportCJKBold", str(bold_path)))
+                bold_name = "CMSReportCJKBold"
+            pdfmetrics.registerFontFamily(
+                "CMSReportCJK",
+                normal="CMSReportCJK",
+                bold=bold_name,
+                italic="CMSReportCJK",
+                boldItalic=bold_name,
+            )
+            _REPORT_FONT_NAMES = ("CMSReportCJK", bold_name)
+            return _REPORT_FONT_NAMES
+        except Exception:  # noqa: BLE001 - continue through known system font candidates.
+            continue
+
+    if "STSong-Light" not in pdfmetrics.getRegisteredFontNames():
+        pdfmetrics.registerFont(UnicodeCIDFont("STSong-Light"))
+    _REPORT_FONT_NAMES = ("STSong-Light", "STSong-Light")
+    return _REPORT_FONT_NAMES
+
+
+def _report_styles(regular_font: str, bold_font: str) -> dict[str, ParagraphStyle]:
+    sample = getSampleStyleSheet()
+    return {
+        "title": ParagraphStyle(
+            "ReportTitle",
+            parent=sample["Title"],
+            fontName=bold_font,
+            fontSize=20,
+            leading=28,
+            alignment=TA_CENTER,
+            textColor=colors.HexColor("#163A4A"),
+            spaceAfter=10 * mm,
+            wordWrap="CJK",
+        ),
+        "heading": ParagraphStyle(
+            "ReportHeading",
+            parent=sample["Heading1"],
+            fontName=bold_font,
+            fontSize=14,
+            leading=21,
+            textColor=colors.HexColor("#0D7D79"),
+            spaceBefore=5 * mm,
+            spaceAfter=2.5 * mm,
+            keepWithNext=True,
+            wordWrap="CJK",
+        ),
+        "subheading": ParagraphStyle(
+            "ReportSubheading",
+            parent=sample["Heading2"],
+            fontName=bold_font,
+            fontSize=11.5,
+            leading=17,
+            textColor=colors.HexColor("#263B47"),
+            spaceBefore=3 * mm,
+            spaceAfter=1.5 * mm,
+            keepWithNext=True,
+            wordWrap="CJK",
+        ),
+        "body": ParagraphStyle(
+            "ReportBody",
+            parent=sample["BodyText"],
+            fontName=regular_font,
+            fontSize=9.5,
+            leading=15,
+            textColor=colors.HexColor("#202A31"),
+            spaceAfter=1.4 * mm,
+            wordWrap="CJK",
+        ),
+        "bullet": ParagraphStyle(
+            "ReportBullet",
+            parent=sample["BodyText"],
+            fontName=regular_font,
+            fontSize=9.3,
+            leading=14.5,
+            leftIndent=5 * mm,
+            firstLineIndent=-3 * mm,
+            bulletIndent=1.5 * mm,
+            textColor=colors.HexColor("#202A31"),
+            spaceAfter=1.2 * mm,
+            wordWrap="CJK",
+        ),
+        "step": ParagraphStyle(
+            "ReportStep",
+            parent=sample["BodyText"],
+            fontName=regular_font,
+            fontSize=9.3,
+            leading=14.5,
+            leftIndent=5 * mm,
+            firstLineIndent=-5 * mm,
+            textColor=colors.HexColor("#202A31"),
+            spaceAfter=1.4 * mm,
+            wordWrap="CJK",
+        ),
+        "formula": ParagraphStyle(
+            "ReportFormula",
+            parent=sample["Code"],
+            fontName=regular_font,
+            fontSize=9.2,
+            leading=14,
+            leftIndent=5 * mm,
+            rightIndent=5 * mm,
+            borderColor=colors.HexColor("#B8D9D6"),
+            borderWidth=0.5,
+            borderPadding=5,
+            backColor=colors.HexColor("#F2F8F7"),
+            textColor=colors.HexColor("#17343F"),
+            spaceBefore=1.5 * mm,
+            spaceAfter=2 * mm,
+            wordWrap="CJK",
+        ),
+        "caption": ParagraphStyle(
+            "ReportCaption",
+            parent=sample["BodyText"],
+            fontName=regular_font,
+            fontSize=8.5,
+            leading=13,
+            alignment=TA_CENTER,
+            textColor=colors.HexColor("#66727A"),
+            wordWrap="CJK",
+        ),
     }
-    page_ids: list[int] = []
-    for index, page_lines in enumerate(pages):
-        page_id = 5 + index * 2
-        content_id = page_id + 1
-        page_ids.append(page_id)
-        content = _page_content(page_lines)
-        objects[content_id] = _stream_object(content)
-        objects[page_id] = (
-            f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] "
-            f"/Resources << /Font << /F1 3 0 R >> >> /Contents {content_id} 0 R >>"
-        ).encode("ascii")
 
-    next_object_id = max(objects) + 1
-    for image_index, (image_title, data) in enumerate(_report_images(images), start=1):
-        width, height = _jpeg_size(data)
-        image_name = f"Im{image_index}"
-        image_id = next_object_id
-        content_id = next_object_id + 1
-        page_id = next_object_id + 2
-        next_object_id += 3
-        image_object = (
-            f"<< /Type /XObject /Subtype /Image /Width {width} /Height {height} "
-            f"/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length {len(data)} >>\n"
-        ).encode("ascii")
-        objects[image_id] = image_object + b"stream\n" + data + b"\nendstream"
-        content = _image_page_content(image_title or title, image_name, width, height)
-        objects[content_id] = _stream_object(content)
-        objects[page_id] = (
-            f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] "
-            f"/Resources << /Font << /F1 3 0 R >> /XObject << /{image_name} {image_id} 0 R >> >> "
-            f"/Contents {content_id} 0 R >>"
-        ).encode("ascii")
-        page_ids.append(page_id)
-    kids = " ".join(f"{page_id} 0 R" for page_id in page_ids)
-    objects[2] = f"<< /Type /Pages /Kids [{kids}] /Count {len(page_ids)} >>".encode("ascii")
-    return _write_pdf(objects)
+
+def _report_story(text: str, styles: dict[str, ParagraphStyle]) -> list[Any]:
+    story: list[Any] = []
+    first_content = True
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            story.append(Spacer(1, 2.2 * mm))
+            continue
+        safe_line = escape(line)
+        if first_content:
+            story.append(Paragraph(safe_line, styles["title"]))
+            first_content = False
+        elif line in REPORT_SECTION_HEADINGS:
+            story.append(Paragraph(safe_line, styles["heading"]))
+        elif line.endswith("：") and len(line) <= 40 and "=" not in line:
+            story.append(Paragraph(safe_line, styles["subheading"]))
+        elif line.startswith("- "):
+            content = escape(line[2:])
+            style = styles["formula"] if _looks_like_formula(line) else styles["bullet"]
+            story.append(Paragraph(content, style, bulletText=None if style is styles["formula"] else "•"))
+        elif re.match(r"^\d+[.、]", line):
+            story.append(Paragraph(safe_line, styles["step"]))
+        elif _looks_like_formula(line):
+            story.append(Paragraph(safe_line, styles["formula"]))
+        else:
+            story.append(Paragraph(safe_line, styles["body"]))
+    return story or [Paragraph("暂无可报告内容。", styles["body"])]
+
+
+def _looks_like_formula(line: str) -> bool:
+    formula_tokens = (
+        "[K]",
+        "[k_e]",
+        "[k'_e]",
+        "{u}",
+        "{P}",
+        "{R}",
+        "{f'_e}",
+        "Δv=",
+        "F=",
+        "m·a",
+        "k1",
+        "k2",
+        "k3",
+        "k4",
+        "x(t)",
+        "y(t)",
+        "σ=",
+        "ε=",
+    )
+    return any(token in line for token in formula_tokens)
 
 
 def _append_diagnostics(lines: list[str], diagnostics: Any) -> None:
@@ -367,66 +696,6 @@ def _fmt(value: Any) -> str:
     return f"{numeric:.6f}".rstrip("0").rstrip(".")
 
 
-def _wrap_report_lines(lines: Iterable[str], width: int = 54) -> list[str]:
-    wrapped: list[str] = []
-    for line in lines:
-        if not line:
-            wrapped.append("")
-            continue
-        chunks = textwrap.wrap(
-            line,
-            width=width,
-            break_long_words=True,
-            break_on_hyphens=False,
-            replace_whitespace=False,
-            drop_whitespace=False,
-        )
-        wrapped.extend(chunk.rstrip() for chunk in chunks or [""])
-    return wrapped
-
-
-def _ascii_cid_widths() -> list[int]:
-    """Approximate proportional widths for Unicode U+0020..U+007E in Adobe-GB1."""
-
-    widths: list[int] = []
-    for codepoint in range(32, 127):
-        character = chr(codepoint)
-        if character == " ":
-            width = 260
-        elif character in "ilI.,:;!|'`":
-            width = 280
-        elif character in "mwMW@%&":
-            width = 850
-        elif character.isdigit():
-            width = 540
-        elif character.isupper():
-            width = 650
-        elif character.islower():
-            width = 500
-        else:
-            width = 430
-        widths.append(width)
-    return widths
-
-
-def _page_content(lines: list[str]) -> bytes:
-    commands = ["BT", "/F1 9 Tf", "48 800 Td"]
-    for index, line in enumerate(lines):
-        if index > 0:
-            commands.append("0 -16 Td")
-        commands.append(f"{_unicode_pdf_text(line)} Tj")
-    commands.append("ET")
-    return "\n".join(commands).encode("ascii")
-
-
-def _unicode_pdf_text(text: str) -> str:
-    return f"<{text.encode('utf-16-be').hex().upper()}>"
-
-
-def _stream_object(content: bytes) -> bytes:
-    return b"<< /Length " + str(len(content)).encode("ascii") + b" >>\nstream\n" + content + b"\nendstream"
-
-
 def _report_images(images: dict[str, Any] | None) -> list[tuple[str, bytes]]:
     if not isinstance(images, dict):
         return []
@@ -437,10 +706,12 @@ def _report_images(images: dict[str, Any] | None) -> list[tuple[str, bytes]]:
             continue
         try:
             mime_type, data = _decode_data_url(str(data_url))
-            if mime_type == "image/jpeg":
-                _jpeg_size(data)
+            if mime_type in {"image/jpeg", "image/png"}:
+                width, height = ImageReader(BytesIO(data)).getSize()
+                if width <= 0 or height <= 0:
+                    raise ValueError("Invalid image dimensions")
                 result.append((title, data))
-        except (ValueError, binascii.Error):
+        except (ValueError, OSError, binascii.Error):
             continue
     return result
 
@@ -451,75 +722,3 @@ def _decode_data_url(data_url: str) -> tuple[str, bytes]:
         raise ValueError("Unsupported image data URL")
     mime_type = prefix.removeprefix("data:").split(";")[0].lower()
     return mime_type, base64.b64decode(payload, validate=True)
-
-
-def _jpeg_size(data: bytes) -> tuple[int, int]:
-    if len(data) < 4 or data[0:2] != b"\xff\xd8":
-        raise ValueError("Not a JPEG image")
-    index = 2
-    while index < len(data) - 9:
-        if data[index] != 0xFF:
-            index += 1
-            continue
-        marker = data[index + 1]
-        index += 2
-        if marker in {0xD8, 0xD9} or marker == 0x01 or 0xD0 <= marker <= 0xD7:
-            continue
-        if index + 2 > len(data):
-            break
-        segment_length = int.from_bytes(data[index : index + 2], "big")
-        if marker in {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}:
-            if index + 7 > len(data):
-                break
-            height = int.from_bytes(data[index + 3 : index + 5], "big")
-            width = int.from_bytes(data[index + 5 : index + 7], "big")
-            if width <= 0 or height <= 0:
-                raise ValueError("Invalid JPEG dimensions")
-            return width, height
-        index += segment_length
-    raise ValueError("JPEG dimensions not found")
-
-
-def _image_page_content(title: str, image_name: str, width: int, height: int) -> bytes:
-    max_width = 495.0
-    max_height = 660.0
-    scale = min(max_width / width, max_height / height)
-    draw_width = width * scale
-    draw_height = height * scale
-    x = (595.0 - draw_width) / 2.0
-    y = 78.0 + (max_height - draw_height) / 2.0
-    commands = [
-        "BT",
-        "/F1 14 Tf",
-        "50 800 Td",
-        f"{_unicode_pdf_text(title)} Tj",
-        "ET",
-        "q",
-        f"{draw_width:.3f} 0 0 {draw_height:.3f} {x:.3f} {y:.3f} cm",
-        f"/{image_name} Do",
-        "Q",
-    ]
-    return "\n".join(commands).encode("ascii")
-
-
-def _write_pdf(objects: dict[int, bytes]) -> bytes:
-    chunks = [b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n"]
-    offsets: dict[int, int] = {}
-    for object_id in sorted(objects):
-        offsets[object_id] = sum(len(chunk) for chunk in chunks)
-        chunks.append(f"{object_id} 0 obj\n".encode("ascii"))
-        chunks.append(objects[object_id])
-        chunks.append(b"\nendobj\n")
-    xref_offset = sum(len(chunk) for chunk in chunks)
-    max_object_id = max(objects)
-    chunks.append(f"xref\n0 {max_object_id + 1}\n".encode("ascii"))
-    chunks.append(b"0000000000 65535 f \n")
-    for object_id in range(1, max_object_id + 1):
-        offset = offsets.get(object_id, 0)
-        chunks.append(f"{offset:010d} 00000 n \n".encode("ascii"))
-    chunks.append(
-        f"trailer\n<< /Size {max_object_id + 1} /Root 1 0 R >>\nstartxref\n{xref_offset}\n%%EOF\n".encode(
-            "ascii"
-        )
-    )
-    return b"".join(chunks)

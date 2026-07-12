@@ -11,6 +11,9 @@ const dynamicsToast = document.getElementById("dynamicsToast");
 
 const els = {
   welcomeScreen: document.getElementById("welcomeScreen"),
+  announcementButton: document.getElementById("announcementButton"),
+  announcementDialog: document.getElementById("announcementDialog"),
+  announcementCloseButton: document.getElementById("announcementCloseButton"),
   appShell: document.getElementById("appShell"),
   authChoicePanel: document.getElementById("authChoicePanel"),
   showLoginButton: document.getElementById("showLoginButton"),
@@ -20,10 +23,17 @@ const els = {
   registerCard: document.getElementById("registerCard"),
   startPanel: document.getElementById("startPanel"),
   authMessage: document.getElementById("authMessage"),
+  legacyProfileNotice: document.getElementById("legacyProfileNotice"),
   loginUsername: document.getElementById("loginUsername"),
+  loginPassword: document.getElementById("loginPassword"),
   loginSubmit: document.getElementById("loginSubmit"),
+  internalLoginEntry: document.getElementById("internalLoginEntry"),
   registerUsername: document.getElementById("registerUsername"),
+  registerPassword: document.getElementById("registerPassword"),
+  registerPasswordConfirm: document.getElementById("registerPasswordConfirm"),
   registerNickname: document.getElementById("registerNickname"),
+  acceptTerms: document.getElementById("acceptTerms"),
+  acceptPrivacy: document.getElementById("acceptPrivacy"),
   registerAvatar: document.getElementById("registerAvatar"),
   registerAvatarPreview: document.getElementById("registerAvatarPreview"),
   registerSubmit: document.getElementById("registerSubmit"),
@@ -36,9 +46,13 @@ const els = {
   welcomeLogoutButton: document.getElementById("welcomeLogoutButton"),
   mainUserAvatar: document.getElementById("mainUserAvatar"),
   mainUserName: document.getElementById("mainUserName"),
+  mainUserTier: document.getElementById("mainUserTier"),
+  benefitsButton: document.getElementById("benefitsButton"),
   dynamicsShell: document.getElementById("dynamicsShell"),
   dynamicsUserAvatar: document.getElementById("dynamicsUserAvatar"),
   dynamicsUserName: document.getElementById("dynamicsUserName"),
+  dynamicsUserTier: document.getElementById("dynamicsUserTier"),
+  dynamicsBenefitsButton: document.getElementById("dynamicsBenefitsButton"),
   dynamicsSettingsButton: document.getElementById("dynamicsSettingsButton"),
   dynamicsToStaticButton: document.getElementById("dynamicsToStaticButton"),
   dynamicsBuildKind: document.getElementById("dynamicsBuildKind"),
@@ -60,6 +74,12 @@ const els = {
   runDynamicsSolveButton: document.getElementById("runDynamicsSolveButton"),
   dynamicsFieldDialog: document.getElementById("dynamicsFieldDialog"),
   dynamicsEnvironment: document.getElementById("dynamicsEnvironment"),
+  dynamicsFieldMode: document.getElementById("dynamicsFieldMode"),
+  dynamicsFieldExpressionFields: document.getElementById("dynamicsFieldExpressionFields"),
+  dynamicsFieldExpressionXLabel: document.getElementById("dynamicsFieldExpressionXLabel"),
+  dynamicsFieldExpressionX: document.getElementById("dynamicsFieldExpressionX"),
+  dynamicsFieldExpressionYField: document.getElementById("dynamicsFieldExpressionYField"),
+  dynamicsFieldExpressionY: document.getElementById("dynamicsFieldExpressionY"),
   dynamicsFieldMagnitude: document.getElementById("dynamicsFieldMagnitude"),
   dynamicsFieldDirectionPreset: document.getElementById("dynamicsFieldDirectionPreset"),
   dynamicsVectorDirectionField: document.getElementById("dynamicsVectorDirectionField"),
@@ -89,9 +109,13 @@ const els = {
   dynamicsForceStart: document.getElementById("dynamicsForceStart"),
   dynamicsForceDurationField: document.getElementById("dynamicsForceDurationField"),
   dynamicsForceDuration: document.getElementById("dynamicsForceDuration"),
+  dynamicsForcePointFrame: document.getElementById("dynamicsForcePointFrame"),
+  dynamicsForcePointX: document.getElementById("dynamicsForcePointX"),
+  dynamicsForcePointY: document.getElementById("dynamicsForcePointY"),
   dynamicsForceMessage: document.getElementById("dynamicsForceMessage"),
   dynamicsForceApplyButton: document.getElementById("dynamicsForceApplyButton"),
   dynamicsRigidToggle: document.getElementById("dynamicsRigidToggle"),
+  dynamicsGroundToggle: document.getElementById("dynamicsGroundToggle"),
   dynamicsSolveButton: document.getElementById("dynamicsSolveButton"),
   dynamicsMass: document.getElementById("dynamicsMass"),
   dynamicsDensity: document.getElementById("dynamicsDensity"),
@@ -108,6 +132,8 @@ const els = {
   dynamicsY0: document.getElementById("dynamicsY0"),
   dynamicsVx0: document.getElementById("dynamicsVx0"),
   dynamicsVy0: document.getElementById("dynamicsVy0"),
+  dynamicsTheta0: document.getElementById("dynamicsTheta0"),
+  dynamicsOmega0: document.getElementById("dynamicsOmega0"),
   dynamicsDuration: document.getElementById("dynamicsDuration"),
   dynamicsTimeStep: document.getElementById("dynamicsTimeStep"),
   dynamicsOptionInputs: [...document.querySelectorAll("input[name='dynamicsOption']")],
@@ -116,9 +142,11 @@ const els = {
   dynamicsObjectCount: document.getElementById("dynamicsObjectCount"),
   dynamicsFieldCount: document.getElementById("dynamicsFieldCount"),
   dynamicsForceCount: document.getElementById("dynamicsForceCount"),
+  dynamicsTrackCount: document.getElementById("dynamicsTrackCount"),
   dynamicsObjectList: document.getElementById("dynamicsObjectList"),
   dynamicsFieldList: document.getElementById("dynamicsFieldList"),
   dynamicsForceList: document.getElementById("dynamicsForceList"),
+  dynamicsTrackList: document.getElementById("dynamicsTrackList"),
   settingsButton: document.getElementById("settingsButton"),
   settingsDialog: document.getElementById("settingsDialog"),
   fontSizeSelect: document.getElementById("fontSizeSelect"),
@@ -127,8 +155,21 @@ const els = {
   settingsAvatarPreview: document.getElementById("settingsAvatarPreview"),
   saveNicknameButton: document.getElementById("saveNicknameButton"),
   saveAvatarButton: document.getElementById("saveAvatarButton"),
+  settingsCurrentPassword: document.getElementById("settingsCurrentPassword"),
+  settingsNewPassword: document.getElementById("settingsNewPassword"),
+  settingsNewPasswordConfirm: document.getElementById("settingsNewPasswordConfirm"),
+  savePasswordButton: document.getElementById("savePasswordButton"),
   logoutButton: document.getElementById("logoutButton"),
   settingsMessage: document.getElementById("settingsMessage"),
+  entitlementsDialog: document.getElementById("entitlementsDialog"),
+  entitlementCurrentLabel: document.getElementById("entitlementCurrentLabel"),
+  entitlementExpiry: document.getElementById("entitlementExpiry"),
+  entitlementPlanList: document.getElementById("entitlementPlanList"),
+  internalInviteCode: document.getElementById("internalInviteCode"),
+  redeemInternalButton: document.getElementById("redeemInternalButton"),
+  pinnWaitlistStatus: document.getElementById("pinnWaitlistStatus"),
+  joinPinnWaitlistButton: document.getElementById("joinPinnWaitlistButton"),
+  entitlementsMessage: document.getElementById("entitlementsMessage"),
   toolButtons: [...document.querySelectorAll(".tool-button")],
   selectionMode: document.getElementById("selectionMode"),
   supportPreset: document.getElementById("supportPreset"),
@@ -222,6 +263,7 @@ const state = {
   pendingAvatar: "",
   pendingSettingsAvatar: "",
   currentUser: null,
+  entitlements: null,
   result: null,
   lastProject: null,
   lastScope: "whole",
@@ -253,9 +295,14 @@ const state = {
   solveOptions: ["determinacy", "system", "internal", "moment", "shear", "axial", "displacement", "reaction", "danger"],
   activeModule: "welcome",
   dynamics: {
+    model: "independent-particle2d",
     objects: [],
     fields: [],
     forces: [],
+    grounds: [],
+    tracks: [],
+    constraints: [],
+    simulationSettings: {},
     objectSeq: 1,
     fieldSeq: 1,
     forceSeq: 1,
@@ -278,36 +325,34 @@ const state = {
   },
 };
 
-const AUTH_USERS_KEY = "cms_users";
-const AUTH_CURRENT_KEY = "cms_current_user";
+const LEGACY_AUTH_USERS_KEY = "cms_users";
+const LEGACY_AUTH_CURRENT_KEY = "cms_current_user";
 const AUTH_FONT_SIZE_KEY = "cms_font_size";
-const DEFAULT_USER_AVATAR = "/static/brand-avatar.png";
+const DEFAULT_USER_AVATAR = "";
+const authClient = AuthClient.create();
+const USER_TIER_LABELS = {
+  free: "Free",
+  plus: "Plus",
+  pro: "Pro",
+  internal_tester: "Internal Tester",
+  admin: "Admin",
+};
+let announcementReturnFocus = null;
 
-function loadUsers() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || "{}");
-    const users = {};
-    let removedPlaintextPassword = false;
-    for (const [username, rawUser] of Object.entries(stored)) {
-      if (!rawUser || typeof rawUser !== "object") continue;
-      const { password: _discardedPassword, ...safeUser } = rawUser;
-      removedPlaintextPassword ||= "password" in rawUser;
-      users[username] = { ...safeUser, username };
-    }
-    if (removedPlaintextPassword) localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(users));
-    return users;
-  } catch (error) {
-    return {};
-  }
+function openAnnouncement() {
+  if (!els.announcementDialog || els.announcementDialog.open) return;
+  announcementReturnFocus = document.activeElement;
+  els.announcementDialog.showModal();
+  requestAnimationFrame(() => els.announcementCloseButton?.focus());
 }
 
-function saveUsers(users) {
-  const safeUsers = {};
-  for (const [username, rawUser] of Object.entries(users || {})) {
-    const { password: _discardedPassword, ...safeUser } = rawUser || {};
-    safeUsers[username] = { ...safeUser, username };
-  }
-  localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(safeUsers));
+function closeAnnouncement() {
+  if (els.announcementDialog?.open) els.announcementDialog.close();
+}
+
+function restoreAnnouncementFocus() {
+  if (announcementReturnFocus instanceof HTMLElement) announcementReturnFocus.focus();
+  announcementReturnFocus = null;
 }
 
 function setAuthMessage(message) {
@@ -342,6 +387,7 @@ function showAvatar(target, avatarData) {
     const image = document.createElement("img");
     image.src = avatarData;
     image.alt = "用户头像";
+    image.addEventListener("error", () => showDefaultAvatar(target), { once: true });
     target.appendChild(image);
   } else {
     target.textContent = "CM";
@@ -349,7 +395,27 @@ function showAvatar(target, avatarData) {
 }
 
 function userAvatar(user) {
-  return (user && user.avatar) || DEFAULT_USER_AVATAR;
+  return (user && user.avatarUrl) || DEFAULT_USER_AVATAR;
+}
+
+function refreshTierDisplay(target, user) {
+  if (!target || !user) {
+    if (target) {
+      target.textContent = "";
+      target.removeAttribute("data-role");
+      target.classList.add("hidden");
+    }
+    return;
+  }
+  const role = String(user.role || "free");
+  target.textContent = state.entitlements?.label || USER_TIER_LABELS[role] || "Free";
+  target.dataset.role = role;
+  target.classList.remove("hidden");
+}
+
+function refreshAvatarRole(target, user) {
+  if (!target) return;
+  target.classList.toggle("internal-tester-avatar", user?.role === "internal_tester");
 }
 
 function refreshCurrentUserDisplay(user = state.currentUser) {
@@ -357,34 +423,209 @@ function refreshCurrentUserDisplay(user = state.currentUser) {
     els.mainUserName.textContent = "未登录";
     els.mainUserName.title = "";
     showAvatar(els.mainUserAvatar, DEFAULT_USER_AVATAR);
+    refreshTierDisplay(els.mainUserTier, null);
+    refreshAvatarRole(els.mainUserAvatar, null);
     if (els.dynamicsUserName && els.dynamicsUserAvatar) {
       els.dynamicsUserName.textContent = "未登录";
       els.dynamicsUserName.title = "";
       showAvatar(els.dynamicsUserAvatar, DEFAULT_USER_AVATAR);
+      refreshTierDisplay(els.dynamicsUserTier, null);
+      refreshAvatarRole(els.dynamicsUserAvatar, null);
     }
     return;
   }
-  const displayName = user.nickname || user.username;
+  const displayName = user.displayName || user.username;
   els.mainUserName.textContent = displayName;
-  els.mainUserName.title = user.nickname ? `${user.nickname} (${user.username})` : user.username;
+  els.mainUserName.title = user.displayName ? `${user.displayName} (${user.username})` : user.username;
   showAvatar(els.mainUserAvatar, userAvatar(user));
+  refreshTierDisplay(els.mainUserTier, user);
+  refreshAvatarRole(els.mainUserAvatar, user);
   if (els.dynamicsUserName && els.dynamicsUserAvatar) {
     els.dynamicsUserName.textContent = displayName;
-    els.dynamicsUserName.title = user.nickname ? `${user.nickname} (${user.username})` : user.username;
+    els.dynamicsUserName.title = user.displayName ? `${user.displayName} (${user.username})` : user.username;
     showAvatar(els.dynamicsUserAvatar, userAvatar(user));
+    refreshTierDisplay(els.dynamicsUserTier, user);
+    refreshAvatarRole(els.dynamicsUserAvatar, user);
   }
 }
 
-function updateCurrentUser(patch) {
-  if (!state.currentUser) return null;
-  const users = loadUsers();
-  const username = state.currentUser.username;
-  const nextUser = { ...(users[username] || state.currentUser), ...patch, username };
-  users[username] = nextUser;
-  saveUsers(users);
-  state.currentUser = nextUser;
-  refreshCurrentUserDisplay(nextUser);
-  return nextUser;
+function hasLegacyAuthData() {
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (key === LEGACY_AUTH_USERS_KEY || key === LEGACY_AUTH_CURRENT_KEY) return true;
+  }
+  return false;
+}
+
+function clearLegacyAuthData() {
+  localStorage.removeItem(LEGACY_AUTH_USERS_KEY);
+  localStorage.removeItem(LEGACY_AUTH_CURRENT_KEY);
+}
+
+function updateMigrationNotice() {
+  if (!els.legacyProfileNotice) return;
+  els.legacyProfileNotice.classList.toggle("hidden", !hasLegacyAuthData());
+}
+
+function setButtonBusy(button, busy, label) {
+  if (!button) return;
+  if (busy) {
+    button.dataset.idleLabel = button.textContent;
+    button.textContent = label;
+    button.disabled = true;
+  } else {
+    button.textContent = button.dataset.idleLabel || button.textContent;
+    button.disabled = false;
+    delete button.dataset.idleLabel;
+  }
+}
+
+function authErrorMessage(error) {
+  if (error instanceof AuthClient.AuthClientError) return error.message;
+  return "账户服务暂时不可用，请稍后再试。";
+}
+
+function setEntitlementsMessage(message) {
+  if (els.entitlementsMessage) els.entitlementsMessage.textContent = message || "";
+}
+
+function entitlementExpiryText(value) {
+  if (!value) return "";
+  const expiresAt = new Date(value);
+  if (Number.isNaN(expiresAt.getTime())) return "内部测试资格有效期由服务器管理。";
+  return `内部测试资格有效至 ${new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(expiresAt)}`;
+}
+
+function renderEntitlements() {
+  if (!els.entitlementPlanList) return;
+  const view = state.entitlements;
+  els.entitlementPlanList.replaceChildren();
+  els.entitlementCurrentLabel.textContent = view?.label || "正在读取……";
+  els.entitlementExpiry.textContent = entitlementExpiryText(view?.internalExpiresAt);
+
+  const plans = Array.isArray(view?.plans) ? view.plans : [];
+  if (!plans.length) {
+    const empty = document.createElement("p");
+    empty.className = "entitlement-muted";
+    empty.textContent = view ? "套餐信息暂不可用。" : "正在从服务器读取套餐信息……";
+    els.entitlementPlanList.appendChild(empty);
+  }
+  for (const plan of plans) {
+    const card = document.createElement("article");
+    card.className = "entitlement-plan";
+    if (plan.current) card.classList.add("current");
+
+    const title = document.createElement("h4");
+    title.textContent = plan.displayName || plan.name || "套餐";
+    const description = document.createElement("p");
+    description.textContent = plan.description || "权益以服务端当前配置为准。";
+    const status = document.createElement("span");
+    status.className = "entitlement-plan-status";
+    status.textContent = plan.current
+      ? "当前套餐"
+      : plan.purchaseAvailable
+        ? "可申请"
+        : "尚未开放购买";
+    card.append(title, description, status);
+    els.entitlementPlanList.appendChild(card);
+  }
+
+  const isInternal = view?.role === "internal_tester";
+  els.internalInviteCode.disabled = isInternal;
+  els.redeemInternalButton.disabled = isInternal;
+  els.redeemInternalButton.textContent = isInternal ? "已启用" : "验证并启用";
+
+  const waiting = view?.pinnStatus === "waiting";
+  els.pinnWaitlistStatus.textContent = waiting ? "已加入等待名单" : "尚未加入等待名单";
+  els.joinPinnWaitlistButton.disabled = waiting || !view;
+  els.joinPinnWaitlistButton.textContent = waiting ? "已加入" : "加入等待名单";
+}
+
+function applyEntitlementPayload(payload) {
+  if (!payload || typeof payload !== "object") return;
+  state.entitlements = {
+    role: String(payload.role || "free"),
+    label: String(payload.label || "Free"),
+    entitlements: Array.isArray(payload.entitlements) ? [...payload.entitlements] : [],
+    plans: Array.isArray(payload.plans) ? payload.plans.map((plan) => ({ ...plan })) : [],
+    internalExpiresAt: payload.internalExpiresAt || null,
+    pinnStatus: payload.pinnStatus || null,
+  };
+  if (payload.user && typeof payload.user === "object") {
+    state.currentUser = { ...payload.user };
+  }
+  refreshCurrentUserDisplay(state.currentUser);
+  renderEntitlements();
+}
+
+async function refreshEntitlements({ silent = true } = {}) {
+  const requestedUserId = state.currentUser?.id;
+  if (!requestedUserId) return null;
+  try {
+    const payload = await authClient.entitlements();
+    if (state.currentUser?.id !== requestedUserId) return null;
+    applyEntitlementPayload(payload);
+    return payload;
+  } catch (error) {
+    if (error instanceof AuthClient.AuthClientError && error.status === 401) {
+      completeLogout();
+      return null;
+    }
+    if (!silent) setEntitlementsMessage(authErrorMessage(error));
+    return null;
+  }
+}
+
+async function openEntitlementsDialog() {
+  if (!state.currentUser || !els.entitlementsDialog) return;
+  setEntitlementsMessage("正在从服务器读取当前权益……");
+  renderEntitlements();
+  if (!els.entitlementsDialog.open) els.entitlementsDialog.showModal();
+  const payload = await refreshEntitlements({ silent: false });
+  if (payload) setEntitlementsMessage("权益由服务器实时校验。Plus 与 Pro 购买暂未开放。");
+}
+
+async function redeemInternalAccess() {
+  let credential = els.internalInviteCode.value.trim();
+  els.internalInviteCode.value = "";
+  if (!credential) {
+    setEntitlementsMessage("请输入内部测试凭据。凭据不会保存在浏览器中。");
+    return;
+  }
+  setButtonBusy(els.redeemInternalButton, true, "验证中……");
+  setEntitlementsMessage("");
+  try {
+    const payload = await authClient.redeemInternal(credential);
+    applyEntitlementPayload(payload);
+    setEntitlementsMessage("Internal Tester 已启用；该身份不包含管理员权限。");
+  } catch (error) {
+    setEntitlementsMessage(authErrorMessage(error));
+  } finally {
+    credential = "";
+    setButtonBusy(els.redeemInternalButton, false);
+    renderEntitlements();
+  }
+}
+
+async function joinPinnWaitlist() {
+  setButtonBusy(els.joinPinnWaitlistButton, true, "提交中……");
+  setEntitlementsMessage("");
+  try {
+    const payload = await authClient.joinPinnWaitlist();
+    applyEntitlementPayload(payload);
+    setEntitlementsMessage("已加入 PINN 等待名单。PINN 求解能力仍在开发中，尚未启用。");
+  } catch (error) {
+    setEntitlementsMessage(authErrorMessage(error));
+  } finally {
+    setButtonBusy(els.joinPinnWaitlistButton, false);
+    renderEntitlements();
+  }
 }
 
 function showAuthMode(mode) {
@@ -411,8 +652,8 @@ function resetAuthChoice() {
 }
 
 function setCurrentUser(user) {
+  state.entitlements = null;
   state.currentUser = user;
-  localStorage.setItem(AUTH_CURRENT_KEY, user.username);
   els.authChoicePanel.classList.add("hidden");
   els.authPanel.classList.add("hidden");
   els.loginCard.classList.add("hidden");
@@ -421,58 +662,97 @@ function setCurrentUser(user) {
   els.startAppButton.classList.remove("hidden");
   if (els.moduleChoicePanel) els.moduleChoicePanel.classList.add("hidden");
   refreshCurrentUserDisplay(user);
-  setAuthMessage(`当前本地配置：${user.username}`);
+  setAuthMessage(`已登录：${user.username}`);
+  void refreshEntitlements({ silent: true });
 }
 
-function initAuth() {
-  const users = loadUsers();
-  const currentUsername = localStorage.getItem(AUTH_CURRENT_KEY);
-  const currentUser = currentUsername ? users[currentUsername] : null;
-  if (currentUser) {
-    setCurrentUser(currentUser);
-  } else {
-    resetAuthChoice();
-    els.startPanel.classList.add("hidden");
-    showDefaultAvatar(els.registerAvatarPreview);
-    refreshCurrentUserDisplay(null);
-    setAuthMessage("");
+async function initAuth() {
+  resetAuthChoice();
+  els.startPanel.classList.add("hidden");
+  showDefaultAvatar(els.registerAvatarPreview);
+  refreshCurrentUserDisplay(null);
+  updateMigrationNotice();
+  setAuthMessage("正在检查登录状态……");
+  try {
+    const session = await authClient.session();
+    if (session.authenticated && session.user) {
+      setCurrentUser(session.user);
+      return;
+    }
+    setAuthMessage(hasLegacyAuthData() ? "请注册服务器账户完成旧配置迁移。" : "");
+  } catch (error) {
+    setAuthMessage(authErrorMessage(error));
   }
 }
 
-function loginUser() {
+async function loginUser() {
   const username = els.loginUsername.value.trim();
-  if (!username) {
-    setAuthMessage("请填写本地配置名称。");
+  const password = els.loginPassword.value;
+  if (!username || !password) {
+    setAuthMessage("请填写账户名和密码。");
     return;
   }
-  const user = loadUsers()[username];
-  if (!user) {
-    setAuthMessage("未找到该本地配置。");
-    return;
+  setButtonBusy(els.loginSubmit, true, "正在登录……");
+  setAuthMessage("");
+  try {
+    const session = await authClient.login({ username, password });
+    clearLegacyAuthData();
+    updateMigrationNotice();
+    els.loginPassword.value = "";
+    setCurrentUser(session.user);
+  } catch (error) {
+    setAuthMessage(authErrorMessage(error));
+  } finally {
+    setButtonBusy(els.loginSubmit, false);
   }
-  setCurrentUser(user);
 }
 
-function registerUser() {
+async function registerUser() {
   const username = els.registerUsername.value.trim();
-  const nickname = els.registerNickname.value.trim();
-  if (!username || !nickname) {
-    setAuthMessage("创建本地配置需要填写账户名和昵称。");
+  const password = els.registerPassword.value;
+  const passwordConfirm = els.registerPasswordConfirm.value;
+  const displayName = els.registerNickname.value.trim();
+  if (!username || !password || !passwordConfirm || !displayName) {
+    setAuthMessage("注册需要填写账户名、密码、确认密码和昵称。");
     return;
   }
-  const users = loadUsers();
-  if (users[username]) {
-    setAuthMessage("该账户名已存在，请换一个。");
+  if (!els.acceptTerms.checked || !els.acceptPrivacy.checked) {
+    setAuthMessage("请先阅读并同意用户协议与隐私说明。");
     return;
   }
-  const user = {
-    username,
-    nickname,
-    avatar: state.pendingAvatar || "",
-  };
-  users[username] = user;
-  saveUsers(users);
-  setCurrentUser(user);
+  setButtonBusy(els.registerSubmit, true, "正在注册……");
+  setAuthMessage("");
+  try {
+    let session = await authClient.register({
+      username,
+      password,
+      passwordConfirm,
+      displayName,
+      acceptedTerms: true,
+      acceptedPrivacy: true,
+    });
+    const avatarFile = els.registerAvatar.files && els.registerAvatar.files[0];
+    let avatarWarning = "";
+    if (avatarFile) {
+      try {
+        session = await authClient.uploadAvatar(avatarFile);
+      } catch (error) {
+        avatarWarning = `账户已创建，但头像未保存：${authErrorMessage(error)}`;
+      }
+    }
+    clearLegacyAuthData();
+    updateMigrationNotice();
+    state.pendingAvatar = "";
+    els.registerAvatar.value = "";
+    els.registerPassword.value = "";
+    els.registerPasswordConfirm.value = "";
+    setCurrentUser(session.user);
+    if (avatarWarning) setAuthMessage(avatarWarning);
+  } catch (error) {
+    setAuthMessage(authErrorMessage(error));
+  } finally {
+    setButtonBusy(els.registerSubmit, false);
+  }
 }
 
 function previewRegisterAvatar(file) {
@@ -492,22 +772,34 @@ function previewRegisterAvatar(file) {
 function openSettingsDialog() {
   if (!state.currentUser) return;
   state.pendingSettingsAvatar = "";
-  els.settingsNickname.value = state.currentUser.nickname || "";
+  els.settingsNickname.value = state.currentUser.displayName || "";
   els.settingsAvatar.value = "";
+  els.settingsCurrentPassword.value = "";
+  els.settingsNewPassword.value = "";
+  els.settingsNewPasswordConfirm.value = "";
   applyFontSize(localStorage.getItem(AUTH_FONT_SIZE_KEY), false);
   showAvatar(els.settingsAvatarPreview, userAvatar(state.currentUser));
   setSettingsMessage("");
   if (!els.settingsDialog.open) els.settingsDialog.showModal();
 }
 
-function saveNickname() {
-  const nickname = els.settingsNickname.value.trim();
-  if (!nickname) {
+async function saveNickname() {
+  const displayName = els.settingsNickname.value.trim();
+  if (!displayName) {
     setSettingsMessage("昵称不能为空。");
     return;
   }
-  updateCurrentUser({ nickname });
-  setSettingsMessage("昵称已保存。");
+  setButtonBusy(els.saveNicknameButton, true, "保存中……");
+  try {
+    const session = await authClient.updateProfile(displayName);
+    state.currentUser = session.user;
+    refreshCurrentUserDisplay(session.user);
+    setSettingsMessage("昵称已保存到服务器。");
+  } catch (error) {
+    setSettingsMessage(authErrorMessage(error));
+  } finally {
+    setButtonBusy(els.saveNicknameButton, false);
+  }
 }
 
 function previewSettingsAvatar(file) {
@@ -524,20 +816,63 @@ function previewSettingsAvatar(file) {
   reader.readAsDataURL(file);
 }
 
-function saveSettingsAvatar() {
-  if (!state.pendingSettingsAvatar) {
+async function saveSettingsAvatar() {
+  const avatarFile = els.settingsAvatar.files && els.settingsAvatar.files[0];
+  if (!avatarFile) {
     setSettingsMessage("请选择新的头像文件。");
     return;
   }
-  updateCurrentUser({ avatar: state.pendingSettingsAvatar });
-  setSettingsMessage("头像已保存。");
+  setButtonBusy(els.saveAvatarButton, true, "上传中……");
+  try {
+    const session = await authClient.uploadAvatar(avatarFile);
+    state.currentUser = session.user;
+    refreshCurrentUserDisplay(session.user);
+    showAvatar(els.settingsAvatarPreview, userAvatar(session.user));
+    state.pendingSettingsAvatar = "";
+    els.settingsAvatar.value = "";
+    setSettingsMessage("头像已安全保存到服务器。");
+  } catch (error) {
+    setSettingsMessage(authErrorMessage(error));
+  } finally {
+    setButtonBusy(els.saveAvatarButton, false);
+  }
 }
 
-function logoutUser() {
+async function savePassword() {
+  const currentPassword = els.settingsCurrentPassword.value;
+  const newPassword = els.settingsNewPassword.value;
+  const newPasswordConfirm = els.settingsNewPasswordConfirm.value;
+  if (!currentPassword || !newPassword || !newPasswordConfirm) {
+    setSettingsMessage("请完整填写原密码、新密码和确认新密码。");
+    return;
+  }
+  setButtonBusy(els.savePasswordButton, true, "更新中……");
+  try {
+    const session = await authClient.changePassword(
+      currentPassword,
+      newPassword,
+      newPasswordConfirm
+    );
+    state.currentUser = session.user;
+    refreshCurrentUserDisplay(session.user);
+    els.settingsCurrentPassword.value = "";
+    els.settingsNewPassword.value = "";
+    els.settingsNewPasswordConfirm.value = "";
+    setSettingsMessage("密码已更新，其他登录会话已撤销。");
+  } catch (error) {
+    setSettingsMessage(authErrorMessage(error));
+  } finally {
+    setButtonBusy(els.savePasswordButton, false);
+  }
+}
+
+function completeLogout() {
   cancelDynamicsFieldPlacement({ silent: true });
   state.currentUser = null;
-  localStorage.removeItem(AUTH_CURRENT_KEY);
+  state.entitlements = null;
   if (els.settingsDialog.open) els.settingsDialog.close();
+  if (els.entitlementsDialog?.open) els.entitlementsDialog.close();
+  if (els.internalInviteCode) els.internalInviteCode.value = "";
   els.appShell.classList.add("app-hidden");
   if (els.dynamicsShell) els.dynamicsShell.classList.add("app-hidden");
   els.welcomeScreen.classList.remove("hidden");
@@ -550,6 +885,23 @@ function logoutUser() {
   refreshCurrentUserDisplay(null);
   setAuthMessage("");
   setSettingsMessage("");
+  setEntitlementsMessage("");
+  renderEntitlements();
+}
+
+async function logoutUser() {
+  if (!state.currentUser) {
+    completeLogout();
+    return;
+  }
+  setSettingsMessage("正在退出……");
+  try {
+    await authClient.logout();
+    completeLogout();
+  } catch (error) {
+    setSettingsMessage(authErrorMessage(error));
+    if (error instanceof AuthClient.AuthClientError && error.status === 401) completeLogout();
+  }
 }
 
 function startApplication() {
@@ -574,6 +926,7 @@ function launchStaticApplication() {
   els.welcomeScreen.classList.add("hidden");
   els.appShell.classList.remove("app-hidden");
   if (els.dynamicsShell) els.dynamicsShell.classList.add("app-hidden");
+  window.scrollTo(0, 0);
   resizeCanvas();
   syncUi();
 }
@@ -588,6 +941,7 @@ function launchDynamicsApplication() {
   els.welcomeScreen.classList.add("hidden");
   els.appShell.classList.add("app-hidden");
   els.dynamicsShell.classList.remove("app-hidden");
+  window.scrollTo(0, 0);
   resizeDynamicsCanvas();
   syncDynamicsControls();
   updateDynamicsFieldStatus();
@@ -646,9 +1000,14 @@ function redo() {
 
 function dynamicsSnapshot() {
   return JSON.stringify({
+    model: state.dynamics.model,
     objects: state.dynamics.objects,
     fields: state.dynamics.fields,
     forces: state.dynamics.forces,
+    grounds: state.dynamics.grounds,
+    tracks: state.dynamics.tracks,
+    constraints: state.dynamics.constraints,
+    simulationSettings: state.dynamics.simulationSettings,
     objectSeq: state.dynamics.objectSeq,
     fieldSeq: state.dynamics.fieldSeq,
     forceSeq: state.dynamics.forceSeq,
@@ -665,9 +1024,15 @@ function restoreDynamics(serialized) {
   cancelDynamicsFieldPlacement({ silent: true });
   cancelDynamicsAnimation();
   const data = JSON.parse(serialized);
+  state.dynamics.model = data.model || "independent-particle2d";
   state.dynamics.objects = data.objects || [];
   state.dynamics.fields = data.fields || [];
   state.dynamics.forces = data.forces || [];
+  state.dynamics.grounds = data.grounds || [];
+  state.dynamics.tracks = data.tracks || [];
+  state.dynamics.constraints = data.constraints || [];
+  state.dynamics.simulationSettings = data.simulationSettings || {};
+  if (els.dynamicsGroundToggle) els.dynamicsGroundToggle.checked = state.dynamics.grounds.length > 0;
   state.dynamics.objectSeq = data.objectSeq || nextSequence(state.dynamics.objects, "D");
   state.dynamics.fieldSeq = data.fieldSeq || nextSequence(state.dynamics.fields, "F");
   state.dynamics.forceSeq = data.forceSeq || nextSequence(state.dynamics.forces, "A");
@@ -2420,6 +2785,9 @@ function syncDynamicsSizeLabels() {
 
 function dynamicsObjectFromControls(kind, world, path = null) {
   const id = `D${state.dynamics.objectSeq++}`;
+  const rigid = els.dynamicsRigidToggle.checked;
+  const sizeB = Math.max(Math.abs(dynamicsValue(els.dynamicsSizeB, "m")), 1e-6);
+  if (rigid) state.dynamics.model = "coupled-rigid-body2d";
   return {
     id,
     name: `${dynamicsKindLabel(kind)} ${id}`,
@@ -2433,10 +2801,20 @@ function dynamicsObjectFromControls(kind, world, path = null) {
     density: Math.max(dynamicsValue(els.dynamicsDensity, "kg/m^3"), 0),
     charge: dynamicsValue(els.dynamicsCharge, "C"),
     sizeA: Math.max(Math.abs(dynamicsValue(els.dynamicsSizeA, "m")), 1e-6),
-    sizeB: Math.max(Math.abs(dynamicsValue(els.dynamicsSizeB, "m")), 1e-6),
+    sizeB,
     sizeC: Math.max(Math.abs(dynamicsValue(els.dynamicsSizeC, "m")), 1e-6),
     materialE: Math.max(dynamicsValue(els.dynamicsMaterialE, "Pa"), 0),
-    rigid: els.dynamicsRigidToggle.checked,
+    rigid,
+    theta0: Number(els.dynamicsTheta0.value || 0),
+    omega0: Number(els.dynamicsOmega0.value || 0),
+    collisionRadius: sizeB,
+    contact: {
+      enabled: rigid && ["particle", "circle"].includes(kind),
+      restitution: 0.8,
+      staticFriction: 0.5,
+      dynamicFriction: 0.3,
+      damping: 0,
+    },
     equation: els.dynamicsShapeEquation.value.trim(),
     path,
   };
@@ -2462,6 +2840,8 @@ function syncDynamicsObjectControls(object) {
   els.dynamicsY0.value = `${formatNumber(object.y)} m`;
   els.dynamicsVx0.value = `${formatNumber(object.vx0)} m/s`;
   els.dynamicsVy0.value = `${formatNumber(object.vy0)} m/s`;
+  els.dynamicsTheta0.value = String(Number(object.theta0 || 0));
+  els.dynamicsOmega0.value = String(Number(object.omega0 || 0));
   state.dynamics.object = object;
   syncDynamicsControls();
 }
@@ -2478,6 +2858,18 @@ function updateSelectedDynamicsObjectFromControls() {
   object.sizeC = Math.max(Math.abs(dynamicsValue(els.dynamicsSizeC, "m")), 1e-6);
   object.materialE = Math.max(dynamicsValue(els.dynamicsMaterialE, "Pa"), 0);
   object.rigid = els.dynamicsRigidToggle.checked;
+  object.theta0 = Number(els.dynamicsTheta0.value || 0);
+  object.omega0 = Number(els.dynamicsOmega0.value || 0);
+  object.collisionRadius = object.sizeB;
+  object.contact = {
+    ...(object.contact || {}),
+    enabled: object.rigid && ["particle", "circle"].includes(object.kind),
+    restitution: Number(object.contact?.restitution ?? 0.8),
+    staticFriction: Number(object.contact?.staticFriction ?? 0.5),
+    dynamicFriction: Number(object.contact?.dynamicFriction ?? 0.3),
+    damping: Number(object.contact?.damping ?? 0),
+  };
+  if (object.rigid) state.dynamics.model = "coupled-rigid-body2d";
   object.equation = els.dynamicsShapeEquation.value.trim();
   object.x = dynamicsValue(els.dynamicsX0, "m");
   object.y = dynamicsValue(els.dynamicsY0, "m");
@@ -2509,6 +2901,7 @@ function deleteDynamicsObject(id) {
   cancelDynamicsAnimation();
   state.dynamics.objects = state.dynamics.objects.filter((object) => object.id !== id);
   state.dynamics.forces = state.dynamics.forces.filter((force) => force.targetId !== id);
+  state.dynamics.constraints = (state.dynamics.constraints || []).filter((constraint) => constraint.bodyId !== id);
   if (state.dynamics.selectedObjectId === id) {
     state.dynamics.selectedObjectId = state.dynamics.objects[0]?.id || null;
     state.dynamics.object = state.dynamics.objects[0] || null;
@@ -2540,6 +2933,19 @@ function deleteDynamicsForce(id) {
   recordDynamicsHistory();
   cancelDynamicsAnimation();
   state.dynamics.forces = state.dynamics.forces.filter((force) => force.id !== id);
+  state.dynamics.result = null;
+  renderDynamicsResult();
+  renderDynamicsSceneLists();
+  drawDynamicsScene();
+}
+
+function deleteDynamicsTrack(id) {
+  cancelDynamicsFieldPlacement({ silent: true });
+  if (!(state.dynamics.tracks || []).some((track) => track.id === id)) return;
+  recordDynamicsHistory();
+  cancelDynamicsAnimation();
+  state.dynamics.tracks = state.dynamics.tracks.filter((track) => track.id !== id);
+  state.dynamics.constraints = (state.dynamics.constraints || []).filter((constraint) => constraint.trackId !== id);
   state.dynamics.result = null;
   renderDynamicsResult();
   renderDynamicsSceneLists();
@@ -2588,6 +2994,7 @@ function renderDynamicsSceneLists() {
   els.dynamicsObjectCount.textContent = String(state.dynamics.objects.length);
   els.dynamicsFieldCount.textContent = String(state.dynamics.fields.length);
   els.dynamicsForceCount.textContent = String(state.dynamics.forces.length);
+  els.dynamicsTrackCount.textContent = String((state.dynamics.tracks || []).length);
   replaceDynamicsSceneList(
     els.dynamicsObjectList,
     state.dynamics.objects.map((object, index) =>
@@ -2628,6 +3035,18 @@ function renderDynamicsSceneLists() {
     }),
     "暂无外力"
   );
+  replaceDynamicsSceneList(
+    els.dynamicsTrackList,
+    (state.dynamics.tracks || []).map((track) =>
+      createDynamicsSceneRow({
+        id: track.id,
+        text: `${track.kind || track.type} · ${track.endpointBehavior || "open"}`,
+        color: "#24c7b1",
+        kind: "track",
+      })
+    ),
+    "暂无轨道（可打开 v2 工程）"
+  );
   syncDynamicsActionUi();
 }
 
@@ -2640,20 +3059,24 @@ function buildDynamicsProject() {
     schema: ProjectAdapter.DYNAMICS_SCHEMA,
     application: ProjectAdapter.APPLICATION_ID,
     module: "dynamics",
-    model: "independent-particle2d",
+    model: state.dynamics.model || "independent-particle2d",
     simulation: {
+      ...JSON.parse(JSON.stringify(state.dynamics.simulationSettings || {})),
       duration: els.dynamicsDuration.value,
       timeStep: els.dynamicsTimeStep.value,
     },
     objects: JSON.parse(JSON.stringify(state.dynamics.objects)),
     fields: JSON.parse(JSON.stringify(state.dynamics.fields)),
     forces: JSON.parse(JSON.stringify(state.dynamics.forces)),
+    grounds: JSON.parse(JSON.stringify(state.dynamics.grounds || [])),
+    tracks: JSON.parse(JSON.stringify(state.dynamics.tracks || [])),
+    constraints: JSON.parse(JSON.stringify(state.dynamics.constraints || [])),
   };
 }
 
 function saveDynamicsProject() {
   try {
-    const project = ProjectAdapter.loadDynamicsProject(buildDynamicsProject());
+    const project = DynamicsController.loadProject(buildDynamicsProject());
     const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -2667,7 +3090,7 @@ function saveDynamicsProject() {
 
 function importDynamicsProject(rawProject) {
   cancelDynamicsFieldPlacement({ silent: true });
-  const project = ProjectAdapter.loadDynamicsProject(rawProject);
+  const project = DynamicsController.loadProject(rawProject);
   const nextObjects = project.objects.map((raw, index) => {
     const object = DynamicsCore.normalizeObject(raw);
     return {
@@ -2676,12 +3099,21 @@ function importDynamicsProject(rawProject) {
       name: String(raw.name || `${dynamicsKindLabel(object.kind)} D${index + 1}`),
       dynamicsModel: String(raw.dynamicsModel || object.dynamicsModel || "particle2d"),
       density: Number(raw.massProperties?.density ?? raw.density ?? 0),
-      rigid: Boolean(raw.rigid),
+      rigid: Boolean(raw.rigid || raw.dynamicsModel === "rigid-body2d" || project.model === "coupled-rigid-body2d"),
+      theta0: Number(raw.initialState?.theta ?? raw.theta0 ?? raw.angle ?? 0),
+      omega0: Number(raw.initialState?.omega ?? raw.omega0 ?? raw.angularVelocity ?? 0),
+      inertia: raw.massProperties?.inertia ?? raw.inertia,
+      centerOfMass: raw.massProperties?.centerOfMass ?? raw.centerOfMass,
+      collisionRadius: raw.geometry?.collisionRadius ?? raw.collisionRadius,
+      contact: raw.contact ? JSON.parse(JSON.stringify(raw.contact)) : undefined,
       path: Array.isArray(object.path) ? object.path.map((point) => ({ x: Number(point.x), y: Number(point.y) })) : null,
     };
   });
   const nextFields = JSON.parse(JSON.stringify(project.fields));
   const nextForces = JSON.parse(JSON.stringify(project.forces));
+  const nextGrounds = JSON.parse(JSON.stringify(project.grounds || []));
+  const nextTracks = JSON.parse(JSON.stringify(project.tracks || []));
+  const nextConstraints = JSON.parse(JSON.stringify(project.constraints || []));
   const nextObjectSeq = nextSequence(nextObjects, "D");
   const nextFieldSeq = nextSequence(nextFields, "F");
   const nextForceSeq = nextSequence(nextForces, "A");
@@ -2692,6 +3124,14 @@ function importDynamicsProject(rawProject) {
   state.dynamics.objects = nextObjects;
   state.dynamics.fields = nextFields;
   state.dynamics.forces = nextForces;
+  state.dynamics.model = project.model;
+  state.dynamics.grounds = nextGrounds;
+  state.dynamics.tracks = nextTracks;
+  state.dynamics.constraints = nextConstraints;
+  state.dynamics.simulationSettings = Object.fromEntries(
+    Object.entries(project.simulation).filter(([key]) => !["duration", "timeStep"].includes(key))
+  );
+  if (els.dynamicsGroundToggle) els.dynamicsGroundToggle.checked = nextGrounds.length > 0;
   state.dynamics.objectSeq = nextObjectSeq;
   state.dynamics.fieldSeq = nextFieldSeq;
   state.dynamics.forceSeq = nextForceSeq;
@@ -2738,21 +3178,19 @@ async function downloadDynamicsReport() {
     return;
   }
   els.dynamicsReportButton.disabled = true;
-  const derivation = [
-    "",
-    "计算方法",
-    "1. 所有输入先换算为 SI 单位，位置为 m、时间为 s、质量为 kg、力为 N。",
-    "2. 瞬时力按冲量 J 处理，初速度增量为 Δv=J/m；持续力在设定时间段内进入合力。",
-    "3. 重力场、电场和磁场按各自空间范围叠加，洛伦兹力采用 F=q(E+v×B)。",
-    "4. 平动方程 m·a=ΣF 采用四阶 Runge-Kutta 方法逐步积分，得到位置、速度和加速度。",
-    "5. 当前各对象独立求解，不包含碰撞、接触、约束及对象间相互作用。",
-  ].join("\n");
   try {
+    const reportText = DynamicsReport.buildReportText({
+      objects: state.dynamics.objects,
+      fields: state.dynamics.fields,
+      forces: state.dynamics.forces,
+      result: state.dynamics.result,
+      options: selectedDynamicsOptions(),
+    });
     const response = await fetch("/api/dynamics-report", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        report_text: `${els.dynamicsResultText.textContent}${derivation}`,
+        report_text: reportText,
         report_images: { model: canvasDataUrl(dynamicsCanvas) },
       }),
     });
@@ -2815,13 +3253,19 @@ function setDynamicsFieldDefaults(kind) {
     els.dynamicsFieldMagnitude.value = "9.81 m/s^2";
     els.dynamicsFieldDirectionPreset.value = "down";
     els.dynamicsFieldAngle.value = "-90";
+    els.dynamicsFieldExpressionX.value = "0";
+    els.dynamicsFieldExpressionY.value = "-9.81";
   } else if (kind === "electric") {
     els.dynamicsFieldMagnitude.value = "1 N/C";
     els.dynamicsFieldDirectionPreset.value = "right";
     els.dynamicsFieldAngle.value = "0";
+    els.dynamicsFieldExpressionX.value = "1";
+    els.dynamicsFieldExpressionY.value = "0";
   } else if (kind === "magnetic") {
     els.dynamicsFieldMagnitude.value = "1 T";
     els.dynamicsMagneticDirection.value = "out";
+    els.dynamicsFieldExpressionX.value = "1";
+    els.dynamicsFieldExpressionY.value = "0";
   } else {
     els.dynamicsFieldMagnitude.value = "0";
   }
@@ -2833,12 +3277,16 @@ function syncDynamicsFieldDialog() {
   const rangeType = els.dynamicsFieldRange.value;
   const isZero = kind === "zero";
   const isMagnetic = kind === "magnetic";
+  const variableMode = els.dynamicsFieldMode.value !== "constant" && !isZero;
   const editingFieldId = state.dynamics.fieldPlacement.editingFieldId;
   const editingField = editingFieldId ? state.dynamics.fields.find((field) => field.id === editingFieldId) : null;
-  els.dynamicsFieldMagnitude.disabled = isZero;
-  els.dynamicsVectorDirectionField.classList.toggle("hidden", isMagnetic || isZero);
-  els.dynamicsFieldAngleField.classList.toggle("hidden", isMagnetic || isZero);
-  els.dynamicsMagneticDirectionField.classList.toggle("hidden", !isMagnetic);
+  els.dynamicsFieldMagnitude.disabled = isZero || variableMode;
+  els.dynamicsFieldExpressionFields.classList.toggle("hidden", !variableMode);
+  els.dynamicsFieldExpressionXLabel.textContent = isMagnetic ? "Bz 表达式（T）" : "x 分量表达式";
+  els.dynamicsFieldExpressionYField.classList.toggle("hidden", isMagnetic);
+  els.dynamicsVectorDirectionField.classList.toggle("hidden", isMagnetic || isZero || variableMode);
+  els.dynamicsFieldAngleField.classList.toggle("hidden", isMagnetic || isZero || variableMode);
+  els.dynamicsMagneticDirectionField.classList.toggle("hidden", !isMagnetic || variableMode);
   els.dynamicsFieldRange.disabled = isZero;
   els.dynamicsFieldCenterX.disabled = isZero || rangeType === "global";
   els.dynamicsFieldCenterY.disabled = isZero || rangeType === "global";
@@ -2864,6 +3312,8 @@ function syncDynamicsFieldDialog() {
   }
   if (isZero) {
     els.dynamicsFieldMessage.textContent = "零场不会在画布中绘制，也不会对对象施加外场作用。";
+  } else if (variableMode) {
+    els.dynamicsFieldMessage.textContent = "表达式仅允许 t、x、y、vx、vy 与白名单数学函数；使用受控 AST 求值，不执行脚本。常量大小仅用于画布预览。";
   } else if (rangeType === "global") {
     els.dynamicsFieldMessage.textContent = "全局均匀场作用于无限建模空间，可连续定义重力势能或电势能。";
   } else if (rangeType === "custom") {
@@ -2894,6 +3344,10 @@ function openDynamicsFieldDialog(fieldId = null) {
     els.dynamicsFieldWidth.value = `${field.width ?? 8} m`;
     els.dynamicsFieldHeight.value = `${field.height ?? 6} m`;
     els.dynamicsFieldRadius.value = `${field.radius ?? 3} m`;
+    els.dynamicsFieldMode.value = field.variation?.mode || "constant";
+    const expressions = field.variation?.expressions || field.variation?.components || {};
+    els.dynamicsFieldExpressionX.value = String(field.kind === "magnetic" ? expressions.z ?? "1" : expressions.x ?? "0");
+    els.dynamicsFieldExpressionY.value = String(expressions.y ?? "0");
   } else {
     const center = DynamicsFieldGeometry.viewportWorldCenter({
       origin: state.dynamics.origin,
@@ -2902,6 +3356,7 @@ function openDynamicsFieldDialog(fieldId = null) {
       canvasHeight: dynamicsCanvas.height,
     });
     els.dynamicsEnvironment.value = "gravity";
+    els.dynamicsFieldMode.value = "constant";
     setDynamicsFieldDefaults("gravity");
     els.dynamicsFieldRange.value = "rectangle";
     els.dynamicsFieldCenterX.value = `${formatNumber(center.x)} m`;
@@ -2935,6 +3390,20 @@ function dynamicsFieldDraftFromDialog({ preserveCustomPath = false } = {}) {
     radius: Math.abs(dynamicsValue(els.dynamicsFieldRadius, "m")),
     path: null,
   };
+  if (els.dynamicsFieldMode.value !== "constant") {
+    field.variation = {
+      mode: els.dynamicsFieldMode.value,
+      representation: "components",
+      unit: dynamicsFieldUnit(kind),
+      components:
+        kind === "magnetic"
+          ? { z: els.dynamicsFieldExpressionX.value.trim() }
+          : {
+              x: els.dynamicsFieldExpressionX.value.trim(),
+              y: els.dynamicsFieldExpressionY.value.trim(),
+            },
+    };
+  }
   if (rangeType === "custom" && preserveCustomPath && existing?.rangeType === "custom" && Array.isArray(existing.path)) {
     field.path = DynamicsFieldGeometry.translatePathToCenter(existing.path, {
       x: field.centerX,
@@ -2957,6 +3426,7 @@ function dynamicsFieldValidationMessage(field, validation) {
 }
 
 function commitDynamicsField(field, editingFieldId = null) {
+  if (field.variation) DynamicsFields.compileField(DynamicsWorld.variableFieldSpec(field));
   const validation = DynamicsFieldGeometry.validateFieldGeometry(field);
   if (!validation.valid) {
     const message = dynamicsFieldValidationMessage(field, validation);
@@ -3079,17 +3549,24 @@ function pointInDynamicsField(point, field) {
 
 function syncDynamicsForceDialog() {
   const continuous = els.dynamicsForceType.value === "continuous";
+  const pointFrame = els.dynamicsForcePointFrame.value;
   els.dynamicsForceMagnitudeLabel.textContent = continuous ? "力的大小" : "冲量大小";
   els.dynamicsForceStartField.classList.toggle("hidden", !continuous);
   els.dynamicsForceDurationField.classList.toggle("hidden", !continuous);
   els.dynamicsForceAngle.disabled = els.dynamicsForceDirectionPreset.value !== "custom";
+  els.dynamicsForcePointX.disabled = pointFrame === "center";
+  els.dynamicsForcePointY.disabled = pointFrame === "center";
   if (els.dynamicsForceDirectionPreset.value !== "custom") {
     const angles = { right: 0, up: 90, left: 180, down: -90 };
     els.dynamicsForceAngle.value = String(angles[els.dynamicsForceDirectionPreset.value] ?? 0);
   }
-  els.dynamicsForceMessage.textContent = continuous
-    ? "持续力在设定时间段内参与每一步积分；持续时间为 0 时作用到求解结束。"
-    : "瞬时力按冲量处理，只在初始瞬间改变对象速度，之后不再持续作用。";
+  const pointMessage =
+    pointFrame === "center" ? "默认作用于质心。" : pointFrame === "local" ? "局部作用点会随刚体旋转。" : "世界作用点保持绝对坐标。";
+  els.dynamicsForceMessage.textContent = `${
+    continuous
+      ? "持续力在设定时间段内参与积分；持续时间为 0 时作用到求解结束。"
+      : "瞬时力按冲量处理，只在初始瞬间改变线速度与角速度。"
+  } ${pointMessage}`;
 }
 
 function openDynamicsForceDialog() {
@@ -3112,6 +3589,9 @@ function openDynamicsForceDialog() {
   els.dynamicsForceAngle.value = "0";
   els.dynamicsForceStart.value = "0 s";
   els.dynamicsForceDuration.value = "0 s";
+  els.dynamicsForcePointFrame.value = "center";
+  els.dynamicsForcePointX.value = "0";
+  els.dynamicsForcePointY.value = "0";
   syncDynamicsForceDialog();
   els.dynamicsForceDialog.showModal();
 }
@@ -3124,7 +3604,27 @@ function applyDynamicsForce() {
   const magnitude = Math.abs(dynamicsValue(els.dynamicsForceMagnitude, unit));
   const angle = Number(els.dynamicsForceAngle.value || 0);
   const vector = vectorFromAngle(magnitude, angle);
+  const pointFrame = els.dynamicsForcePointFrame.value;
+  const applicationPoint = {
+    frame: pointFrame === "world" ? "world" : "local",
+    x: pointFrame === "center" ? 0 : Number(els.dynamicsForcePointX.value || 0),
+    y: pointFrame === "center" ? 0 : Number(els.dynamicsForcePointY.value || 0),
+  };
   recordDynamicsHistory();
+  if (pointFrame !== "center") {
+    state.dynamics.model = "coupled-rigid-body2d";
+    const target = dynamicsObjectById(targetId);
+    target.rigid = true;
+    target.collisionRadius = target.collisionRadius || target.sizeB;
+    target.contact = {
+      ...(target.contact || {}),
+      enabled: ["particle", "circle"].includes(target.kind),
+      restitution: Number(target.contact?.restitution ?? 0.8),
+      staticFriction: Number(target.contact?.staticFriction ?? 0.5),
+      dynamicFriction: Number(target.contact?.dynamicFriction ?? 0.3),
+      damping: Number(target.contact?.damping ?? 0),
+    };
+  }
   state.dynamics.forces.push({
     id: `A${state.dynamics.forceSeq++}`,
     targetId,
@@ -3135,6 +3635,7 @@ function applyDynamicsForce() {
     y: vector.y,
     start: type === "continuous" ? Math.max(0, dynamicsValue(els.dynamicsForceStart, "s")) : 0,
     duration: type === "continuous" ? Math.max(0, dynamicsValue(els.dynamicsForceDuration, "s")) : 0,
+    applicationPoint,
   });
   state.dynamics.result = null;
   els.dynamicsForceDialog.close();
@@ -3154,13 +3655,11 @@ function solveDynamics() {
   const duration = dynamicsValue(els.dynamicsDuration, "s");
   const timeStep = dynamicsValue(els.dynamicsTimeStep, "s");
   try {
-    state.dynamics.result = DynamicsCore.simulateScene({
-      objects: state.dynamics.objects,
-      fields: state.dynamics.fields,
-      forces: state.dynamics.forces,
-      duration,
-      timeStep,
-    });
+    const project = buildDynamicsProject();
+    project.simulation.duration = duration;
+    project.simulation.timeStep = timeStep;
+    const controller = DynamicsController.createController(project);
+    state.dynamics.result = controller.solve();
   } catch (error) {
     state.dynamics.result = null;
     renderDynamicsResult();
@@ -3173,19 +3672,6 @@ function solveDynamics() {
   showDynamicsToast(`已完成 ${state.dynamics.result.objectResults.length} 个对象的动力学求解。`);
 }
 
-function dynamicsTrajectoryEquation(model) {
-  if (!model || model.kind !== "constant-acceleration") {
-    return {
-      x: "x(t)：由四阶 Runge-Kutta 数值积分得到",
-      y: "y(t)：分区场、磁场或分段外力使加速度变化，无单一二次解析式",
-    };
-  }
-  return {
-    x: `x(t) = ${formatNumber(model.x0)} + ${formatNumber(model.vx0)} t + ${formatNumber(0.5 * model.ax)} t^2`,
-    y: `y(t) = ${formatNumber(model.y0)} + ${formatNumber(model.vy0)} t + ${formatNumber(0.5 * model.ay)} t^2`,
-  };
-}
-
 function renderDynamicsResult() {
   const result = state.dynamics.result;
   if (!result) {
@@ -3193,54 +3679,12 @@ function renderDynamicsResult() {
     syncDynamicsActionUi();
     return;
   }
-  const options = selectedDynamicsOptions();
-  const lines = [
-    "求解模块：二维多对象独立质点动力学",
-    `场景：${result.objectResults.length} 个对象，${state.dynamics.fields.length} 个场，${state.dynamics.forces.length} 个外加作用力`,
-    `用户请求步长：${formatNumber(result.requestedTimeStep)} s`,
-    `实际采用步长：${formatNumber(result.timeStep)} s`,
-    `单对象积分步数：${result.stepCount}，总样本数：${result.totalSampleCount}`,
-  ];
-  if (options.has("kinetic")) lines.push(`系统总动能：${formatNumber(result.totals.kineticEnergy)} J`);
-  if (options.has("potential")) lines.push(`系统总势能：${formatNumber(result.totals.potentialEnergy)} J（坐标原点为零势能参考）`);
-  if (options.has("total_energy")) lines.push(`系统机械能：${formatNumber(result.totals.mechanicalEnergy)} J`);
-  if (options.has("momentum")) {
-    lines.push(`系统总动量：px=${formatNumber(result.totals.momentumX)} kg·m/s, py=${formatNumber(result.totals.momentumY)} kg·m/s`);
-  }
-  if (options.has("angular_momentum")) {
-    lines.push(`系统关于全局原点的轨道角动量：Lz=${formatNumber(result.totals.orbitalAngularMomentum)} kg·m^2/s`);
-  }
-  for (const diagnostic of result.diagnostics || []) {
-    lines.push(`[${diagnostic.level === "warning" ? "警告" : "提示"}] ${diagnostic.message}`);
-  }
-  for (const item of result.objectResults) {
-    lines.push("", `${item.name}：`);
-    if (options.has("kinetic")) lines.push(`  动能：${formatNumber(item.kineticEnergy)} J`);
-    if (options.has("potential")) lines.push(`  势能：${formatNumber(item.potentialEnergy)} J`);
-    if (options.has("total_energy")) lines.push(`  机械能：${formatNumber(item.mechanicalEnergy)} J`);
-    if (options.has("momentum")) lines.push(`  动量：(${formatNumber(item.momentum.x)}, ${formatNumber(item.momentum.y)}) kg·m/s`);
-    if (options.has("angular_momentum")) {
-      lines.push(`  关于全局原点的轨道角动量 Lz：${formatNumber(item.orbitalAngularMomentum)} kg·m^2/s`);
-    }
-    if (options.has("lorentz_force")) {
-      lines.push(`  洛伦兹力：Fx=${formatNumber(item.lorentzForce.x)} N, Fy=${formatNumber(item.lorentzForce.y)} N`);
-    }
-    if (options.has("velocity")) lines.push(`  速度：vx=${formatNumber(item.final.vx)} m/s, vy=${formatNumber(item.final.vy)} m/s`);
-    if (options.has("acceleration")) lines.push(`  加速度：ax=${formatNumber(item.ax)} m/s^2, ay=${formatNumber(item.ay)} m/s^2`);
-    if (options.has("inertia")) {
-      lines.push(`  几何质心转动惯量估算：I=${formatNumber(item.inertia)} kg·m^2（不参与当前平动积分）`);
-    }
-    if (options.has("displacement")) {
-      lines.push(`  位移：Δx=${formatNumber(item.final.x - item.x0)} m, Δy=${formatNumber(item.final.y - item.y0)} m`);
-    }
-    if (options.has("trajectory_equation")) {
-      const equation = dynamicsTrajectoryEquation(item.trajectoryModel);
-      lines.push(`  ${equation.x}`);
-      lines.push(`  ${equation.y}`);
-    }
-  }
-  if (options.has("trajectory")) lines.push("", "位移轨迹：已在建模区生成多对象动态演示。");
-  els.dynamicsResultText.textContent = lines.join("\n");
+  els.dynamicsResultText.textContent = DynamicsReport.buildResultText({
+    result,
+    fields: state.dynamics.fields,
+    forces: state.dynamics.forces,
+    options: selectedDynamicsOptions(),
+  }).trimEnd();
   syncDynamicsActionUi();
 }
 
@@ -3260,6 +3704,7 @@ function drawDynamicsScene(sampleMap = null) {
   dynamicsCtx.clearRect(0, 0, dynamicsCanvas.width, dynamicsCanvas.height);
   drawDynamicsGrid();
   drawDynamicsField();
+  drawDynamicsTracksAndGrounds();
   const result = state.dynamics.result;
   if (result && selectedDynamicsOptions().has("trajectory")) {
     for (const item of result.objectResults) {
@@ -3332,6 +3777,44 @@ function drawDynamicsGrid() {
 
 function drawDynamicsField() {
   for (const field of state.dynamics.fields) drawSingleDynamicsField(field);
+}
+
+function drawDynamicsTracksAndGrounds() {
+  dynamicsCtx.save();
+  dynamicsCtx.strokeStyle = "#24c7b1";
+  dynamicsCtx.lineWidth = 2.4;
+  for (const trackSpec of state.dynamics.tracks || []) {
+    try {
+      const frames = DynamicsTracks.sampleTrack({ ...trackSpec, ...(trackSpec.geometry || {}) }, { count: 96 });
+      dynamicsCtx.beginPath();
+      frames.forEach((frame, index) => {
+        const screen = dynamicsToScreen(frame.point || frame);
+        if (index === 0) dynamicsCtx.moveTo(screen.x, screen.y);
+        else dynamicsCtx.lineTo(screen.x, screen.y);
+      });
+      dynamicsCtx.stroke();
+    } catch (_error) {
+      // Project validation reports malformed tracks; the renderer stays fail-safe.
+    }
+  }
+  dynamicsCtx.strokeStyle = "#e5b955";
+  dynamicsCtx.lineWidth = 2;
+  for (const ground of state.dynamics.grounds || []) {
+    const normal = ground.normal || { x: 0, y: 1 };
+    const lengthSquared = normal.x * normal.x + normal.y * normal.y;
+    if (!(lengthSquared > 1e-12)) continue;
+    const offset = Number(ground.offset || 0);
+    const base = { x: (normal.x * offset) / lengthSquared, y: (normal.y * offset) / lengthSquared };
+    const tangent = { x: -normal.y, y: normal.x };
+    const extent = (Math.max(dynamicsCanvas.width, dynamicsCanvas.height) / state.dynamics.scale) * 2;
+    const start = dynamicsToScreen({ x: base.x - tangent.x * extent, y: base.y - tangent.y * extent });
+    const end = dynamicsToScreen({ x: base.x + tangent.x * extent, y: base.y + tangent.y * extent });
+    dynamicsCtx.beginPath();
+    dynamicsCtx.moveTo(start.x, start.y);
+    dynamicsCtx.lineTo(end.x, end.y);
+    dynamicsCtx.stroke();
+  }
+  dynamicsCtx.restore();
 }
 
 function drawSingleDynamicsField(field) {
@@ -3444,6 +3927,7 @@ function drawDynamicsObject(point, result) {
   const sizeA = Math.max(16, Math.min(120, (result?.sizeA || model?.sizeA || 1) * state.dynamics.scale));
   const rawSizeB = (result?.sizeB || model?.sizeB || 0.2) * state.dynamics.scale;
   const sizeB = Math.max(kind === "particle" ? 4 : 10, Math.min(kind === "particle" ? 40 : 90, rawSizeB));
+  const bodyAngle = Number(point.angle ?? point.theta ?? model?.theta0 ?? 0);
   const objectIndex = Math.max(0, state.dynamics.objects.findIndex((object) => object.id === model?.id));
   const color = dynamicsObjectColor(objectIndex);
   dynamicsCtx.save();
@@ -3463,10 +3947,14 @@ function drawDynamicsObject(point, result) {
     dynamicsCtx.fill();
     dynamicsCtx.stroke();
   } else if (kind === "rod") {
-    lineDynamics({ x: screen.x - sizeA / 2, y: screen.y }, { x: screen.x + sizeA / 2, y: screen.y });
+    const axis = { x: Math.cos(bodyAngle) * sizeA / 2, y: -Math.sin(bodyAngle) * sizeA / 2 };
+    lineDynamics({ x: screen.x - axis.x, y: screen.y - axis.y }, { x: screen.x + axis.x, y: screen.y + axis.y });
   } else if (kind === "rectangle") {
-    dynamicsCtx.strokeRect(screen.x - sizeA / 2, screen.y - sizeB / 2, sizeA, sizeB);
-    dynamicsCtx.fillRect(screen.x - sizeA / 2, screen.y - sizeB / 2, sizeA, sizeB);
+    dynamicsCtx.translate(screen.x, screen.y);
+    dynamicsCtx.rotate(-bodyAngle);
+    dynamicsCtx.strokeRect(-sizeA / 2, -sizeB / 2, sizeA, sizeB);
+    dynamicsCtx.fillRect(-sizeA / 2, -sizeB / 2, sizeA, sizeB);
+    dynamicsCtx.setTransform(1, 0, 0, 1, 0, 0);
   } else {
     dynamicsCtx.beginPath();
     dynamicsCtx.arc(screen.x, screen.y, sizeB, 0, Math.PI * 2);
@@ -3476,6 +3964,12 @@ function drawDynamicsObject(point, result) {
       dynamicsCtx.beginPath();
       dynamicsCtx.arc(screen.x, screen.y, Math.max(4, sizeB * 0.62), 0, Math.PI * 2);
       dynamicsCtx.stroke();
+    }
+    if (kind === "circle" || kind === "ring") {
+      lineDynamics(
+        { x: screen.x, y: screen.y },
+        { x: screen.x + Math.cos(bodyAngle) * sizeB, y: screen.y - Math.sin(bodyAngle) * sizeB }
+      );
     }
   }
   dynamicsCtx.fillStyle = cssColor("--ink");
@@ -3489,7 +3983,22 @@ function drawDynamicsAppliedForces() {
   for (const force of state.dynamics.forces) {
     const object = dynamicsObjectById(force.targetId);
     if (!object) continue;
-    const point = dynamicsToScreen(object);
+    const applicationPoint = force.applicationPoint || { frame: "local", x: 0, y: 0 };
+    const angle = Number(object.theta0 || 0);
+    const worldPoint =
+      applicationPoint.frame === "world"
+        ? { x: Number(applicationPoint.x || 0), y: Number(applicationPoint.y || 0) }
+        : {
+            x:
+              object.x +
+              Math.cos(angle) * Number(applicationPoint.x || 0) -
+              Math.sin(angle) * Number(applicationPoint.y || 0),
+            y:
+              object.y +
+              Math.sin(angle) * Number(applicationPoint.x || 0) +
+              Math.cos(angle) * Number(applicationPoint.y || 0),
+          };
+    const point = dynamicsToScreen(worldPoint);
     const magnitude = Math.hypot(force.x, force.y);
     if (magnitude < 1e-12) continue;
     const unit = { x: force.x / magnitude, y: -force.y / magnitude };
@@ -3582,7 +4091,7 @@ function startDynamicsAnimation() {
     const sampleMap = Object.fromEntries(
       state.dynamics.result.objectResults.map((result) => [
         result.objectId,
-        DynamicsCore.sampleAtTime(result.samples, elapsed, result.timeStep),
+        DynamicsRenderer.interpolateSamples(result.samples, elapsed) || result.final,
       ])
     );
     drawDynamicsScene(sampleMap);
@@ -3742,12 +4251,25 @@ function finishDynamicsFieldPlacement() {
 
 function clearDynamicsModel() {
   cancelDynamicsFieldPlacement({ silent: true });
-  if (!state.dynamics.objects.length && !state.dynamics.fields.length && !state.dynamics.forces.length) return;
+  if (
+    !state.dynamics.objects.length &&
+    !state.dynamics.fields.length &&
+    !state.dynamics.forces.length &&
+    !(state.dynamics.grounds || []).length &&
+    !(state.dynamics.tracks || []).length
+  )
+    return;
   recordDynamicsHistory();
   cancelDynamicsAnimation();
   state.dynamics.objects = [];
   state.dynamics.fields = [];
   state.dynamics.forces = [];
+  state.dynamics.model = "independent-particle2d";
+  state.dynamics.grounds = [];
+  state.dynamics.tracks = [];
+  state.dynamics.constraints = [];
+  state.dynamics.simulationSettings = {};
+  if (els.dynamicsGroundToggle) els.dynamicsGroundToggle.checked = false;
   state.dynamics.objectSeq = 1;
   state.dynamics.fieldSeq = 1;
   state.dynamics.forceSeq = 1;
@@ -4720,7 +5242,19 @@ canvas.addEventListener("dblclick", (event) => {
 });
 
 els.showLoginButton.addEventListener("click", () => showAuthMode("login"));
+if (els.announcementButton) els.announcementButton.addEventListener("click", openAnnouncement);
+if (els.announcementDialog) {
+  els.announcementDialog.addEventListener("click", (event) => {
+    if (event.target === els.announcementDialog) closeAnnouncement();
+  });
+  els.announcementDialog.addEventListener("close", restoreAnnouncementFocus);
+}
 els.showRegisterButton.addEventListener("click", () => showAuthMode("register"));
+if (els.internalLoginEntry) {
+  els.internalLoginEntry.addEventListener("click", () => {
+    setAuthMessage("请先登录，再通过“获得更多权益”进入内部测试通道。");
+  });
+}
 els.loginSubmit.addEventListener("click", loginUser);
 els.registerSubmit.addEventListener("click", registerUser);
 els.startAppButton.addEventListener("click", startApplication);
@@ -4729,11 +5263,30 @@ if (els.dynamicsModuleButton) els.dynamicsModuleButton.addEventListener("click",
 els.welcomeLogoutButton.addEventListener("click", logoutUser);
 els.settingsButton.addEventListener("click", openSettingsDialog);
 if (els.dynamicsSettingsButton) els.dynamicsSettingsButton.addEventListener("click", openSettingsDialog);
+if (els.benefitsButton) els.benefitsButton.addEventListener("click", openEntitlementsDialog);
+if (els.dynamicsBenefitsButton) {
+  els.dynamicsBenefitsButton.addEventListener("click", openEntitlementsDialog);
+}
+if (els.redeemInternalButton) {
+  els.redeemInternalButton.addEventListener("click", redeemInternalAccess);
+}
+if (els.joinPinnWaitlistButton) {
+  els.joinPinnWaitlistButton.addEventListener("click", joinPinnWaitlist);
+}
+if (els.internalInviteCode) {
+  els.internalInviteCode.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      redeemInternalAccess();
+    }
+  });
+}
 if (els.dynamicsToStaticButton) els.dynamicsToStaticButton.addEventListener("click", launchStaticApplication);
 if (els.staticToDynamicsButton) els.staticToDynamicsButton.addEventListener("click", launchDynamicsApplication);
 els.fontSizeSelect.addEventListener("change", () => applyFontSize(els.fontSizeSelect.value));
 els.saveNicknameButton.addEventListener("click", saveNickname);
 els.saveAvatarButton.addEventListener("click", saveSettingsAvatar);
+els.savePasswordButton.addEventListener("click", savePassword);
 els.logoutButton.addEventListener("click", logoutUser);
 els.registerAvatar.addEventListener("change", () => {
   const file = els.registerAvatar.files && els.registerAvatar.files[0];
@@ -4743,12 +5296,17 @@ els.settingsAvatar.addEventListener("change", () => {
   const file = els.settingsAvatar.files && els.settingsAvatar.files[0];
   previewSettingsAvatar(file);
 });
-for (const input of [els.loginUsername]) {
+for (const input of [els.loginUsername, els.loginPassword]) {
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter") loginUser();
   });
 }
-for (const input of [els.registerUsername, els.registerNickname]) {
+for (const input of [
+  els.registerUsername,
+  els.registerPassword,
+  els.registerPasswordConfirm,
+  els.registerNickname,
+]) {
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter") registerUser();
   });
@@ -4867,6 +5425,7 @@ if (els.dynamicsForceType) els.dynamicsForceType.addEventListener("change", () =
   syncDynamicsForceDialog();
 });
 if (els.dynamicsForceDirectionPreset) els.dynamicsForceDirectionPreset.addEventListener("change", syncDynamicsForceDialog);
+if (els.dynamicsForcePointFrame) els.dynamicsForcePointFrame.addEventListener("change", syncDynamicsForceDialog);
 
 if (els.dynamicsEnvironment) {
   els.dynamicsEnvironment.addEventListener("change", () => {
@@ -4874,7 +5433,7 @@ if (els.dynamicsEnvironment) {
     syncDynamicsFieldDialog();
   });
 }
-for (const control of [els.dynamicsFieldDirectionPreset, els.dynamicsFieldRange]) {
+for (const control of [els.dynamicsFieldDirectionPreset, els.dynamicsFieldRange, els.dynamicsFieldMode]) {
   if (control) control.addEventListener("change", syncDynamicsFieldDialog);
 }
 
@@ -4906,11 +5465,36 @@ for (const control of [
   els.dynamicsShapeEquation,
   els.dynamicsVx0,
   els.dynamicsVy0,
+  els.dynamicsTheta0,
+  els.dynamicsOmega0,
 ]) {
   if (!control) continue;
   control.addEventListener("change", () => {
     updateSelectedDynamicsObjectFromControls();
     syncDynamicsControls();
+  });
+}
+
+if (els.dynamicsGroundToggle) {
+  els.dynamicsGroundToggle.addEventListener("change", () => {
+    recordDynamicsHistory();
+    if (els.dynamicsGroundToggle.checked) {
+      state.dynamics.model = "coupled-rigid-body2d";
+      state.dynamics.grounds = [
+        {
+          id: "G1",
+          normal: { x: 0, y: 1 },
+          offset: 0,
+          contact: { restitution: 0.5, staticFriction: 0.6, dynamicFriction: 0.4, damping: 0 },
+        },
+      ];
+    } else {
+      state.dynamics.grounds = [];
+    }
+    state.dynamics.result = null;
+    cancelDynamicsAnimation();
+    renderDynamicsResult();
+    drawDynamicsScene();
   });
 }
 
@@ -4925,7 +5509,7 @@ for (const control of [els.dynamicsX0, els.dynamicsY0, els.dynamicsDuration, els
   });
 }
 
-for (const list of [els.dynamicsObjectList, els.dynamicsFieldList, els.dynamicsForceList]) {
+for (const list of [els.dynamicsObjectList, els.dynamicsFieldList, els.dynamicsForceList, els.dynamicsTrackList]) {
   if (!list) continue;
   list.addEventListener("click", (event) => {
     const row = event.target.closest(".dynamics-scene-row");
@@ -4935,6 +5519,7 @@ for (const list of [els.dynamicsObjectList, els.dynamicsFieldList, els.dynamicsF
       if (kind === "object") deleteDynamicsObject(id);
       if (kind === "field") deleteDynamicsField(id);
       if (kind === "force") deleteDynamicsForce(id);
+      if (kind === "track") deleteDynamicsTrack(id);
       return;
     }
     if (kind === "object") selectDynamicsObject(id);
@@ -5074,6 +5659,11 @@ for (const control of [
 }
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && els.announcementDialog?.open) {
+    event.preventDefault();
+    closeAnnouncement();
+    return;
+  }
   if (event.key === "Escape" && state.dynamics.fieldPlacement.active) {
     event.preventDefault();
     cancelDynamicsFieldPlacement();

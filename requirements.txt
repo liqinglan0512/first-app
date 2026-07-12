@@ -1,1 +1,6 @@
 numpy>=1.24
+reportlab>=4.0
+pypdf>=5.0
+argon2-cffi>=23.1,<26
+Pillow>=10.0
+psycopg[binary]>=3.2,<4
