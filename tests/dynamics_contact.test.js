@@ -199,6 +199,19 @@ check(() => {
 });
 
 check(() => {
+  const a = circle("A", -1, 0, 1, 0);
+  const b = circle("B", 0, 0, 0, 0);
+  const c = circle("C", 1, 0, 0, 0);
+  const contacts = contact.generateContacts([a, b, c], [], { margin: 1e-9 });
+  const before = contact.systemKineticEnergy([a, b, c]);
+  const solved = contact.solveContacts(contacts, { iterations: 50, restitutionVelocityThreshold: 0 });
+  const after = contact.systemKineticEnergy([a, b, c]);
+  close(after, before, 1e-10);
+  close(solved.dissipatedEnergy, 0, 1e-10);
+  assert.ok(solved.attributedDissipatedEnergy >= 0);
+});
+
+check(() => {
   const body = circle("fast", -5, 0, 100, 0);
   const result = contact.stepWorld({
     bodies: [body],

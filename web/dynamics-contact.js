@@ -423,13 +423,17 @@
 
   function solveContacts(contacts, options = {}) {
     if (!Array.isArray(contacts)) throw new TypeError("contacts must be an array.");
+    const bodies = [...new Set(contacts.flatMap((contact) => [contact.a, contact.b]).filter(Boolean))];
+    const energyBefore = systemKineticEnergy(bodies);
     solveVelocityConstraints(contacts, options);
     solvePositionConstraints(contacts, options);
     const summaries = contacts.map(contactSummary);
+    const energyAfter = systemKineticEnergy(bodies);
     return {
       contacts: summaries,
       contactCount: summaries.length,
-      dissipatedEnergy: summaries.reduce((sum, contact) => sum + contact.dissipatedEnergy, 0),
+      dissipatedEnergy: Math.max(0, energyBefore - energyAfter),
+      attributedDissipatedEnergy: summaries.reduce((sum, contact) => sum + contact.dissipatedEnergy, 0),
     };
   }
 

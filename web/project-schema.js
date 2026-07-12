@@ -11,7 +11,8 @@
   }
 
   const STATIC_SCHEMA = "cms-static-project@1";
-  const DYNAMICS_SCHEMA = "cms-dynamics-project@1";
+  const DYNAMICS_SCHEMA = "cms-dynamics-project@2";
+  const PREVIOUS_DYNAMICS_SCHEMA = "cms-dynamics-project@1";
   const APPLICATION_ID = "computational-mechanics-solver";
   const LEGACY_DYNAMICS_SCHEMA = "mechanics-dynamics-project@1";
   const LEGACY_GEOMETRIES = new Set(["arc", "tee", "freeform", "right_angle"]);
@@ -22,6 +23,13 @@
   const DYNAMICS_FIELD_KINDS = new Set(["gravity", "electric", "magnetic"]);
   const DYNAMICS_RANGE_TYPES = new Set(["global", "rectangle", "circle", "custom"]);
   const DYNAMICS_FORCE_TYPES = new Set(["impulse", "continuous"]);
+  const DYNAMICS_MODELS = new Set(["independent-particle2d", "coupled-rigid-body2d"]);
+  const DYNAMICS_CONTACT_KINDS = new Set(["particle", "circle"]);
+  const DYNAMICS_TRACK_KINDS = new Set(["line", "incline", "polyline", "arc", "bezier"]);
+  const DYNAMICS_ENDPOINT_BEHAVIORS = new Set(["release", "open", "stop", "reflect", "bounce"]);
+  const DYNAMICS_EXPRESSION_MODES = new Set(["constant", "time", "space", "time-space"]);
+  const DYNAMICS_FIELD_REPRESENTATIONS = new Set(["components", "magnitude-angle"]);
+  const DYNAMICS_FIELD_UNITS = Object.freeze({ gravity: "m/s^2", electric: "N/C", magnetic: "T" });
   const GEOMETRY_EPSILON = 1e-9;
 
   function isPlainObject(value) {
@@ -79,6 +87,19 @@
   function assertNonNegativeNumber(value, label) {
     const number = assertFiniteNumber(value, label);
     if (number < 0) throw new Error(`${label}不能小于 0。`);
+    return number;
+  }
+
+  function assertBoolean(value, label) {
+    if (typeof value !== "boolean") throw new Error(`${label}必须是布尔值。`);
+    return value;
+  }
+
+  function assertBoundedNumber(value, minimum, maximum, label) {
+    const number = assertFiniteNumber(value, label);
+    if (number < minimum || number > maximum) {
+      throw new Error(`${label}必须在 [${minimum}, ${maximum}] 内。`);
+    }
     return number;
   }
 
@@ -336,7 +357,12 @@
     assertPlainObject(rawProject, "动力学工程根对象");
     const project = deepClone(rawProject);
     const schema = project.schema;
-    const legacy = schema === undefined || schema === null || schema === "" || schema === LEGACY_DYNAMICS_SCHEMA;
+    const legacy =
+      schema === undefined ||
+      schema === null ||
+      schema === "" ||
+      schema === LEGACY_DYNAMICS_SCHEMA ||
+      schema === PREVIOUS_DYNAMICS_SCHEMA;
     if (!legacy && schema !== DYNAMICS_SCHEMA) throw new Error(`不支持的动力学工程版本：${String(schema)}。`);
     if (legacy) {
       if (project.module !== "dynamics") {
@@ -345,6 +371,63 @@
       project.schema = DYNAMICS_SCHEMA;
       project.application = APPLICATION_ID;
       project.model = project.model || "independent-particle2d";
+      project.objects = (Array.isArray(project.objects) ? project.objects : []).map((object) => {
+        if (!isPlainObject(object)) return object;
+        const geometry = isPlainObject(object.geometry) ? object.geometry : {};
+        const massProperties = isPlainObject(object.massProperties) ? object.massProperties : {};
+        const initialState = isPlainObject(object.initialState) ? object.initialState : {};
+        return {
+          ...object,
+          geometry: {
+            ...geometry,
+            kind: geometry.kind ?? object.kind,
+            sizeA: geometry.sizeA ?? object.sizeA,
+            sizeB: geometry.sizeB ?? object.sizeB,
+            sizeC: geometry.sizeC ?? object.sizeC,
+            collisionRadius: geometry.collisionRadius ?? object.collisionRadius,
+            path: geometry.path ?? object.path,
+            equation: geometry.equation ?? object.equation,
+          },
+          massProperties: {
+            ...massProperties,
+            mass: massProperties.mass ?? object.mass,
+            density: massProperties.density ?? object.density,
+            charge: massProperties.charge ?? object.charge,
+            inertia: massProperties.inertia ?? object.inertia,
+            centerOfMass: massProperties.centerOfMass ?? object.centerOfMass,
+          },
+          initialState: {
+            ...initialState,
+            x: initialState.x ?? object.x,
+            y: initialState.y ?? object.y,
+            vx: initialState.vx ?? object.vx0,
+            vy: initialState.vy ?? object.vy0,
+            theta: initialState.theta ?? object.theta0 ?? object.angle ?? 0,
+            omega: initialState.omega ?? object.omega0 ?? object.angularVelocity ?? 0,
+          },
+        };
+      });
+      project.forces = (Array.isArray(project.forces) ? project.forces : []).map((force) => {
+        if (!isPlainObject(force)) return force;
+        const legacyPoint = isPlainObject(force.applicationPoint)
+          ? force.applicationPoint
+          : isPlainObject(force.localPoint)
+            ? { ...force.localPoint, frame: "local" }
+            : isPlainObject(force.point)
+              ? force.point
+              : { frame: "local", x: 0, y: 0 };
+        return {
+          ...force,
+          applicationPoint: {
+            frame: legacyPoint.frame === "world" ? "world" : "local",
+            x: Number(legacyPoint.x ?? 0),
+            y: Number(legacyPoint.y ?? 0),
+          },
+        };
+      });
+      project.tracks = Array.isArray(project.tracks) ? project.tracks : [];
+      project.grounds = Array.isArray(project.grounds) ? project.grounds : [];
+      project.constraints = Array.isArray(project.constraints) ? project.constraints : [];
     }
     return project;
   }
@@ -352,6 +435,36 @@
   function dynamicsObjectValue(object, nestedGroup, nestedField, flatField) {
     const nested = isPlainObject(object[nestedGroup]) ? object[nestedGroup][nestedField] : undefined;
     return nested ?? object[flatField];
+  }
+
+  function validateContactMaterial(material, label) {
+    if (material === undefined || material === null) return;
+    assertPlainObject(material, label);
+    if (material.enabled !== undefined) assertBoolean(material.enabled, `${label}.enabled`);
+    if (material.restitution !== undefined) {
+      assertBoundedNumber(material.restitution, 0, 1, `${label}.restitution`);
+    }
+    const staticFriction =
+      material.staticFriction === undefined
+        ? undefined
+        : assertNonNegativeNumber(material.staticFriction, `${label}.staticFriction`);
+    const dynamicFriction =
+      material.dynamicFriction === undefined
+        ? undefined
+        : assertNonNegativeNumber(material.dynamicFriction, `${label}.dynamicFriction`);
+    if (staticFriction !== undefined && dynamicFriction !== undefined && staticFriction < dynamicFriction) {
+      throw new Error(`${label}.staticFriction 不能小于 dynamicFriction。`);
+    }
+    if (material.damping !== undefined) assertNonNegativeNumber(material.damping, `${label}.damping`);
+  }
+
+  function validateApplicationPoint(point, label) {
+    if (point === undefined || point === null) return;
+    assertPlainObject(point, label);
+    const frame = String(point.frame || "local");
+    if (!new Set(["local", "world"]).has(frame)) throw new Error(`${label}.frame 必须是 local 或 world。`);
+    assertFiniteNumber(point.x ?? 0, `${label}.x`);
+    assertFiniteNumber(point.y ?? 0, `${label}.y`);
   }
 
   function validateDynamicsObject(object, index) {
@@ -380,9 +493,74 @@
     }
     if (object.name !== undefined && typeof object.name !== "string") throw new Error(`动力学对象 ${id} 的 name 必须是字符串。`);
     if (object.materialE !== undefined) assertNonNegativeNumber(object.materialE, `动力学对象 ${id} 的 materialE`);
-    if (object.equation !== undefined && typeof object.equation !== "string") {
+    const equation = dynamicsObjectValue(object, "geometry", "equation", "equation");
+    if (equation !== undefined && typeof equation !== "string") {
       throw new Error(`动力学对象 ${id} 的 equation 必须是字符串。`);
     }
+    const theta = dynamicsObjectValue(object, "initialState", "theta", "theta0");
+    const omega = dynamicsObjectValue(object, "initialState", "omega", "omega0");
+    if (theta !== undefined) assertFiniteNumber(theta, `动力学对象 ${id} 的 theta0`);
+    if (omega !== undefined) assertFiniteNumber(omega, `动力学对象 ${id} 的 omega0`);
+    const inertia = dynamicsObjectValue(object, "massProperties", "inertia", "inertia");
+    if (inertia !== undefined) assertPositiveNumber(inertia, `动力学对象 ${id} 的 inertia`);
+    const centerOfMass = dynamicsObjectValue(object, "massProperties", "centerOfMass", "centerOfMass");
+    if (centerOfMass !== undefined) assertPoint(centerOfMass, `动力学对象 ${id} 的 centerOfMass`);
+    const collisionRadius =
+      dynamicsObjectValue(object, "geometry", "collisionRadius", "collisionRadius") ??
+      (kind === "particle" ? dynamicsObjectValue(object, "geometry", "sizeB", "sizeB") : undefined);
+    if (collisionRadius !== undefined) {
+      assertPositiveNumber(collisionRadius, `动力学对象 ${id} 的 collisionRadius`);
+    }
+    validateContactMaterial(object.contact, `动力学对象 ${id} 的 contact`);
+    if (object.contact?.enabled) {
+      if (!DYNAMICS_CONTACT_KINDS.has(kind)) {
+        throw new Error(`动力学对象 ${id} 的几何 ${kind} 尚未实现碰撞，不能启用 contact。`);
+      }
+      if (kind === "particle" && collisionRadius === undefined) {
+        throw new Error(`动力学质点 ${id} 启用 contact 时必须提供 collisionRadius。`);
+      }
+    }
+  }
+
+  function validateFieldVariation(field, id) {
+    const variation = field.variation ?? field.expression;
+    if (variation === undefined || variation === null) return false;
+    assertPlainObject(variation, `动力场 ${id} 的 variation`);
+    const mode = String(variation.mode || "");
+    if (!DYNAMICS_EXPRESSION_MODES.has(mode)) {
+      throw new Error(`动力场 ${id} 的 variation.mode ${mode || "(空)"} 不受支持。`);
+    }
+    const representation = String(variation.representation || "components");
+    if (!DYNAMICS_FIELD_REPRESENTATIONS.has(representation) || (field.kind === "magnetic" && representation !== "components")) {
+      throw new Error(`动力场 ${id} 的 variation.representation ${representation} 不受支持。`);
+    }
+    const expectedUnit = DYNAMICS_FIELD_UNITS[field.kind];
+    const expressions = variation.expressions ?? variation.components;
+    assertPlainObject(expressions, `动力场 ${id} 的 variation.expressions`);
+    const units = variation.units;
+    if (units !== undefined) assertPlainObject(units, `动力场 ${id} 的 variation.units`);
+    const permitted =
+      field.kind === "magnetic" ? ["z"] : representation === "magnitude-angle" ? ["magnitude", "angle"] : ["x", "y"];
+    for (const required of permitted) {
+      if (typeof expressions[required] !== "string" || !expressions[required].trim()) {
+        throw new Error(`动力场 ${id} 的 variation.expressions.${required} 必须是非空表达式。`);
+      }
+    }
+    for (const [component, expression] of Object.entries(expressions)) {
+      if (!permitted.includes(component)) throw new Error(`动力场 ${id} 不允许表达式分量 ${component}。`);
+      if (typeof expression !== "string" || !expression.trim()) {
+        throw new Error(`动力场 ${id} 的 ${component} 分量表达式必须是非空字符串。`);
+      }
+      if (expression.length > 512) throw new Error(`动力场 ${id} 的 ${component} 分量表达式超过 512 字符上限。`);
+    }
+    const fieldUnit = units?.[permitted[0]] ?? variation.unit;
+    if (String(fieldUnit || "") !== expectedUnit) {
+      throw new Error(`动力场 ${id} 的 variation 场分量单位必须是 ${expectedUnit}。`);
+    }
+    if (representation === "magnitude-angle" && String(units?.angle ?? variation.angleUnit ?? "deg") !== "deg") {
+      throw new Error(`动力场 ${id} 的角度表达式单位必须是 deg。`);
+    }
+    return true;
   }
 
   function validateDynamicsField(field, index) {
@@ -390,7 +568,12 @@
     const id = assertId(field.id, `动力场第 ${index + 1} 项的 ID`);
     const kind = String(field.kind || "");
     if (!DYNAMICS_FIELD_KINDS.has(kind)) throw new Error(`动力场 ${id} 的 kind ${kind || "(空)"} 不受支持。`);
-    assertNonNegativeNumber(field.magnitude, `动力场 ${id} 的 magnitude`);
+    const hasVariation = validateFieldVariation(field, id);
+    if (field.magnitude !== undefined) {
+      assertNonNegativeNumber(field.magnitude, `动力场 ${id} 的 magnitude`);
+    } else if (!hasVariation) {
+      throw new Error(`动力场 ${id} 必须提供 magnitude 或受控 variation。`);
+    }
     if (field.angle !== undefined) assertFiniteNumber(field.angle, `动力场 ${id} 的 angle`);
     const rangeType = String(field.rangeType || "");
     if (!DYNAMICS_RANGE_TYPES.has(rangeType)) throw new Error(`动力场 ${id} 的 rangeType ${rangeType || "(空)"} 不受支持。`);
@@ -429,6 +612,74 @@
       assertNonNegativeNumber(force.start ?? 0, `外力 ${id} 的 start`);
       assertNonNegativeNumber(force.duration ?? 0, `外力 ${id} 的 duration`);
     }
+    validateApplicationPoint(force.applicationPoint, `外力 ${id} 的 applicationPoint`);
+  }
+
+  function validateDynamicsGround(ground, index) {
+    assertPlainObject(ground, `接触地面第 ${index + 1} 项`);
+    const id = assertId(ground.id, `接触地面第 ${index + 1} 项的 ID`);
+    assertPoint(ground.normal, `接触地面 ${id} 的 normal`);
+    if (!(Math.hypot(Number(ground.normal.x), Number(ground.normal.y)) > GEOMETRY_EPSILON)) {
+      throw new Error(`接触地面 ${id} 的 normal 不能是零向量。`);
+    }
+    assertFiniteNumber(ground.offset ?? 0, `接触地面 ${id} 的 offset`);
+    validateContactMaterial(ground.contact ?? ground.material, `接触地面 ${id} 的 contact`);
+  }
+
+  function validateTrackGeometry(track, id) {
+    const geometry = isPlainObject(track.geometry) ? track.geometry : track;
+    if (track.kind === "line" || track.kind === "incline") {
+      assertPoint(geometry.start, `轨道 ${id} 的 start`);
+      assertPoint(geometry.end, `轨道 ${id} 的 end`);
+      if (Math.hypot(geometry.end.x - geometry.start.x, geometry.end.y - geometry.start.y) <= GEOMETRY_EPSILON) {
+        throw new Error(`轨道 ${id} 的起点与终点不能重合。`);
+      }
+      return;
+    }
+    if (track.kind === "polyline") {
+      assertArray(geometry.points, `轨道 ${id} 的 points`);
+      if (geometry.points.length < 2) throw new Error(`轨道 ${id} 的 points 至少需要 2 个点。`);
+      geometry.points.forEach((point, pointIndex) => assertPoint(point, `轨道 ${id} 的 points[${pointIndex}]`));
+      return;
+    }
+    if (track.kind === "arc") {
+      assertPoint(geometry.center, `轨道 ${id} 的 center`);
+      assertPositiveNumber(geometry.radius, `轨道 ${id} 的 radius`);
+      assertFiniteNumber(geometry.startAngle, `轨道 ${id} 的 startAngle`);
+      assertFiniteNumber(geometry.endAngle, `轨道 ${id} 的 endAngle`);
+      return;
+    }
+    for (const pointName of ["start", "control1", "control2", "end"]) {
+      assertPoint(geometry[pointName], `轨道 ${id} 的 ${pointName}`);
+    }
+  }
+
+  function validateDynamicsTrack(track, index, objectIds) {
+    assertPlainObject(track, `轨道第 ${index + 1} 项`);
+    const id = assertId(track.id, `轨道第 ${index + 1} 项的 ID`);
+    const kind = String(track.kind || "");
+    if (!DYNAMICS_TRACK_KINDS.has(kind)) throw new Error(`轨道 ${id} 的 kind ${kind || "(空)"} 不受支持。`);
+    if (track.bodyId !== undefined) {
+      const bodyId = assertId(track.bodyId, `轨道 ${id} 的 bodyId`);
+      if (!objectIds.has(bodyId)) throw new Error(`轨道 ${id} 引用了不存在的对象 ${bodyId}。`);
+    }
+    validateTrackGeometry(track, id);
+    validateContactMaterial(track.contact ?? track.material, `轨道 ${id} 的 contact`);
+    const endpointBehavior = String(track.endpointBehavior || "release");
+    if (!DYNAMICS_ENDPOINT_BEHAVIORS.has(endpointBehavior)) {
+      throw new Error(`轨道 ${id} 的 endpointBehavior ${endpointBehavior} 不受支持。`);
+    }
+    if (track.rolling !== undefined) assertBoolean(track.rolling, `轨道 ${id} 的 rolling`);
+  }
+
+  function validateDynamicsConstraint(constraint, index, objectIds, trackIds) {
+    assertPlainObject(constraint, `约束第 ${index + 1} 项`);
+    const id = assertId(constraint.id, `约束第 ${index + 1} 项的 ID`);
+    const bodyId = assertId(constraint.bodyId, `约束 ${id} 的 bodyId`);
+    const trackId = assertId(constraint.trackId, `约束 ${id} 的 trackId`);
+    if (!objectIds.has(bodyId)) throw new Error(`约束 ${id} 引用了不存在的对象 ${bodyId}。`);
+    if (!trackIds.has(trackId)) throw new Error(`约束 ${id} 引用了不存在的轨道 ${trackId}。`);
+    if (constraint.rolling !== undefined) assertBoolean(constraint.rolling, `约束 ${id} 的 rolling`);
   }
 
   function validateDynamicsProject(project) {
@@ -438,21 +689,56 @@
       throw new Error(`动力学工程 application 必须是 ${APPLICATION_ID}，实际为 ${String(project.application)}。`);
     }
     if (project.module !== "dynamics") throw new Error(`动力学工程 module 必须是 dynamics，实际为 ${String(project.module)}。`);
-    if (project.model !== "independent-particle2d") {
-      throw new Error(`动力学工程 model ${String(project.model)} 不受支持，当前仅支持 independent-particle2d。`);
+    if (!DYNAMICS_MODELS.has(project.model)) {
+      throw new Error(`动力学工程 model ${String(project.model)} 不受支持。`);
     }
     assertPlainObject(project.simulation, "动力学工程 simulation");
     assertPositiveQuantity(project.simulation.duration, "s", "动力学工程 simulation.duration");
     assertPositiveQuantity(project.simulation.timeStep, "s", "动力学工程 simulation.timeStep");
+    if (project.simulation.maxSubsteps !== undefined) {
+      const maxSubsteps = assertPositiveNumber(project.simulation.maxSubsteps, "动力学工程 simulation.maxSubsteps");
+      if (!Number.isInteger(maxSubsteps) || maxSubsteps > 4096) {
+        throw new Error("动力学工程 simulation.maxSubsteps 必须是 1 到 4096 的整数。");
+      }
+    }
+    if (project.simulation.contactIterations !== undefined) {
+      const iterations = assertPositiveNumber(
+        project.simulation.contactIterations,
+        "动力学工程 simulation.contactIterations"
+      );
+      if (!Number.isInteger(iterations) || iterations > 128) {
+        throw new Error("动力学工程 simulation.contactIterations 必须是 1 到 128 的整数。");
+      }
+    }
     assertArray(project.objects, "动力学工程 objects");
     assertArray(project.fields, "动力学工程 fields");
     assertArray(project.forces, "动力学工程 forces");
+    const grounds = project.grounds ?? [];
+    const tracks = project.tracks ?? [];
+    const constraints = project.constraints ?? [];
+    assertArray(grounds, "动力学工程 grounds");
+    assertArray(tracks, "动力学工程 tracks");
+    assertArray(constraints, "动力学工程 constraints");
     const objectIds = assertUniqueIds(project.objects, "动力学对象");
     project.objects.forEach(validateDynamicsObject);
+    if (project.model === "coupled-rigid-body2d") {
+      project.objects.forEach((object) => {
+        const kind = String(dynamicsObjectValue(object, "geometry", "kind", "kind") || "");
+        if (object.contact?.enabled !== false && !DYNAMICS_CONTACT_KINDS.has(kind)) {
+          throw new Error(`耦合动力学对象 ${object.id} 的几何 ${kind} 尚未实现碰撞；请禁用 contact 或改用圆/带半径质点。`);
+        }
+      });
+    }
     assertUniqueIds(project.fields, "动力场");
     project.fields.forEach(validateDynamicsField);
     assertUniqueIds(project.forces, "外力");
     project.forces.forEach((force, index) => validateDynamicsForce(force, index, objectIds));
+    assertUniqueIds(grounds, "接触地面");
+    grounds.forEach(validateDynamicsGround);
+    const trackIds = assertUniqueIds(tracks, "轨道");
+    tracks.forEach((track, index) => validateDynamicsTrack(track, index, objectIds));
+    assertUniqueIds(constraints, "约束");
+    constraints.forEach((constraint, index) => validateDynamicsConstraint(constraint, index, objectIds, trackIds));
     return project;
   }
 
@@ -471,6 +757,7 @@
   return {
     STATIC_SCHEMA,
     DYNAMICS_SCHEMA,
+    PREVIOUS_DYNAMICS_SCHEMA,
     APPLICATION_ID,
     migrateStaticProject,
     migrateDynamicsProject,

@@ -11,6 +11,9 @@
     "total_energy",
     "momentum",
     "angular_momentum",
+    "angular_velocity",
+    "angular_acceleration",
+    "torque",
     "lorentz_force",
     "velocity",
     "acceleration",
@@ -78,8 +81,9 @@
   function buildResultLines({ result, fields = [], forces = [], options } = {}) {
     if (!result || !Array.isArray(result.objectResults)) return ["暂无结果"];
     const enabled = selectedOptions(options);
+    const coupled = result.model === "coupled-rigid-body2d";
     const lines = [
-      "求解模块：二维多对象独立质点动力学",
+      `求解模块：${coupled ? "二维同步刚体、接触与轨道动力学" : "二维多对象独立质点动力学"}`,
       `场景：${result.objectResults.length} 个对象，${fields.length} 个场，${forces.length} 个外加作用力`,
       `仿真总时长：${formatNumber(result.duration)} s`,
       `用户请求步长：${formatNumber(result.requestedTimeStep)} s`,
@@ -101,7 +105,9 @@
     }
     if (enabled.has("angular_momentum")) {
       lines.push(
-        `系统关于全局原点的轨道角动量：Lz=${formatNumber(result.totals?.orbitalAngularMomentum)} kg·m^2/s`
+        `系统关于全局原点的角动量：Lz=${formatNumber(
+          result.totals?.angularMomentum ?? result.totals?.orbitalAngularMomentum
+        )} kg·m^2/s`
       );
     }
     for (const diagnostic of result.diagnostics || []) {
@@ -127,10 +133,21 @@
         lines.push(`  速度：vx=${formatNumber(item.final?.vx)} m/s, vy=${formatNumber(item.final?.vy)} m/s`);
       }
       if (enabled.has("acceleration")) {
-        lines.push(`  加速度：ax=${formatNumber(item.ax)} m/s^2, ay=${formatNumber(item.ay)} m/s^2`);
+        lines.push(`  加速度：ax=${formatNumber(item.final?.ax ?? item.ax)} m/s^2, ay=${formatNumber(item.final?.ay ?? item.ay)} m/s^2`);
+      }
+      if (enabled.has("angular_velocity")) {
+        lines.push(`  角速度：ω=${formatNumber(item.final?.omega ?? item.angularVelocity)} rad/s`);
+      }
+      if (enabled.has("angular_acceleration")) {
+        lines.push(`  角加速度：α=${formatNumber(item.final?.angularAcceleration)} rad/s^2`);
+      }
+      if (enabled.has("torque")) {
+        lines.push(`  合力矩：τ=${formatNumber(item.final?.torque)} N·m`);
       }
       if (enabled.has("inertia")) {
-        lines.push(`  几何质心转动惯量估算：I=${formatNumber(item.inertia)} kg·m^2（不参与当前平动积分）`);
+        lines.push(
+          `  质心转动惯量：I=${formatNumber(item.inertia)} kg·m^2${coupled ? "" : "（独立质点模型中仅作估算）"}`
+        );
       }
       if (enabled.has("displacement")) {
         lines.push(
@@ -143,6 +160,19 @@
         lines.push(`  ${equation.x}`);
         lines.push(`  ${equation.y}`);
       }
+      if (item.track) {
+        lines.push(
+          `  轨道状态：到达时间=${item.track.arrivalTime === null ? "未到达" : `${formatNumber(item.track.arrivalTime)} s`}，` +
+            `滑动=${item.track.sliding ? "是" : "否"}，离轨=${item.track.detached ? "是" : "否"}，端点=${item.track.endpointState || "none"}`
+        );
+      }
+    }
+    if (coupled) {
+      lines.push(
+        "",
+        `接触事件：${result.contactCount || 0}，自适应子步总数：${result.totalSubsteps || result.stepCount || 0}，` +
+          `接触耗散=${formatNumber(result.totals?.dissipatedEnergy)} J`
+      );
     }
     if (enabled.has("trajectory")) lines.push("", "位移轨迹：已在建模区生成多对象动态演示。");
     return lines;
@@ -174,6 +204,10 @@
       lines.push(
         `-   初始位置 x0=${formatNumber(state.x)} m，y0=${formatNumber(state.y)} m；` +
           `初始速度 vx0=${formatNumber(state.vx ?? state.vx0)} m/s，vy0=${formatNumber(state.vy ?? state.vy0)} m/s`
+      );
+      lines.push(
+        `-   初始角度 θ0=${formatNumber(state.theta ?? object.theta0)} rad，` +
+          `初始角速度 ω0=${formatNumber(state.omega ?? object.omega0)} rad/s`
       );
     }
     lines.push("");
@@ -209,6 +243,14 @@
       lines.push(
         `-   范围=${FIELD_RANGE_LABELS[field.rangeType || "global"] || field.rangeType}；${fieldRangeDescription(field)}`
       );
+      if (field.variation) {
+        const expressions = field.variation.expressions || field.variation.components || {};
+        lines.push(
+          `-   变化模式=${field.variation.mode}；受控表达式=${Object.entries(expressions)
+            .map(([key, value]) => `${key}:${value}`)
+            .join(", ")}`
+        );
+      }
     }
     lines.push("");
     return lines;
@@ -228,6 +270,12 @@
         lines.push(
           `- ${force.id || "未编号作用"}: 目标=${force.targetId}，持续力 F=${formatNumber(force.magnitude)} N，` +
             `分量=(${formatNumber(force.x)}, ${formatNumber(force.y)}) N，开始=${formatNumber(force.start)} s，持续=${duration}`
+        );
+      }
+      const point = force.applicationPoint;
+      if (point) {
+        lines.push(
+          `-   作用点=${point.frame === "world" ? "世界" : "局部"}坐标 (${formatNumber(point.x)}, ${formatNumber(point.y)}) m`
         );
       }
     }
@@ -251,7 +299,11 @@
           `合位移=${formatNumber(displacement)} m，末动能=${formatNumber(item.kineticEnergy)} J。`
       );
     }
-    lines.push("- 当前结论基于二维独立质点平动模型；对象之间不发生碰撞、接触、约束或相互作用。");
+    if (result.model === "coupled-rigid-body2d") {
+      lines.push("- 当前结论来自同步二维刚体世界；圆形接触采用顺序冲量、库仑摩擦、穿透修正与自适应子步，轨道对象按约束模型求解。");
+    } else {
+      lines.push("- 当前结论基于二维独立质点平动模型；对象之间不发生碰撞、接触、约束或相互作用。");
+    }
     lines.push("- 数值结果应结合减小时间步长后的收敛性检查及解析解/成熟软件进行独立复核。");
     lines.push("");
     return lines;
@@ -260,10 +312,11 @@
   function buildReportText({ objects = [], fields = [], forces = [], result, options, generatedAt } = {}) {
     if (!result) throw new Error("缺少动力学求解结果，无法生成计算书。");
     const timestamp = generatedAt || new Date().toISOString();
+    const coupled = result.model === "coupled-rigid-body2d";
     const lines = [
       "动力学计算书",
       `生成时间：${timestamp}`,
-      "求解模块：二维多对象独立质点动力学",
+      `求解模块：${coupled ? "二维同步刚体、接触与轨道动力学" : "二维多对象独立质点动力学"}`,
       "单位制：SI（m、s、kg、N、C、T、J）",
       "",
       ...objectLines(objects),
@@ -277,6 +330,13 @@
       "- 洛伦兹力：F_B=q(v×B)；二维分量 Fx=q·vy·Bz，Fy=-q·vx·Bz",
       "- 动能：E_k=1/2·m(vx^2+vy^2)",
       "- 动量：p=m·v；关于全局原点的轨道角动量 Lz=m(x·vy-y·vx)",
+      ...(coupled
+        ? [
+            "- 转动方程：I·α=Στ；偏心冲量使 Δω=(r×J)/I",
+            "- 接触法向冲量：jn=-(1+e)vn/K；切向冲量受静/动库仑摩擦上限约束",
+            "- 无滑动滚动约束：v=R·ω；轨道法向力为负时判定离轨",
+          ]
+        : []),
       "",
       "数值积分过程",
       "1. 将对象、场、冲量和持续力全部换算到 SI 单位。",
@@ -292,8 +352,16 @@
       "",
       ...conclusionLines(result),
       "适用范围与限制",
-      "- 当前动力学核心按对象逐个独立求解，不包含对象间引力、电力、碰撞、接触和运动学约束。",
-      "- 杆、圆、圆环、矩形和任意形状当前使用其质心作为质点参与平动积分；转动惯量只作几何估算，不参与角运动积分。",
+      ...(coupled
+        ? [
+            "- 碰撞几何只支持圆和提供碰撞半径的质点；其他几何启用接触时会明确拒绝。",
+            "- 接触采用离散冲量与自适应子步；极端刚性、多尺度或高密度堆积仍需减小步长并独立复核。",
+            "- 轨道接触与自由物体接触当前按各自模型求解，不声明两者之间的联合碰撞耦合。",
+          ]
+        : [
+            "- 当前动力学核心按对象逐个独立求解，不包含对象间引力、电力、碰撞、接触和运动学约束。",
+            "- 杆、圆、圆环、矩形和任意形状当前使用其质心作为质点参与平动积分；转动惯量只作几何估算，不参与角运动积分。",
+          ]),
       "- 有限区域重力场或电场的势能参考在边界处不连续，相关机械能仅作局部估算。",
       "- RK4 是数值积分方法；过大的时间步长会降低轨迹和能量精度，过小步长会触发浏览器样本上限。",
       "- 本计算书用于学习、演示、科研探索和原型验证，不应未经独立复核直接用于工程安全决策。",

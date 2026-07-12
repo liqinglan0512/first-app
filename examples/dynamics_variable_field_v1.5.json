@@ -1,0 +1,37 @@
+{
+  "schema": "cms-dynamics-project@2",
+  "application": "computational-mechanics-solver",
+  "module": "dynamics",
+  "model": "independent-particle2d",
+  "simulation": { "duration": "2 s", "timeStep": "0.01 s" },
+  "objects": [
+    {
+      "id": "D1",
+      "name": "时空变化重力场质点",
+      "geometry": { "kind": "particle", "sizeA": 0.2, "sizeB": 0.1, "sizeC": 0.05, "collisionRadius": 0.1 },
+      "massProperties": { "mass": 1, "charge": 0 },
+      "initialState": { "x": 0, "y": 0, "vx": 1, "vy": 2, "theta": 0, "omega": 0 },
+      "contact": { "enabled": false }
+    }
+  ],
+  "fields": [
+    {
+      "id": "F1",
+      "kind": "gravity",
+      "rangeType": "global",
+      "variation": {
+        "mode": "time-space",
+        "representation": "components",
+        "unit": "m/s^2",
+        "components": {
+          "x": "0.2*sin(t) - 0.05*x",
+          "y": "-9.81*(1 + 0.02*cos(t))"
+        }
+      }
+    }
+  ],
+  "forces": [],
+  "grounds": [],
+  "tracks": [],
+  "constraints": []
+}

@@ -81,6 +81,7 @@
 
   function normalizeEndpointMode(value) {
     const mode = String(value || "open").trim().toLowerCase();
+    if (mode === "release" || mode === "released") return "open";
     if (mode === "reflect" || mode === "reflection") return "bounce";
     if (mode === "closed" || mode === "halt") return "stop";
     if (!new Set(["open", "stop", "bounce"]).has(mode)) {

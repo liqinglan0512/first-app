@@ -1,0 +1,53 @@
+{
+  "schema": "cms-dynamics-project@2",
+  "application": "computational-mechanics-solver",
+  "module": "dynamics",
+  "model": "coupled-rigid-body2d",
+  "simulation": {
+    "duration": "2 s",
+    "timeStep": "0.01 s",
+    "maxSubsteps": 512,
+    "contactIterations": 20
+  },
+  "objects": [
+    {
+      "id": "D1",
+      "name": "左侧圆盘",
+      "geometry": { "kind": "circle", "sizeA": 1, "sizeB": 0.5, "sizeC": 0.1, "collisionRadius": 0.5 },
+      "massProperties": { "mass": 1, "charge": 0 },
+      "initialState": { "x": -1.5, "y": 1.5, "vx": 2, "vy": 0, "theta": 0, "omega": 0 },
+      "contact": { "enabled": true, "restitution": 0.8, "staticFriction": 0.5, "dynamicFriction": 0.3, "damping": 0 }
+    },
+    {
+      "id": "D2",
+      "name": "右侧圆盘",
+      "geometry": { "kind": "circle", "sizeA": 1, "sizeB": 0.5, "sizeC": 0.1, "collisionRadius": 0.5 },
+      "massProperties": { "mass": 1, "charge": 0 },
+      "initialState": { "x": 0, "y": 1.5, "vx": 0, "vy": 0, "theta": 0, "omega": 0 },
+      "contact": { "enabled": true, "restitution": 0.8, "staticFriction": 0.5, "dynamicFriction": 0.3, "damping": 0 }
+    }
+  ],
+  "fields": [
+    { "id": "F1", "kind": "gravity", "magnitude": 9.81, "angle": -90, "rangeType": "global" }
+  ],
+  "forces": [
+    {
+      "id": "A1",
+      "targetId": "D1",
+      "type": "impulse",
+      "x": 0,
+      "y": 0.5,
+      "applicationPoint": { "frame": "local", "x": 0.5, "y": 0 }
+    }
+  ],
+  "grounds": [
+    {
+      "id": "G1",
+      "normal": { "x": 0, "y": 1 },
+      "offset": 0,
+      "contact": { "restitution": 0.4, "staticFriction": 0.6, "dynamicFriction": 0.4, "damping": 0 }
+    }
+  ],
+  "tracks": [],
+  "constraints": []
+}

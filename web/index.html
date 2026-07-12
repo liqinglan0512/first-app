@@ -30,7 +30,7 @@
           <span>欢迎使用</span>
           <span>Computational Mechanics Solver</span>
         </h1>
-        <p id="releaseVersion" class="welcome-version rainbow-animated">v1.4.0-beta.1</p>
+        <p id="releaseVersion" class="welcome-version rainbow-animated">v1.5.0-alpha.1</p>
         <p class="welcome-subtitle studio-credit">Leo <span class="li-ion">Li<sup>+</sup></span> Studio出品</p>
         <p class="welcome-contact">
           如有任何错误、bug、请联系：620026600@qq.com 或202402040108@stu.bucea.edu.cn
@@ -355,8 +355,11 @@
             title="取消场放置"
             aria-label="取消场放置"
           >×</button>
-          <label class="inline-toggle" title="二维刚体转动方程尚未接入">
-            <input id="dynamicsRigidToggle" type="checkbox" disabled>刚体（开发中）
+          <label class="inline-toggle" title="启用平动与转动状态；圆和带半径质点同时参与接触求解">
+            <input id="dynamicsRigidToggle" type="checkbox">刚体 / 接触
+          </label>
+          <label class="inline-toggle" title="在世界坐标 y=0 处添加带摩擦的水平地面">
+            <input id="dynamicsGroundToggle" type="checkbox">地面 y=0
           </label>
           <button id="dynamicsClearButton" type="button">清空</button>
         </div>
@@ -386,6 +389,7 @@
               <span>对象 <strong id="dynamicsObjectCount">0</strong></span>
               <span>场 <strong id="dynamicsFieldCount">0</strong></span>
               <span>外力 <strong id="dynamicsForceCount">0</strong></span>
+              <span>轨道 <strong id="dynamicsTrackCount">0</strong></span>
             </div>
             <h3>对象</h3>
             <div id="dynamicsObjectList" class="dynamics-scene-list"></div>
@@ -393,6 +397,8 @@
             <div id="dynamicsFieldList" class="dynamics-scene-list"></div>
             <h3>外加作用力</h3>
             <div id="dynamicsForceList" class="dynamics-scene-list"></div>
+            <h3>轨道约束</h3>
+            <div id="dynamicsTrackList" class="dynamics-scene-list"></div>
           </section>
 
           <section class="panel">
@@ -433,7 +439,7 @@
               <span>任意形状函数（开发中）</span>
               <input id="dynamicsShapeEquation" value="y=0.2*sin(2*pi*x)" disabled>
             </label>
-            <p class="capability-note">当前求解模型：二维多对象独立质点动力学。密度和材料 E 仅随工程保存，不参与平动积分。</p>
+            <p class="capability-note">普通对象保持独立质点积分；启用刚体、接触、变化场或打开 v2 轨道工程时，自动切换同步二维物理世界。密度和材料 E 仅随工程保存。</p>
           </section>
 
           <section class="panel">
@@ -456,6 +462,16 @@
               <label class="wide-field">
                 <span>vy0</span>
                 <input id="dynamicsVy0" value="0 m/s">
+              </label>
+            </div>
+            <div class="field-row two">
+              <label class="wide-field">
+                <span>初始角度 θ0（rad）</span>
+                <input id="dynamicsTheta0" type="number" value="0" step="0.01">
+              </label>
+              <label class="wide-field">
+                <span>初始角速度 ω0（rad/s）</span>
+                <input id="dynamicsOmega0" type="number" value="0" step="0.01">
               </label>
             </div>
             <div class="field-row two">
@@ -529,7 +545,7 @@
           <h2>选择动力学求解内容</h2>
           <button value="cancel" class="icon-button" title="关闭">×</button>
         </header>
-        <p class="modal-copy">当前按二维多对象独立质点模型求解，各对象之间暂不发生碰撞、约束或相互作用。</p>
+        <p class="modal-copy">求解器按工程模型自动选择独立质点或同步刚体世界，并支持圆形接触、摩擦、轨道约束、滚动和安全变化场。</p>
         <div class="solve-grid dynamics-option-grid">
           <label><input name="dynamicsOption" type="checkbox" value="kinetic" checked>动能</label>
           <label><input name="dynamicsOption" type="checkbox" value="potential" checked>势能</label>
@@ -539,10 +555,10 @@
           <label><input name="dynamicsOption" type="checkbox" value="lorentz_force">洛伦兹力</label>
           <label><input name="dynamicsOption" type="checkbox" value="velocity" checked>速度</label>
           <label><input name="dynamicsOption" type="checkbox" value="acceleration" checked>加速度</label>
-          <label title="刚体转动方程尚未接入"><input name="dynamicsOption" type="checkbox" value="angular_velocity" disabled>角速度（开发中）</label>
-          <label title="刚体转动方程尚未接入"><input name="dynamicsOption" type="checkbox" value="angular_acceleration" disabled>角加速度（开发中）</label>
-          <label title="外力作用点和刚体转动方程尚未接入"><input name="dynamicsOption" type="checkbox" value="torque" disabled>力矩（开发中）</label>
-          <label><input name="dynamicsOption" type="checkbox" value="inertia">几何质心转动惯量估算</label>
+          <label><input name="dynamicsOption" type="checkbox" value="angular_velocity">角速度</label>
+          <label><input name="dynamicsOption" type="checkbox" value="angular_acceleration">角加速度</label>
+          <label><input name="dynamicsOption" type="checkbox" value="torque">力矩</label>
+          <label><input name="dynamicsOption" type="checkbox" value="inertia">质心转动惯量</label>
           <label><input name="dynamicsOption" type="checkbox" value="displacement" checked>位移</label>
           <label><input name="dynamicsOption" type="checkbox" value="trajectory">位移轨迹</label>
           <label><input name="dynamicsOption" type="checkbox" value="trajectory_equation">位移轨迹方程</label>
@@ -570,6 +586,27 @@
             <option value="magnetic">磁场</option>
           </select>
         </label>
+
+        <label class="wide-field">
+          <span>变化模式</span>
+          <select id="dynamicsFieldMode">
+            <option value="constant">常量</option>
+            <option value="time">时间 t</option>
+            <option value="space">空间 x, y</option>
+            <option value="time-space">时间－空间 t, x, y, vx, vy</option>
+          </select>
+        </label>
+
+        <div id="dynamicsFieldExpressionFields" class="field-row two hidden">
+          <label class="wide-field">
+            <span id="dynamicsFieldExpressionXLabel">x 分量表达式</span>
+            <input id="dynamicsFieldExpressionX" value="0">
+          </label>
+          <label id="dynamicsFieldExpressionYField" class="wide-field">
+            <span>y 分量表达式</span>
+            <input id="dynamicsFieldExpressionY" value="-9.81">
+          </label>
+        </div>
 
         <div class="field-row two">
           <label class="wide-field">
@@ -696,6 +733,24 @@
           <span>持续时间（0 表示至求解结束）</span>
           <input id="dynamicsForceDuration" value="0 s">
         </label>
+        <div class="field-row three">
+          <label class="wide-field">
+            <span>作用点</span>
+            <select id="dynamicsForcePointFrame">
+              <option value="center">质心</option>
+              <option value="local">物体局部坐标</option>
+              <option value="world">世界坐标</option>
+            </select>
+          </label>
+          <label class="wide-field">
+            <span>作用点 x（m）</span>
+            <input id="dynamicsForcePointX" type="number" value="0" step="0.01" disabled>
+          </label>
+          <label class="wide-field">
+            <span>作用点 y（m）</span>
+            <input id="dynamicsForcePointY" type="number" value="0" step="0.01" disabled>
+          </label>
+        </div>
         <p id="dynamicsForceMessage" class="modal-copy dynamics-field-message"></p>
         <footer class="modal-actions">
           <button type="submit" value="cancel">取消</button>
@@ -1052,7 +1107,15 @@
     <script src="/static/project-adapter.js"></script>
     <script src="/static/dynamics-field-geometry.js"></script>
     <script src="/static/dynamics-field-placement.js"></script>
+    <script src="/static/dynamics-expression.js"></script>
+    <script src="/static/dynamics-fields.js"></script>
+    <script src="/static/dynamics-rigid-body.js"></script>
+    <script src="/static/dynamics-contact.js"></script>
+    <script src="/static/dynamics-tracks.js"></script>
     <script src="/static/dynamics-core.js"></script>
+    <script src="/static/dynamics-world.js"></script>
+    <script src="/static/dynamics-controller.js"></script>
+    <script src="/static/dynamics-renderer.js"></script>
     <script src="/static/dynamics-report.js"></script>
     <script src="/static/auth-client.js"></script>
     <script src="/static/app.js"></script>

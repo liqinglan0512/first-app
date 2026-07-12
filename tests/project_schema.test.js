@@ -284,4 +284,97 @@ check(() => {
   assert.throws(() => adapter.loadStaticProject(project), /节点 N2 的 x 无法解析/);
 });
 
+check(() => {
+  assert.equal(adapter.DYNAMICS_SCHEMA, "cms-dynamics-project@2");
+  const legacy = dynamicsProject();
+  legacy.schema = "cms-dynamics-project@1";
+  legacy.objects[0].theta0 = 0.25;
+  legacy.objects[0].omega0 = -2;
+  legacy.forces[0].localPoint = { x: 0.3, y: -0.2 };
+  const loaded = adapter.loadDynamicsProject(legacy);
+  assert.equal(loaded.schema, adapter.DYNAMICS_SCHEMA);
+  assert.equal(loaded.objects[0].initialState.theta, 0.25);
+  assert.equal(loaded.objects[0].initialState.omega, -2);
+  assert.deepEqual(loaded.forces[0].applicationPoint, { frame: "local", x: 0.3, y: -0.2 });
+  assert.deepEqual(loaded.tracks, []);
+  assert.deepEqual(loaded.grounds, []);
+});
+
+check(() => {
+  const project = dynamicsProject();
+  project.model = "coupled-rigid-body2d";
+  project.simulation.maxSubsteps = 32;
+  project.simulation.contactIterations = 12;
+  project.objects[0] = {
+    id: "D1",
+    name: "rolling disk",
+    geometry: { kind: "circle", sizeA: 1, sizeB: 0.5, sizeC: 0.1, collisionRadius: 0.5 },
+    massProperties: { mass: 2, density: 1, charge: 0, inertia: 0.25, centerOfMass: { x: 0, y: 0 } },
+    initialState: { x: 0, y: 1, vx: 1, vy: 0, theta: 0.2, omega: -2 },
+    contact: { enabled: true, restitution: 0.4, staticFriction: 0.6, dynamicFriction: 0.4, damping: 0.1 },
+  };
+  project.fields[0] = {
+    id: "F1",
+    kind: "gravity",
+    rangeType: "global",
+    variation: { mode: "time-space", unit: "m/s^2", components: { x: "0", y: "-9.81*(1+0.01*t)" } },
+  };
+  project.forces[0].applicationPoint = { frame: "local", x: 0.5, y: 0 };
+  project.grounds = [
+    {
+      id: "G1",
+      normal: { x: 0, y: 1 },
+      offset: 0,
+      contact: { restitution: 0.2, staticFriction: 0.7, dynamicFriction: 0.5, damping: 0 },
+    },
+  ];
+  project.tracks = [
+    {
+      id: "T1",
+      kind: "arc",
+      geometry: { center: { x: 0, y: 0 }, radius: 2, startAngle: 0, endAngle: 1.57 },
+      endpointBehavior: "release",
+      rolling: true,
+    },
+  ];
+  project.constraints = [{ id: "C1", bodyId: "D1", trackId: "T1", rolling: true }];
+  const loaded = adapter.loadDynamicsProject(project);
+  assert.deepEqual(loaded.forces[0].applicationPoint, { frame: "local", x: 0.5, y: 0 });
+  assert.equal(loaded.tracks[0].kind, "arc");
+  assert.equal(loaded.constraints[0].rolling, true);
+});
+
+check(() => {
+  const project = dynamicsProject();
+  project.model = "coupled-rigid-body2d";
+  project.objects[0].kind = "rectangle";
+  project.objects[0].contact = { enabled: true, restitution: 0.5 };
+  assert.throws(() => adapter.loadDynamicsProject(project), /几何 rectangle.*尚未实现碰撞/);
+});
+
+check(() => {
+  const project = dynamicsProject();
+  project.objects[0].contact = {
+    enabled: true,
+    restitution: 1.1,
+    staticFriction: 0.2,
+    dynamicFriction: 0.3,
+  };
+  assert.throws(() => adapter.loadDynamicsProject(project), /restitution.*\[0, 1\]|staticFriction/);
+});
+
+check(() => {
+  const project = dynamicsProject();
+  project.forces[0].applicationPoint = { frame: "screen", x: 1, y: 2 };
+  assert.throws(() => adapter.loadDynamicsProject(project), /applicationPoint.*local 或 world/);
+});
+
+check(() => {
+  const project = dynamicsProject();
+  project.tracks = [
+    { id: "T1", kind: "line", bodyId: "missing", start: { x: 0, y: 0 }, end: { x: 1, y: 0 } },
+  ];
+  assert.throws(() => adapter.loadDynamicsProject(project), /轨道 T1.*不存在的对象 missing/);
+});
+
 console.log(`project-schema: ${checks} checks passed`);

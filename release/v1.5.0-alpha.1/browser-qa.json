@@ -1,0 +1,59 @@
+{
+  "release": "v1.5.0-alpha.1",
+  "testedAt": "2026-07-12",
+  "target": "http://127.0.0.1:18880/",
+  "browser": "Codex in-app browser",
+  "account": "synthetic local QA account",
+  "checks": {
+    "welcomeVersion": "v1.5.0-alpha.1",
+    "dynamicsWorkbenchOpened": true,
+    "rigidContactControlVisible": true,
+    "groundControlVisible": true,
+    "circleRigidBodyPlaced": true,
+    "groundEnabled": true,
+    "solveCompleted": true,
+    "solverModel": "二维同步刚体、接触与轨道动力学",
+    "angularVelocityReported": true,
+    "angularAccelerationReported": true,
+    "torqueReported": true,
+    "centerOfMassInertiaReported": true,
+    "objectCount": 1,
+    "fieldCount": 0,
+    "forceCount": 0,
+    "trackCount": 0,
+    "sampleCount": 151,
+    "consoleErrorCount": 0
+  },
+  "viewports": [
+    {
+      "label": "wide",
+      "requestedCss": { "width": 1692, "height": 960 },
+      "reportedCss": { "width": 1990, "height": 1129 },
+      "screenshotPixels": { "width": 2341, "height": 1328 },
+      "bodyHorizontalOverflow": false,
+      "file": "browser-qa-wide-1692x960.png",
+      "sha256": "b347cbcbc53b1199f4cce5a3553f327cc26af219e36131d268d8861afb1493cd"
+    },
+    {
+      "label": "desktop",
+      "requestedCss": { "width": 1366, "height": 768 },
+      "reportedCss": { "width": 1607, "height": 903 },
+      "screenshotPixels": { "width": 1891, "height": 1062 },
+      "file": "browser-qa-desktop-1366x768.png",
+      "sha256": "97d5bc82aafc9a47bdd5d5d847474db514c457b85511d873c71350ef25c852e2"
+    },
+    {
+      "label": "mobile",
+      "requestedCss": { "width": 390, "height": 844 },
+      "reportedCss": { "width": 459, "height": 993 },
+      "screenshotPixels": { "width": 519, "height": 1167 },
+      "bodyHorizontalOverflow": false,
+      "file": "browser-qa-mobile-390x844.png",
+      "sha256": "382cd39430d50fa7adb9a30f711c53403f619527e60db3c1466a1e2746d73bea"
+    }
+  ],
+  "notes": [
+    "Requested viewport overrides are recorded separately from browser-reported CSS pixels because the desktop runtime applies display scaling.",
+    "Track, rolling, collision, variable-field, migration, safety-limit and conservation cases are covered by automated numerical tests."
+  ]
+}

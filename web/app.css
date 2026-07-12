@@ -1084,6 +1084,10 @@ body.freeform-drawing #canvas {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.field-row.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .field-row .wide-field {
   margin-bottom: 10px;
 }
@@ -1820,6 +1824,7 @@ body.dark-theme .dynamics-command {
 
   .module-choice-panel,
   .field-row.two,
+  .field-row.three,
   .dynamics-option-grid,
   .entitlement-plan-list,
   .entitlement-action-row {

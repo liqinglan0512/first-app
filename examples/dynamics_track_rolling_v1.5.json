@@ -1,0 +1,36 @@
+{
+  "schema": "cms-dynamics-project@2",
+  "application": "computational-mechanics-solver",
+  "module": "dynamics",
+  "model": "coupled-rigid-body2d",
+  "simulation": { "duration": "2 s", "timeStep": "0.005 s" },
+  "objects": [
+    {
+      "id": "D1",
+      "name": "无滑动滚动圆盘",
+      "geometry": { "kind": "circle", "sizeA": 0.4, "sizeB": 0.2, "sizeC": 0.05, "collisionRadius": 0.2 },
+      "massProperties": { "mass": 1, "charge": 0, "inertia": 0.02 },
+      "initialState": { "x": 0, "y": 1, "vx": 0, "vy": 0, "theta": 0, "omega": 0 },
+      "contact": { "enabled": false, "restitution": 0, "staticFriction": 0.5, "dynamicFriction": 0.3, "damping": 0 }
+    }
+  ],
+  "fields": [
+    { "id": "F1", "kind": "gravity", "magnitude": 9.81, "angle": -90, "rangeType": "global" }
+  ],
+  "forces": [],
+  "grounds": [],
+  "tracks": [
+    {
+      "id": "T1",
+      "kind": "incline",
+      "start": { "x": 0, "y": 1 },
+      "end": { "x": 1.5, "y": 0 },
+      "endpointBehavior": "stop",
+      "rolling": true,
+      "contact": { "restitution": 0, "staticFriction": 0.5, "dynamicFriction": 0.3, "damping": 0 }
+    }
+  ],
+  "constraints": [
+    { "id": "C1", "bodyId": "D1", "trackId": "T1", "rolling": true }
+  ]
+}

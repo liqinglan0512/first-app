@@ -74,6 +74,12 @@ const els = {
   runDynamicsSolveButton: document.getElementById("runDynamicsSolveButton"),
   dynamicsFieldDialog: document.getElementById("dynamicsFieldDialog"),
   dynamicsEnvironment: document.getElementById("dynamicsEnvironment"),
+  dynamicsFieldMode: document.getElementById("dynamicsFieldMode"),
+  dynamicsFieldExpressionFields: document.getElementById("dynamicsFieldExpressionFields"),
+  dynamicsFieldExpressionXLabel: document.getElementById("dynamicsFieldExpressionXLabel"),
+  dynamicsFieldExpressionX: document.getElementById("dynamicsFieldExpressionX"),
+  dynamicsFieldExpressionYField: document.getElementById("dynamicsFieldExpressionYField"),
+  dynamicsFieldExpressionY: document.getElementById("dynamicsFieldExpressionY"),
   dynamicsFieldMagnitude: document.getElementById("dynamicsFieldMagnitude"),
   dynamicsFieldDirectionPreset: document.getElementById("dynamicsFieldDirectionPreset"),
   dynamicsVectorDirectionField: document.getElementById("dynamicsVectorDirectionField"),
@@ -103,9 +109,13 @@ const els = {
   dynamicsForceStart: document.getElementById("dynamicsForceStart"),
   dynamicsForceDurationField: document.getElementById("dynamicsForceDurationField"),
   dynamicsForceDuration: document.getElementById("dynamicsForceDuration"),
+  dynamicsForcePointFrame: document.getElementById("dynamicsForcePointFrame"),
+  dynamicsForcePointX: document.getElementById("dynamicsForcePointX"),
+  dynamicsForcePointY: document.getElementById("dynamicsForcePointY"),
   dynamicsForceMessage: document.getElementById("dynamicsForceMessage"),
   dynamicsForceApplyButton: document.getElementById("dynamicsForceApplyButton"),
   dynamicsRigidToggle: document.getElementById("dynamicsRigidToggle"),
+  dynamicsGroundToggle: document.getElementById("dynamicsGroundToggle"),
   dynamicsSolveButton: document.getElementById("dynamicsSolveButton"),
   dynamicsMass: document.getElementById("dynamicsMass"),
   dynamicsDensity: document.getElementById("dynamicsDensity"),
@@ -122,6 +132,8 @@ const els = {
   dynamicsY0: document.getElementById("dynamicsY0"),
   dynamicsVx0: document.getElementById("dynamicsVx0"),
   dynamicsVy0: document.getElementById("dynamicsVy0"),
+  dynamicsTheta0: document.getElementById("dynamicsTheta0"),
+  dynamicsOmega0: document.getElementById("dynamicsOmega0"),
   dynamicsDuration: document.getElementById("dynamicsDuration"),
   dynamicsTimeStep: document.getElementById("dynamicsTimeStep"),
   dynamicsOptionInputs: [...document.querySelectorAll("input[name='dynamicsOption']")],
@@ -130,9 +142,11 @@ const els = {
   dynamicsObjectCount: document.getElementById("dynamicsObjectCount"),
   dynamicsFieldCount: document.getElementById("dynamicsFieldCount"),
   dynamicsForceCount: document.getElementById("dynamicsForceCount"),
+  dynamicsTrackCount: document.getElementById("dynamicsTrackCount"),
   dynamicsObjectList: document.getElementById("dynamicsObjectList"),
   dynamicsFieldList: document.getElementById("dynamicsFieldList"),
   dynamicsForceList: document.getElementById("dynamicsForceList"),
+  dynamicsTrackList: document.getElementById("dynamicsTrackList"),
   settingsButton: document.getElementById("settingsButton"),
   settingsDialog: document.getElementById("settingsDialog"),
   fontSizeSelect: document.getElementById("fontSizeSelect"),
@@ -281,9 +295,14 @@ const state = {
   solveOptions: ["determinacy", "system", "internal", "moment", "shear", "axial", "displacement", "reaction", "danger"],
   activeModule: "welcome",
   dynamics: {
+    model: "independent-particle2d",
     objects: [],
     fields: [],
     forces: [],
+    grounds: [],
+    tracks: [],
+    constraints: [],
+    simulationSettings: {},
     objectSeq: 1,
     fieldSeq: 1,
     forceSeq: 1,
@@ -981,9 +1000,14 @@ function redo() {
 
 function dynamicsSnapshot() {
   return JSON.stringify({
+    model: state.dynamics.model,
     objects: state.dynamics.objects,
     fields: state.dynamics.fields,
     forces: state.dynamics.forces,
+    grounds: state.dynamics.grounds,
+    tracks: state.dynamics.tracks,
+    constraints: state.dynamics.constraints,
+    simulationSettings: state.dynamics.simulationSettings,
     objectSeq: state.dynamics.objectSeq,
     fieldSeq: state.dynamics.fieldSeq,
     forceSeq: state.dynamics.forceSeq,
@@ -1000,9 +1024,15 @@ function restoreDynamics(serialized) {
   cancelDynamicsFieldPlacement({ silent: true });
   cancelDynamicsAnimation();
   const data = JSON.parse(serialized);
+  state.dynamics.model = data.model || "independent-particle2d";
   state.dynamics.objects = data.objects || [];
   state.dynamics.fields = data.fields || [];
   state.dynamics.forces = data.forces || [];
+  state.dynamics.grounds = data.grounds || [];
+  state.dynamics.tracks = data.tracks || [];
+  state.dynamics.constraints = data.constraints || [];
+  state.dynamics.simulationSettings = data.simulationSettings || {};
+  if (els.dynamicsGroundToggle) els.dynamicsGroundToggle.checked = state.dynamics.grounds.length > 0;
   state.dynamics.objectSeq = data.objectSeq || nextSequence(state.dynamics.objects, "D");
   state.dynamics.fieldSeq = data.fieldSeq || nextSequence(state.dynamics.fields, "F");
   state.dynamics.forceSeq = data.forceSeq || nextSequence(state.dynamics.forces, "A");
@@ -2755,6 +2785,9 @@ function syncDynamicsSizeLabels() {
 
 function dynamicsObjectFromControls(kind, world, path = null) {
   const id = `D${state.dynamics.objectSeq++}`;
+  const rigid = els.dynamicsRigidToggle.checked;
+  const sizeB = Math.max(Math.abs(dynamicsValue(els.dynamicsSizeB, "m")), 1e-6);
+  if (rigid) state.dynamics.model = "coupled-rigid-body2d";
   return {
     id,
     name: `${dynamicsKindLabel(kind)} ${id}`,
@@ -2768,10 +2801,20 @@ function dynamicsObjectFromControls(kind, world, path = null) {
     density: Math.max(dynamicsValue(els.dynamicsDensity, "kg/m^3"), 0),
     charge: dynamicsValue(els.dynamicsCharge, "C"),
     sizeA: Math.max(Math.abs(dynamicsValue(els.dynamicsSizeA, "m")), 1e-6),
-    sizeB: Math.max(Math.abs(dynamicsValue(els.dynamicsSizeB, "m")), 1e-6),
+    sizeB,
     sizeC: Math.max(Math.abs(dynamicsValue(els.dynamicsSizeC, "m")), 1e-6),
     materialE: Math.max(dynamicsValue(els.dynamicsMaterialE, "Pa"), 0),
-    rigid: els.dynamicsRigidToggle.checked,
+    rigid,
+    theta0: Number(els.dynamicsTheta0.value || 0),
+    omega0: Number(els.dynamicsOmega0.value || 0),
+    collisionRadius: sizeB,
+    contact: {
+      enabled: rigid && ["particle", "circle"].includes(kind),
+      restitution: 0.8,
+      staticFriction: 0.5,
+      dynamicFriction: 0.3,
+      damping: 0,
+    },
     equation: els.dynamicsShapeEquation.value.trim(),
     path,
   };
@@ -2797,6 +2840,8 @@ function syncDynamicsObjectControls(object) {
   els.dynamicsY0.value = `${formatNumber(object.y)} m`;
   els.dynamicsVx0.value = `${formatNumber(object.vx0)} m/s`;
   els.dynamicsVy0.value = `${formatNumber(object.vy0)} m/s`;
+  els.dynamicsTheta0.value = String(Number(object.theta0 || 0));
+  els.dynamicsOmega0.value = String(Number(object.omega0 || 0));
   state.dynamics.object = object;
   syncDynamicsControls();
 }
@@ -2813,6 +2858,18 @@ function updateSelectedDynamicsObjectFromControls() {
   object.sizeC = Math.max(Math.abs(dynamicsValue(els.dynamicsSizeC, "m")), 1e-6);
   object.materialE = Math.max(dynamicsValue(els.dynamicsMaterialE, "Pa"), 0);
   object.rigid = els.dynamicsRigidToggle.checked;
+  object.theta0 = Number(els.dynamicsTheta0.value || 0);
+  object.omega0 = Number(els.dynamicsOmega0.value || 0);
+  object.collisionRadius = object.sizeB;
+  object.contact = {
+    ...(object.contact || {}),
+    enabled: object.rigid && ["particle", "circle"].includes(object.kind),
+    restitution: Number(object.contact?.restitution ?? 0.8),
+    staticFriction: Number(object.contact?.staticFriction ?? 0.5),
+    dynamicFriction: Number(object.contact?.dynamicFriction ?? 0.3),
+    damping: Number(object.contact?.damping ?? 0),
+  };
+  if (object.rigid) state.dynamics.model = "coupled-rigid-body2d";
   object.equation = els.dynamicsShapeEquation.value.trim();
   object.x = dynamicsValue(els.dynamicsX0, "m");
   object.y = dynamicsValue(els.dynamicsY0, "m");
@@ -2844,6 +2901,7 @@ function deleteDynamicsObject(id) {
   cancelDynamicsAnimation();
   state.dynamics.objects = state.dynamics.objects.filter((object) => object.id !== id);
   state.dynamics.forces = state.dynamics.forces.filter((force) => force.targetId !== id);
+  state.dynamics.constraints = (state.dynamics.constraints || []).filter((constraint) => constraint.bodyId !== id);
   if (state.dynamics.selectedObjectId === id) {
     state.dynamics.selectedObjectId = state.dynamics.objects[0]?.id || null;
     state.dynamics.object = state.dynamics.objects[0] || null;
@@ -2875,6 +2933,19 @@ function deleteDynamicsForce(id) {
   recordDynamicsHistory();
   cancelDynamicsAnimation();
   state.dynamics.forces = state.dynamics.forces.filter((force) => force.id !== id);
+  state.dynamics.result = null;
+  renderDynamicsResult();
+  renderDynamicsSceneLists();
+  drawDynamicsScene();
+}
+
+function deleteDynamicsTrack(id) {
+  cancelDynamicsFieldPlacement({ silent: true });
+  if (!(state.dynamics.tracks || []).some((track) => track.id === id)) return;
+  recordDynamicsHistory();
+  cancelDynamicsAnimation();
+  state.dynamics.tracks = state.dynamics.tracks.filter((track) => track.id !== id);
+  state.dynamics.constraints = (state.dynamics.constraints || []).filter((constraint) => constraint.trackId !== id);
   state.dynamics.result = null;
   renderDynamicsResult();
   renderDynamicsSceneLists();
@@ -2923,6 +2994,7 @@ function renderDynamicsSceneLists() {
   els.dynamicsObjectCount.textContent = String(state.dynamics.objects.length);
   els.dynamicsFieldCount.textContent = String(state.dynamics.fields.length);
   els.dynamicsForceCount.textContent = String(state.dynamics.forces.length);
+  els.dynamicsTrackCount.textContent = String((state.dynamics.tracks || []).length);
   replaceDynamicsSceneList(
     els.dynamicsObjectList,
     state.dynamics.objects.map((object, index) =>
@@ -2963,6 +3035,18 @@ function renderDynamicsSceneLists() {
     }),
     "暂无外力"
   );
+  replaceDynamicsSceneList(
+    els.dynamicsTrackList,
+    (state.dynamics.tracks || []).map((track) =>
+      createDynamicsSceneRow({
+        id: track.id,
+        text: `${track.kind || track.type} · ${track.endpointBehavior || "open"}`,
+        color: "#24c7b1",
+        kind: "track",
+      })
+    ),
+    "暂无轨道（可打开 v2 工程）"
+  );
   syncDynamicsActionUi();
 }
 
@@ -2975,20 +3059,24 @@ function buildDynamicsProject() {
     schema: ProjectAdapter.DYNAMICS_SCHEMA,
     application: ProjectAdapter.APPLICATION_ID,
     module: "dynamics",
-    model: "independent-particle2d",
+    model: state.dynamics.model || "independent-particle2d",
     simulation: {
+      ...JSON.parse(JSON.stringify(state.dynamics.simulationSettings || {})),
       duration: els.dynamicsDuration.value,
       timeStep: els.dynamicsTimeStep.value,
     },
     objects: JSON.parse(JSON.stringify(state.dynamics.objects)),
     fields: JSON.parse(JSON.stringify(state.dynamics.fields)),
     forces: JSON.parse(JSON.stringify(state.dynamics.forces)),
+    grounds: JSON.parse(JSON.stringify(state.dynamics.grounds || [])),
+    tracks: JSON.parse(JSON.stringify(state.dynamics.tracks || [])),
+    constraints: JSON.parse(JSON.stringify(state.dynamics.constraints || [])),
   };
 }
 
 function saveDynamicsProject() {
   try {
-    const project = ProjectAdapter.loadDynamicsProject(buildDynamicsProject());
+    const project = DynamicsController.loadProject(buildDynamicsProject());
     const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -3002,7 +3090,7 @@ function saveDynamicsProject() {
 
 function importDynamicsProject(rawProject) {
   cancelDynamicsFieldPlacement({ silent: true });
-  const project = ProjectAdapter.loadDynamicsProject(rawProject);
+  const project = DynamicsController.loadProject(rawProject);
   const nextObjects = project.objects.map((raw, index) => {
     const object = DynamicsCore.normalizeObject(raw);
     return {
@@ -3011,12 +3099,21 @@ function importDynamicsProject(rawProject) {
       name: String(raw.name || `${dynamicsKindLabel(object.kind)} D${index + 1}`),
       dynamicsModel: String(raw.dynamicsModel || object.dynamicsModel || "particle2d"),
       density: Number(raw.massProperties?.density ?? raw.density ?? 0),
-      rigid: Boolean(raw.rigid),
+      rigid: Boolean(raw.rigid || raw.dynamicsModel === "rigid-body2d" || project.model === "coupled-rigid-body2d"),
+      theta0: Number(raw.initialState?.theta ?? raw.theta0 ?? raw.angle ?? 0),
+      omega0: Number(raw.initialState?.omega ?? raw.omega0 ?? raw.angularVelocity ?? 0),
+      inertia: raw.massProperties?.inertia ?? raw.inertia,
+      centerOfMass: raw.massProperties?.centerOfMass ?? raw.centerOfMass,
+      collisionRadius: raw.geometry?.collisionRadius ?? raw.collisionRadius,
+      contact: raw.contact ? JSON.parse(JSON.stringify(raw.contact)) : undefined,
       path: Array.isArray(object.path) ? object.path.map((point) => ({ x: Number(point.x), y: Number(point.y) })) : null,
     };
   });
   const nextFields = JSON.parse(JSON.stringify(project.fields));
   const nextForces = JSON.parse(JSON.stringify(project.forces));
+  const nextGrounds = JSON.parse(JSON.stringify(project.grounds || []));
+  const nextTracks = JSON.parse(JSON.stringify(project.tracks || []));
+  const nextConstraints = JSON.parse(JSON.stringify(project.constraints || []));
   const nextObjectSeq = nextSequence(nextObjects, "D");
   const nextFieldSeq = nextSequence(nextFields, "F");
   const nextForceSeq = nextSequence(nextForces, "A");
@@ -3027,6 +3124,14 @@ function importDynamicsProject(rawProject) {
   state.dynamics.objects = nextObjects;
   state.dynamics.fields = nextFields;
   state.dynamics.forces = nextForces;
+  state.dynamics.model = project.model;
+  state.dynamics.grounds = nextGrounds;
+  state.dynamics.tracks = nextTracks;
+  state.dynamics.constraints = nextConstraints;
+  state.dynamics.simulationSettings = Object.fromEntries(
+    Object.entries(project.simulation).filter(([key]) => !["duration", "timeStep"].includes(key))
+  );
+  if (els.dynamicsGroundToggle) els.dynamicsGroundToggle.checked = nextGrounds.length > 0;
   state.dynamics.objectSeq = nextObjectSeq;
   state.dynamics.fieldSeq = nextFieldSeq;
   state.dynamics.forceSeq = nextForceSeq;
@@ -3148,13 +3253,19 @@ function setDynamicsFieldDefaults(kind) {
     els.dynamicsFieldMagnitude.value = "9.81 m/s^2";
     els.dynamicsFieldDirectionPreset.value = "down";
     els.dynamicsFieldAngle.value = "-90";
+    els.dynamicsFieldExpressionX.value = "0";
+    els.dynamicsFieldExpressionY.value = "-9.81";
   } else if (kind === "electric") {
     els.dynamicsFieldMagnitude.value = "1 N/C";
     els.dynamicsFieldDirectionPreset.value = "right";
     els.dynamicsFieldAngle.value = "0";
+    els.dynamicsFieldExpressionX.value = "1";
+    els.dynamicsFieldExpressionY.value = "0";
   } else if (kind === "magnetic") {
     els.dynamicsFieldMagnitude.value = "1 T";
     els.dynamicsMagneticDirection.value = "out";
+    els.dynamicsFieldExpressionX.value = "1";
+    els.dynamicsFieldExpressionY.value = "0";
   } else {
     els.dynamicsFieldMagnitude.value = "0";
   }
@@ -3166,12 +3277,16 @@ function syncDynamicsFieldDialog() {
   const rangeType = els.dynamicsFieldRange.value;
   const isZero = kind === "zero";
   const isMagnetic = kind === "magnetic";
+  const variableMode = els.dynamicsFieldMode.value !== "constant" && !isZero;
   const editingFieldId = state.dynamics.fieldPlacement.editingFieldId;
   const editingField = editingFieldId ? state.dynamics.fields.find((field) => field.id === editingFieldId) : null;
-  els.dynamicsFieldMagnitude.disabled = isZero;
-  els.dynamicsVectorDirectionField.classList.toggle("hidden", isMagnetic || isZero);
-  els.dynamicsFieldAngleField.classList.toggle("hidden", isMagnetic || isZero);
-  els.dynamicsMagneticDirectionField.classList.toggle("hidden", !isMagnetic);
+  els.dynamicsFieldMagnitude.disabled = isZero || variableMode;
+  els.dynamicsFieldExpressionFields.classList.toggle("hidden", !variableMode);
+  els.dynamicsFieldExpressionXLabel.textContent = isMagnetic ? "Bz 表达式（T）" : "x 分量表达式";
+  els.dynamicsFieldExpressionYField.classList.toggle("hidden", isMagnetic);
+  els.dynamicsVectorDirectionField.classList.toggle("hidden", isMagnetic || isZero || variableMode);
+  els.dynamicsFieldAngleField.classList.toggle("hidden", isMagnetic || isZero || variableMode);
+  els.dynamicsMagneticDirectionField.classList.toggle("hidden", !isMagnetic || variableMode);
   els.dynamicsFieldRange.disabled = isZero;
   els.dynamicsFieldCenterX.disabled = isZero || rangeType === "global";
   els.dynamicsFieldCenterY.disabled = isZero || rangeType === "global";
@@ -3197,6 +3312,8 @@ function syncDynamicsFieldDialog() {
   }
   if (isZero) {
     els.dynamicsFieldMessage.textContent = "零场不会在画布中绘制，也不会对对象施加外场作用。";
+  } else if (variableMode) {
+    els.dynamicsFieldMessage.textContent = "表达式仅允许 t、x、y、vx、vy 与白名单数学函数；使用受控 AST 求值，不执行脚本。常量大小仅用于画布预览。";
   } else if (rangeType === "global") {
     els.dynamicsFieldMessage.textContent = "全局均匀场作用于无限建模空间，可连续定义重力势能或电势能。";
   } else if (rangeType === "custom") {
@@ -3227,6 +3344,10 @@ function openDynamicsFieldDialog(fieldId = null) {
     els.dynamicsFieldWidth.value = `${field.width ?? 8} m`;
     els.dynamicsFieldHeight.value = `${field.height ?? 6} m`;
     els.dynamicsFieldRadius.value = `${field.radius ?? 3} m`;
+    els.dynamicsFieldMode.value = field.variation?.mode || "constant";
+    const expressions = field.variation?.expressions || field.variation?.components || {};
+    els.dynamicsFieldExpressionX.value = String(field.kind === "magnetic" ? expressions.z ?? "1" : expressions.x ?? "0");
+    els.dynamicsFieldExpressionY.value = String(expressions.y ?? "0");
   } else {
     const center = DynamicsFieldGeometry.viewportWorldCenter({
       origin: state.dynamics.origin,
@@ -3235,6 +3356,7 @@ function openDynamicsFieldDialog(fieldId = null) {
       canvasHeight: dynamicsCanvas.height,
     });
     els.dynamicsEnvironment.value = "gravity";
+    els.dynamicsFieldMode.value = "constant";
     setDynamicsFieldDefaults("gravity");
     els.dynamicsFieldRange.value = "rectangle";
     els.dynamicsFieldCenterX.value = `${formatNumber(center.x)} m`;
@@ -3268,6 +3390,20 @@ function dynamicsFieldDraftFromDialog({ preserveCustomPath = false } = {}) {
     radius: Math.abs(dynamicsValue(els.dynamicsFieldRadius, "m")),
     path: null,
   };
+  if (els.dynamicsFieldMode.value !== "constant") {
+    field.variation = {
+      mode: els.dynamicsFieldMode.value,
+      representation: "components",
+      unit: dynamicsFieldUnit(kind),
+      components:
+        kind === "magnetic"
+          ? { z: els.dynamicsFieldExpressionX.value.trim() }
+          : {
+              x: els.dynamicsFieldExpressionX.value.trim(),
+              y: els.dynamicsFieldExpressionY.value.trim(),
+            },
+    };
+  }
   if (rangeType === "custom" && preserveCustomPath && existing?.rangeType === "custom" && Array.isArray(existing.path)) {
     field.path = DynamicsFieldGeometry.translatePathToCenter(existing.path, {
       x: field.centerX,
@@ -3290,6 +3426,7 @@ function dynamicsFieldValidationMessage(field, validation) {
 }
 
 function commitDynamicsField(field, editingFieldId = null) {
+  if (field.variation) DynamicsFields.compileField(DynamicsWorld.variableFieldSpec(field));
   const validation = DynamicsFieldGeometry.validateFieldGeometry(field);
   if (!validation.valid) {
     const message = dynamicsFieldValidationMessage(field, validation);
@@ -3412,17 +3549,24 @@ function pointInDynamicsField(point, field) {
 
 function syncDynamicsForceDialog() {
   const continuous = els.dynamicsForceType.value === "continuous";
+  const pointFrame = els.dynamicsForcePointFrame.value;
   els.dynamicsForceMagnitudeLabel.textContent = continuous ? "力的大小" : "冲量大小";
   els.dynamicsForceStartField.classList.toggle("hidden", !continuous);
   els.dynamicsForceDurationField.classList.toggle("hidden", !continuous);
   els.dynamicsForceAngle.disabled = els.dynamicsForceDirectionPreset.value !== "custom";
+  els.dynamicsForcePointX.disabled = pointFrame === "center";
+  els.dynamicsForcePointY.disabled = pointFrame === "center";
   if (els.dynamicsForceDirectionPreset.value !== "custom") {
     const angles = { right: 0, up: 90, left: 180, down: -90 };
     els.dynamicsForceAngle.value = String(angles[els.dynamicsForceDirectionPreset.value] ?? 0);
   }
-  els.dynamicsForceMessage.textContent = continuous
-    ? "持续力在设定时间段内参与每一步积分；持续时间为 0 时作用到求解结束。"
-    : "瞬时力按冲量处理，只在初始瞬间改变对象速度，之后不再持续作用。";
+  const pointMessage =
+    pointFrame === "center" ? "默认作用于质心。" : pointFrame === "local" ? "局部作用点会随刚体旋转。" : "世界作用点保持绝对坐标。";
+  els.dynamicsForceMessage.textContent = `${
+    continuous
+      ? "持续力在设定时间段内参与积分；持续时间为 0 时作用到求解结束。"
+      : "瞬时力按冲量处理，只在初始瞬间改变线速度与角速度。"
+  } ${pointMessage}`;
 }
 
 function openDynamicsForceDialog() {
@@ -3445,6 +3589,9 @@ function openDynamicsForceDialog() {
   els.dynamicsForceAngle.value = "0";
   els.dynamicsForceStart.value = "0 s";
   els.dynamicsForceDuration.value = "0 s";
+  els.dynamicsForcePointFrame.value = "center";
+  els.dynamicsForcePointX.value = "0";
+  els.dynamicsForcePointY.value = "0";
   syncDynamicsForceDialog();
   els.dynamicsForceDialog.showModal();
 }
@@ -3457,7 +3604,27 @@ function applyDynamicsForce() {
   const magnitude = Math.abs(dynamicsValue(els.dynamicsForceMagnitude, unit));
   const angle = Number(els.dynamicsForceAngle.value || 0);
   const vector = vectorFromAngle(magnitude, angle);
+  const pointFrame = els.dynamicsForcePointFrame.value;
+  const applicationPoint = {
+    frame: pointFrame === "world" ? "world" : "local",
+    x: pointFrame === "center" ? 0 : Number(els.dynamicsForcePointX.value || 0),
+    y: pointFrame === "center" ? 0 : Number(els.dynamicsForcePointY.value || 0),
+  };
   recordDynamicsHistory();
+  if (pointFrame !== "center") {
+    state.dynamics.model = "coupled-rigid-body2d";
+    const target = dynamicsObjectById(targetId);
+    target.rigid = true;
+    target.collisionRadius = target.collisionRadius || target.sizeB;
+    target.contact = {
+      ...(target.contact || {}),
+      enabled: ["particle", "circle"].includes(target.kind),
+      restitution: Number(target.contact?.restitution ?? 0.8),
+      staticFriction: Number(target.contact?.staticFriction ?? 0.5),
+      dynamicFriction: Number(target.contact?.dynamicFriction ?? 0.3),
+      damping: Number(target.contact?.damping ?? 0),
+    };
+  }
   state.dynamics.forces.push({
     id: `A${state.dynamics.forceSeq++}`,
     targetId,
@@ -3468,6 +3635,7 @@ function applyDynamicsForce() {
     y: vector.y,
     start: type === "continuous" ? Math.max(0, dynamicsValue(els.dynamicsForceStart, "s")) : 0,
     duration: type === "continuous" ? Math.max(0, dynamicsValue(els.dynamicsForceDuration, "s")) : 0,
+    applicationPoint,
   });
   state.dynamics.result = null;
   els.dynamicsForceDialog.close();
@@ -3487,13 +3655,11 @@ function solveDynamics() {
   const duration = dynamicsValue(els.dynamicsDuration, "s");
   const timeStep = dynamicsValue(els.dynamicsTimeStep, "s");
   try {
-    state.dynamics.result = DynamicsCore.simulateScene({
-      objects: state.dynamics.objects,
-      fields: state.dynamics.fields,
-      forces: state.dynamics.forces,
-      duration,
-      timeStep,
-    });
+    const project = buildDynamicsProject();
+    project.simulation.duration = duration;
+    project.simulation.timeStep = timeStep;
+    const controller = DynamicsController.createController(project);
+    state.dynamics.result = controller.solve();
   } catch (error) {
     state.dynamics.result = null;
     renderDynamicsResult();
@@ -3538,6 +3704,7 @@ function drawDynamicsScene(sampleMap = null) {
   dynamicsCtx.clearRect(0, 0, dynamicsCanvas.width, dynamicsCanvas.height);
   drawDynamicsGrid();
   drawDynamicsField();
+  drawDynamicsTracksAndGrounds();
   const result = state.dynamics.result;
   if (result && selectedDynamicsOptions().has("trajectory")) {
     for (const item of result.objectResults) {
@@ -3610,6 +3777,44 @@ function drawDynamicsGrid() {
 
 function drawDynamicsField() {
   for (const field of state.dynamics.fields) drawSingleDynamicsField(field);
+}
+
+function drawDynamicsTracksAndGrounds() {
+  dynamicsCtx.save();
+  dynamicsCtx.strokeStyle = "#24c7b1";
+  dynamicsCtx.lineWidth = 2.4;
+  for (const trackSpec of state.dynamics.tracks || []) {
+    try {
+      const frames = DynamicsTracks.sampleTrack({ ...trackSpec, ...(trackSpec.geometry || {}) }, { count: 96 });
+      dynamicsCtx.beginPath();
+      frames.forEach((frame, index) => {
+        const screen = dynamicsToScreen(frame.point || frame);
+        if (index === 0) dynamicsCtx.moveTo(screen.x, screen.y);
+        else dynamicsCtx.lineTo(screen.x, screen.y);
+      });
+      dynamicsCtx.stroke();
+    } catch (_error) {
+      // Project validation reports malformed tracks; the renderer stays fail-safe.
+    }
+  }
+  dynamicsCtx.strokeStyle = "#e5b955";
+  dynamicsCtx.lineWidth = 2;
+  for (const ground of state.dynamics.grounds || []) {
+    const normal = ground.normal || { x: 0, y: 1 };
+    const lengthSquared = normal.x * normal.x + normal.y * normal.y;
+    if (!(lengthSquared > 1e-12)) continue;
+    const offset = Number(ground.offset || 0);
+    const base = { x: (normal.x * offset) / lengthSquared, y: (normal.y * offset) / lengthSquared };
+    const tangent = { x: -normal.y, y: normal.x };
+    const extent = (Math.max(dynamicsCanvas.width, dynamicsCanvas.height) / state.dynamics.scale) * 2;
+    const start = dynamicsToScreen({ x: base.x - tangent.x * extent, y: base.y - tangent.y * extent });
+    const end = dynamicsToScreen({ x: base.x + tangent.x * extent, y: base.y + tangent.y * extent });
+    dynamicsCtx.beginPath();
+    dynamicsCtx.moveTo(start.x, start.y);
+    dynamicsCtx.lineTo(end.x, end.y);
+    dynamicsCtx.stroke();
+  }
+  dynamicsCtx.restore();
 }
 
 function drawSingleDynamicsField(field) {
@@ -3722,6 +3927,7 @@ function drawDynamicsObject(point, result) {
   const sizeA = Math.max(16, Math.min(120, (result?.sizeA || model?.sizeA || 1) * state.dynamics.scale));
   const rawSizeB = (result?.sizeB || model?.sizeB || 0.2) * state.dynamics.scale;
   const sizeB = Math.max(kind === "particle" ? 4 : 10, Math.min(kind === "particle" ? 40 : 90, rawSizeB));
+  const bodyAngle = Number(point.angle ?? point.theta ?? model?.theta0 ?? 0);
   const objectIndex = Math.max(0, state.dynamics.objects.findIndex((object) => object.id === model?.id));
   const color = dynamicsObjectColor(objectIndex);
   dynamicsCtx.save();
@@ -3741,10 +3947,14 @@ function drawDynamicsObject(point, result) {
     dynamicsCtx.fill();
     dynamicsCtx.stroke();
   } else if (kind === "rod") {
-    lineDynamics({ x: screen.x - sizeA / 2, y: screen.y }, { x: screen.x + sizeA / 2, y: screen.y });
+    const axis = { x: Math.cos(bodyAngle) * sizeA / 2, y: -Math.sin(bodyAngle) * sizeA / 2 };
+    lineDynamics({ x: screen.x - axis.x, y: screen.y - axis.y }, { x: screen.x + axis.x, y: screen.y + axis.y });
   } else if (kind === "rectangle") {
-    dynamicsCtx.strokeRect(screen.x - sizeA / 2, screen.y - sizeB / 2, sizeA, sizeB);
-    dynamicsCtx.fillRect(screen.x - sizeA / 2, screen.y - sizeB / 2, sizeA, sizeB);
+    dynamicsCtx.translate(screen.x, screen.y);
+    dynamicsCtx.rotate(-bodyAngle);
+    dynamicsCtx.strokeRect(-sizeA / 2, -sizeB / 2, sizeA, sizeB);
+    dynamicsCtx.fillRect(-sizeA / 2, -sizeB / 2, sizeA, sizeB);
+    dynamicsCtx.setTransform(1, 0, 0, 1, 0, 0);
   } else {
     dynamicsCtx.beginPath();
     dynamicsCtx.arc(screen.x, screen.y, sizeB, 0, Math.PI * 2);
@@ -3754,6 +3964,12 @@ function drawDynamicsObject(point, result) {
       dynamicsCtx.beginPath();
       dynamicsCtx.arc(screen.x, screen.y, Math.max(4, sizeB * 0.62), 0, Math.PI * 2);
       dynamicsCtx.stroke();
+    }
+    if (kind === "circle" || kind === "ring") {
+      lineDynamics(
+        { x: screen.x, y: screen.y },
+        { x: screen.x + Math.cos(bodyAngle) * sizeB, y: screen.y - Math.sin(bodyAngle) * sizeB }
+      );
     }
   }
   dynamicsCtx.fillStyle = cssColor("--ink");
@@ -3767,7 +3983,22 @@ function drawDynamicsAppliedForces() {
   for (const force of state.dynamics.forces) {
     const object = dynamicsObjectById(force.targetId);
     if (!object) continue;
-    const point = dynamicsToScreen(object);
+    const applicationPoint = force.applicationPoint || { frame: "local", x: 0, y: 0 };
+    const angle = Number(object.theta0 || 0);
+    const worldPoint =
+      applicationPoint.frame === "world"
+        ? { x: Number(applicationPoint.x || 0), y: Number(applicationPoint.y || 0) }
+        : {
+            x:
+              object.x +
+              Math.cos(angle) * Number(applicationPoint.x || 0) -
+              Math.sin(angle) * Number(applicationPoint.y || 0),
+            y:
+              object.y +
+              Math.sin(angle) * Number(applicationPoint.x || 0) +
+              Math.cos(angle) * Number(applicationPoint.y || 0),
+          };
+    const point = dynamicsToScreen(worldPoint);
     const magnitude = Math.hypot(force.x, force.y);
     if (magnitude < 1e-12) continue;
     const unit = { x: force.x / magnitude, y: -force.y / magnitude };
@@ -3860,7 +4091,7 @@ function startDynamicsAnimation() {
     const sampleMap = Object.fromEntries(
       state.dynamics.result.objectResults.map((result) => [
         result.objectId,
-        DynamicsCore.sampleAtTime(result.samples, elapsed, result.timeStep),
+        DynamicsRenderer.interpolateSamples(result.samples, elapsed) || result.final,
       ])
     );
     drawDynamicsScene(sampleMap);
@@ -4020,12 +4251,25 @@ function finishDynamicsFieldPlacement() {
 
 function clearDynamicsModel() {
   cancelDynamicsFieldPlacement({ silent: true });
-  if (!state.dynamics.objects.length && !state.dynamics.fields.length && !state.dynamics.forces.length) return;
+  if (
+    !state.dynamics.objects.length &&
+    !state.dynamics.fields.length &&
+    !state.dynamics.forces.length &&
+    !(state.dynamics.grounds || []).length &&
+    !(state.dynamics.tracks || []).length
+  )
+    return;
   recordDynamicsHistory();
   cancelDynamicsAnimation();
   state.dynamics.objects = [];
   state.dynamics.fields = [];
   state.dynamics.forces = [];
+  state.dynamics.model = "independent-particle2d";
+  state.dynamics.grounds = [];
+  state.dynamics.tracks = [];
+  state.dynamics.constraints = [];
+  state.dynamics.simulationSettings = {};
+  if (els.dynamicsGroundToggle) els.dynamicsGroundToggle.checked = false;
   state.dynamics.objectSeq = 1;
   state.dynamics.fieldSeq = 1;
   state.dynamics.forceSeq = 1;
@@ -5181,6 +5425,7 @@ if (els.dynamicsForceType) els.dynamicsForceType.addEventListener("change", () =
   syncDynamicsForceDialog();
 });
 if (els.dynamicsForceDirectionPreset) els.dynamicsForceDirectionPreset.addEventListener("change", syncDynamicsForceDialog);
+if (els.dynamicsForcePointFrame) els.dynamicsForcePointFrame.addEventListener("change", syncDynamicsForceDialog);
 
 if (els.dynamicsEnvironment) {
   els.dynamicsEnvironment.addEventListener("change", () => {
@@ -5188,7 +5433,7 @@ if (els.dynamicsEnvironment) {
     syncDynamicsFieldDialog();
   });
 }
-for (const control of [els.dynamicsFieldDirectionPreset, els.dynamicsFieldRange]) {
+for (const control of [els.dynamicsFieldDirectionPreset, els.dynamicsFieldRange, els.dynamicsFieldMode]) {
   if (control) control.addEventListener("change", syncDynamicsFieldDialog);
 }
 
@@ -5220,11 +5465,36 @@ for (const control of [
   els.dynamicsShapeEquation,
   els.dynamicsVx0,
   els.dynamicsVy0,
+  els.dynamicsTheta0,
+  els.dynamicsOmega0,
 ]) {
   if (!control) continue;
   control.addEventListener("change", () => {
     updateSelectedDynamicsObjectFromControls();
     syncDynamicsControls();
+  });
+}
+
+if (els.dynamicsGroundToggle) {
+  els.dynamicsGroundToggle.addEventListener("change", () => {
+    recordDynamicsHistory();
+    if (els.dynamicsGroundToggle.checked) {
+      state.dynamics.model = "coupled-rigid-body2d";
+      state.dynamics.grounds = [
+        {
+          id: "G1",
+          normal: { x: 0, y: 1 },
+          offset: 0,
+          contact: { restitution: 0.5, staticFriction: 0.6, dynamicFriction: 0.4, damping: 0 },
+        },
+      ];
+    } else {
+      state.dynamics.grounds = [];
+    }
+    state.dynamics.result = null;
+    cancelDynamicsAnimation();
+    renderDynamicsResult();
+    drawDynamicsScene();
   });
 }
 
@@ -5239,7 +5509,7 @@ for (const control of [els.dynamicsX0, els.dynamicsY0, els.dynamicsDuration, els
   });
 }
 
-for (const list of [els.dynamicsObjectList, els.dynamicsFieldList, els.dynamicsForceList]) {
+for (const list of [els.dynamicsObjectList, els.dynamicsFieldList, els.dynamicsForceList, els.dynamicsTrackList]) {
   if (!list) continue;
   list.addEventListener("click", (event) => {
     const row = event.target.closest(".dynamics-scene-row");
@@ -5249,6 +5519,7 @@ for (const list of [els.dynamicsObjectList, els.dynamicsFieldList, els.dynamicsF
       if (kind === "object") deleteDynamicsObject(id);
       if (kind === "field") deleteDynamicsField(id);
       if (kind === "force") deleteDynamicsForce(id);
+      if (kind === "track") deleteDynamicsTrack(id);
       return;
     }
     if (kind === "object") selectDynamicsObject(id);
