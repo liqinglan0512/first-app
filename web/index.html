@@ -7,7 +7,7 @@
     <link rel="icon" href="/static/brand-avatar.png" type="image/png">
     <link rel="stylesheet" href="/static/app.css">
   </head>
-  <body>
+  <body class="dark-theme">
     <section id="welcomeScreen" class="welcome-screen">
       <button
         id="announcementButton"
@@ -30,46 +30,70 @@
           <span>欢迎使用</span>
           <span>Computational Mechanics Solver</span>
         </h1>
-        <p id="releaseVersion" class="welcome-version rainbow-animated">v1.3.2</p>
-        <p class="welcome-subtitle studio-credit"><span class="li-ion">Li<sup>+</sup></span>工作室出品</p>
+        <p id="releaseVersion" class="welcome-version rainbow-animated">v1.4.0-beta.1</p>
+        <p class="welcome-subtitle studio-credit">Leo <span class="li-ion">Li<sup>+</sup></span> Studio出品</p>
         <p class="welcome-contact">
           如有任何错误、bug、请联系：620026600@qq.com 或202402040108@stu.bucea.edu.cn
         </p>
-        <p class="local-profile-note">用户配置仅保存在当前浏览器，不是云端账户；更换设备或清理浏览器数据后不会同步。</p>
+        <p class="local-profile-note">账户由服务器安全保存；密码仅以不可逆哈希形式存储。</p>
+        <p id="legacyProfileNotice" class="migration-notice hidden">
+          检测到旧版本地配置。请注册服务器账户完成迁移；旧密码不会被读取或上传。
+        </p>
 
         <div id="authChoicePanel" class="auth-choice-panel">
-          <button id="showLoginButton" class="auth-choice-button">使用本地配置</button>
-          <button id="showRegisterButton" class="auth-choice-button">创建本地配置</button>
+          <button id="showLoginButton" class="auth-choice-button" type="button">登录</button>
+          <button id="showRegisterButton" class="auth-choice-button" type="button">注册</button>
         </div>
 
         <div id="authPanel" class="auth-panel hidden">
           <section id="loginCard" class="auth-card hidden">
-            <h2>使用本地配置</h2>
+            <h2>登录</h2>
             <label class="auth-field">
               <span>账户名</span>
-              <input id="loginUsername" autocomplete="username">
+              <input id="loginUsername" autocomplete="username" maxlength="32" required>
             </label>
-            <button id="loginSubmit" class="auth-action">进入</button>
+            <label class="auth-field">
+              <span>密码</span>
+              <input id="loginPassword" type="password" autocomplete="current-password" maxlength="128" required>
+            </label>
+            <button id="loginSubmit" class="auth-action" type="button">登录</button>
+            <button id="internalLoginEntry" class="auth-secondary" type="button">内部测试通道</button>
           </section>
 
           <section id="registerCard" class="auth-card hidden">
-            <h2>创建本地配置</h2>
+            <h2>注册</h2>
             <label class="auth-field">
               <span>账户名</span>
-              <input id="registerUsername" autocomplete="username">
+              <input id="registerUsername" autocomplete="username" maxlength="32" required>
+            </label>
+            <label class="auth-field">
+              <span>密码</span>
+              <input id="registerPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" required>
+            </label>
+            <label class="auth-field">
+              <span>确认密码</span>
+              <input id="registerPasswordConfirm" type="password" autocomplete="new-password" minlength="10" maxlength="128" required>
             </label>
             <label class="auth-field">
               <span>昵称</span>
-              <input id="registerNickname">
+              <input id="registerNickname" autocomplete="nickname" maxlength="40" required>
             </label>
             <div class="avatar-upload-row">
               <span id="registerAvatarPreview" class="default-avatar">CM</span>
               <label class="avatar-upload">
                 <span>上传头像</span>
-                <input id="registerAvatar" type="file" accept="image/*">
+                <input id="registerAvatar" type="file" accept="image/png,image/jpeg,image/webp">
               </label>
             </div>
-            <button id="registerSubmit" class="auth-action">创建并进入</button>
+            <label class="auth-agreement">
+              <input id="acceptTerms" type="checkbox">
+              <span>我已阅读并同意<a href="/static/terms.html" target="_blank" rel="noopener">用户协议</a></span>
+            </label>
+            <label class="auth-agreement">
+              <input id="acceptPrivacy" type="checkbox">
+              <span>我已阅读并同意<a href="/static/privacy.html" target="_blank" rel="noopener">隐私说明</a></span>
+            </label>
+            <button id="registerSubmit" class="auth-action" type="button">注册并登录</button>
           </section>
         </div>
 
@@ -94,7 +118,7 @@
         <div class="brand">
           <span class="brand-copy">
             <span class="brand-title rainbow-title">Computational Mechanics Solver</span>
-            <span class="brand-subtitle studio-credit"><span class="li-ion">Li<sup>+</sup></span>工作室出品</span>
+            <span class="brand-subtitle studio-credit">Leo <span class="li-ion">Li<sup>+</sup></span> Studio出品</span>
           </span>
           <div class="module-switch static-module-switch" role="toolbar" aria-label="力学模块切换">
             <button id="staticActiveButton" class="active" type="button">静力学</button>
@@ -118,12 +142,20 @@
             aria-label="下载 Computational Mechanics Solver v1.3.2 用户与技术说明书"
             title="下载用户与技术说明书"
           >
-            <span class="manual-book-icon" aria-hidden="true"></span>
+            <span class="manual-cube-icon" aria-hidden="true">
+              <span class="cube-edge edge-1"></span><span class="cube-edge edge-2"></span>
+              <span class="cube-edge edge-3"></span><span class="cube-edge edge-4"></span>
+              <span class="cube-edge edge-5"></span><span class="cube-edge edge-6"></span>
+              <span class="cube-edge edge-7"></span><span class="cube-edge edge-8"></span>
+              <span class="cube-edge edge-9"></span>
+            </span>
             <span class="manual-download-title">用户与技术说明书</span>
             <small>v1.3.2 PDF</small>
           </a>
           <span id="mainUserAvatar" class="default-avatar main-avatar">CM</span>
           <span id="mainUserName" class="main-user-name">未登录</span>
+          <span id="mainUserTier" class="user-tier hidden"></span>
+          <button id="benefitsButton" class="benefits-button" type="button">获得更多权益</button>
           <button id="settingsButton" class="settings-button" title="设置">设置</button>
         </div>
 
@@ -149,7 +181,7 @@
           <label class="inline-toggle"><input id="gridToggle" type="checkbox" checked>网格</label>
           <label class="inline-toggle"><input id="snapToggle" type="checkbox" checked>捕捉</label>
           <label class="inline-toggle"><input id="orthogonalToggle" type="checkbox">正交</label>
-          <button id="themeButton" title="切换黑白背景">黑底</button>
+          <button id="themeButton" title="切换黑白背景">白底</button>
         </div>
 
         <div class="action-strip">
@@ -259,7 +291,7 @@
         <div class="brand">
           <span class="brand-copy">
             <span class="brand-title rainbow-title">Computational Mechanics Solver</span>
-            <span class="brand-subtitle studio-credit"><span class="li-ion">Li<sup>+</sup></span>工作室出品</span>
+            <span class="brand-subtitle studio-credit">Leo <span class="li-ion">Li<sup>+</sup></span> Studio出品</span>
           </span>
         </div>
 
@@ -276,12 +308,20 @@
             aria-label="下载 Computational Mechanics Solver v1.3.2 用户与技术说明书"
             title="下载用户与技术说明书"
           >
-            <span class="manual-book-icon" aria-hidden="true"></span>
+            <span class="manual-cube-icon" aria-hidden="true">
+              <span class="cube-edge edge-1"></span><span class="cube-edge edge-2"></span>
+              <span class="cube-edge edge-3"></span><span class="cube-edge edge-4"></span>
+              <span class="cube-edge edge-5"></span><span class="cube-edge edge-6"></span>
+              <span class="cube-edge edge-7"></span><span class="cube-edge edge-8"></span>
+              <span class="cube-edge edge-9"></span>
+            </span>
             <span class="manual-download-title">用户与技术说明书</span>
             <small>v1.3.2 PDF</small>
           </a>
           <span id="dynamicsUserAvatar" class="default-avatar main-avatar">CM</span>
           <span id="dynamicsUserName" class="main-user-name">未登录</span>
+          <span id="dynamicsUserTier" class="user-tier hidden"></span>
+          <button id="dynamicsBenefitsButton" class="benefits-button" type="button">获得更多权益</button>
           <button id="dynamicsSettingsButton" class="settings-button" title="设置">设置</button>
         </div>
 
@@ -442,7 +482,7 @@
       <form method="dialog">
         <header class="modal-header">
           <div>
-            <p class="announcement-kicker">Li<sup>+</sup> Studio Release Notes</p>
+            <p class="announcement-kicker">Leo Li<sup>+</sup> Studio Release Notes</p>
             <h2 id="announcementTitle">Computational Mechanics Solver v1.3.2 更新公告</h2>
           </div>
           <button id="announcementCloseButton" value="close" class="icon-button" aria-label="关闭更新公告">×</button>
@@ -887,7 +927,7 @@
           <div class="field-row">
             <label class="wide-field">
               <span>新昵称</span>
-              <input id="settingsNickname">
+              <input id="settingsNickname" autocomplete="nickname" maxlength="40">
             </label>
             <button id="saveNicknameButton" type="button">保存</button>
           </div>
@@ -898,14 +938,78 @@
             <span id="settingsAvatarPreview" class="default-avatar settings-avatar-preview">CM</span>
             <label class="avatar-upload">
               <span>上传头像</span>
-              <input id="settingsAvatar" type="file" accept="image/*">
+              <input id="settingsAvatar" type="file" accept="image/png,image/jpeg,image/webp">
             </label>
           </div>
           <button id="saveAvatarButton" type="button">保存头像</button>
         </div>
+        <div class="settings-section">
+          <h3>修改密码</h3>
+          <label class="wide-field">
+            <span>原密码</span>
+            <input id="settingsCurrentPassword" type="password" autocomplete="current-password" maxlength="128">
+          </label>
+          <div class="field-row">
+            <label class="wide-field">
+              <span>新密码</span>
+              <input id="settingsNewPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128">
+            </label>
+            <label class="wide-field">
+              <span>确认新密码</span>
+              <input id="settingsNewPasswordConfirm" type="password" autocomplete="new-password" minlength="10" maxlength="128">
+            </label>
+          </div>
+          <button id="savePasswordButton" type="button">更新密码</button>
+        </div>
         <p id="settingsMessage" class="settings-message" role="status"></p>
         <footer class="modal-actions">
           <button id="logoutButton" type="button" class="danger-button">退出登录</button>
+          <button value="cancel" class="primary">完成</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="entitlementsDialog" class="modal entitlements-modal" aria-labelledby="entitlementsTitle">
+      <form method="dialog">
+        <header class="modal-header">
+          <div>
+            <p class="modal-kicker">ACCOUNT &amp; ACCESS</p>
+            <h2 id="entitlementsTitle">账户与权益</h2>
+          </div>
+          <button value="cancel" class="icon-button" title="关闭权益面板">×</button>
+        </header>
+        <div class="entitlements-content">
+          <section class="entitlement-current">
+            <span>当前身份</span>
+            <strong id="entitlementCurrentLabel">正在读取……</strong>
+            <p id="entitlementExpiry" class="entitlement-muted"></p>
+          </section>
+          <section>
+            <h3>套餐权益</h3>
+            <div id="entitlementPlanList" class="entitlement-plan-list" aria-live="polite"></div>
+          </section>
+          <section id="internalAccessSection" class="entitlement-action-section">
+            <h3>Internal Tester</h3>
+            <p>内部测试身份不包含管理员权限。凭据只提交到服务器，本页不会保存。</p>
+            <div class="entitlement-action-row">
+              <label class="wide-field">
+                <span>内部测试凭据</span>
+                <input id="internalInviteCode" type="password" autocomplete="off" maxlength="256">
+              </label>
+              <button id="redeemInternalButton" type="button">验证并启用</button>
+            </div>
+          </section>
+          <section class="entitlement-action-section">
+            <h3>PINN 求解器</h3>
+            <p>仍在开发与验证中。加入等待名单不会开启 PINN 求解能力。</p>
+            <div class="entitlement-action-row">
+              <span id="pinnWaitlistStatus" class="entitlement-muted">尚未加入等待名单</span>
+              <button id="joinPinnWaitlistButton" type="button">加入等待名单</button>
+            </div>
+          </section>
+        </div>
+        <p id="entitlementsMessage" class="settings-message" role="status"></p>
+        <footer class="modal-actions">
           <button value="cancel" class="primary">完成</button>
         </footer>
       </form>
@@ -950,6 +1054,7 @@
     <script src="/static/dynamics-field-placement.js"></script>
     <script src="/static/dynamics-core.js"></script>
     <script src="/static/dynamics-report.js"></script>
+    <script src="/static/auth-client.js"></script>
     <script src="/static/app.js"></script>
   </body>
 </html>

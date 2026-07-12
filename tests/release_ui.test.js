@@ -17,7 +17,7 @@ function check(callback) {
 }
 
 check(() => {
-  assert.match(html, /id="releaseVersion"[^>]*class="[^"]*rainbow-animated[^"]*"[^>]*>v1\.3\.2</);
+  assert.match(html, /id="releaseVersion"[^>]*class="[^"]*rainbow-animated[^"]*"[^>]*>v1\.4\.0-beta\.1</);
   assert.match(css, /\.rainbow-animated\s*\{[^}]*animation:\s*rainbowFlow/s);
 });
 
@@ -52,13 +52,30 @@ check(() => {
     assert.match(card[0], /download/);
     assert.match(card[0], /用户与技术说明书/);
     assert.match(card[0], /v1\.3\.2 PDF/);
+    assert.match(card[0], /manual-cube-icon/);
+    assert.equal((card[0].match(/cube-edge/g) || []).length, 9);
   }
+});
+
+check(() => {
+  assert.doesNotMatch(html, /当前主身份/);
+  assert.match(html, /当前身份/);
+  assert.match(css, /\.manual-cube-icon \.edge-1/);
+  assert.match(css, /\.manual-cube-icon \.edge-9/);
 });
 
 check(() => {
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /\.atom-orbit[\s\S]*animation:\s*none !important/);
+  assert.match(css, /\.manual-download-card[\s\S]*transition:\s*none !important/);
   assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.welcome-content[\s\S]*padding:\s*112px 22px 22px/);
+});
+
+check(() => {
+  assert.match(html, /Leo\s+<span class="li-ion">Li<sup>\+<\/sup><\/span>\s+Studio出品/);
+  assert.match(css, /\.li-ion\s*\{[\s\S]*position:\s*relative[\s\S]*padding-right:\s*0\.34em/);
+  assert.match(css, /\.li-ion sup\s*\{[\s\S]*position:\s*absolute[\s\S]*top:\s*-0\.34em/);
+  assert.match(css, /\.li-nucleus sup\s*\{[\s\S]*position:\s*absolute[\s\S]*right:\s*3px/);
 });
 
 console.log(`release-ui: ${checks} checks passed`);

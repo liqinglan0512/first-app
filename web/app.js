@@ -23,10 +23,17 @@ const els = {
   registerCard: document.getElementById("registerCard"),
   startPanel: document.getElementById("startPanel"),
   authMessage: document.getElementById("authMessage"),
+  legacyProfileNotice: document.getElementById("legacyProfileNotice"),
   loginUsername: document.getElementById("loginUsername"),
+  loginPassword: document.getElementById("loginPassword"),
   loginSubmit: document.getElementById("loginSubmit"),
+  internalLoginEntry: document.getElementById("internalLoginEntry"),
   registerUsername: document.getElementById("registerUsername"),
+  registerPassword: document.getElementById("registerPassword"),
+  registerPasswordConfirm: document.getElementById("registerPasswordConfirm"),
   registerNickname: document.getElementById("registerNickname"),
+  acceptTerms: document.getElementById("acceptTerms"),
+  acceptPrivacy: document.getElementById("acceptPrivacy"),
   registerAvatar: document.getElementById("registerAvatar"),
   registerAvatarPreview: document.getElementById("registerAvatarPreview"),
   registerSubmit: document.getElementById("registerSubmit"),
@@ -39,9 +46,13 @@ const els = {
   welcomeLogoutButton: document.getElementById("welcomeLogoutButton"),
   mainUserAvatar: document.getElementById("mainUserAvatar"),
   mainUserName: document.getElementById("mainUserName"),
+  mainUserTier: document.getElementById("mainUserTier"),
+  benefitsButton: document.getElementById("benefitsButton"),
   dynamicsShell: document.getElementById("dynamicsShell"),
   dynamicsUserAvatar: document.getElementById("dynamicsUserAvatar"),
   dynamicsUserName: document.getElementById("dynamicsUserName"),
+  dynamicsUserTier: document.getElementById("dynamicsUserTier"),
+  dynamicsBenefitsButton: document.getElementById("dynamicsBenefitsButton"),
   dynamicsSettingsButton: document.getElementById("dynamicsSettingsButton"),
   dynamicsToStaticButton: document.getElementById("dynamicsToStaticButton"),
   dynamicsBuildKind: document.getElementById("dynamicsBuildKind"),
@@ -130,8 +141,21 @@ const els = {
   settingsAvatarPreview: document.getElementById("settingsAvatarPreview"),
   saveNicknameButton: document.getElementById("saveNicknameButton"),
   saveAvatarButton: document.getElementById("saveAvatarButton"),
+  settingsCurrentPassword: document.getElementById("settingsCurrentPassword"),
+  settingsNewPassword: document.getElementById("settingsNewPassword"),
+  settingsNewPasswordConfirm: document.getElementById("settingsNewPasswordConfirm"),
+  savePasswordButton: document.getElementById("savePasswordButton"),
   logoutButton: document.getElementById("logoutButton"),
   settingsMessage: document.getElementById("settingsMessage"),
+  entitlementsDialog: document.getElementById("entitlementsDialog"),
+  entitlementCurrentLabel: document.getElementById("entitlementCurrentLabel"),
+  entitlementExpiry: document.getElementById("entitlementExpiry"),
+  entitlementPlanList: document.getElementById("entitlementPlanList"),
+  internalInviteCode: document.getElementById("internalInviteCode"),
+  redeemInternalButton: document.getElementById("redeemInternalButton"),
+  pinnWaitlistStatus: document.getElementById("pinnWaitlistStatus"),
+  joinPinnWaitlistButton: document.getElementById("joinPinnWaitlistButton"),
+  entitlementsMessage: document.getElementById("entitlementsMessage"),
   toolButtons: [...document.querySelectorAll(".tool-button")],
   selectionMode: document.getElementById("selectionMode"),
   supportPreset: document.getElementById("supportPreset"),
@@ -225,6 +249,7 @@ const state = {
   pendingAvatar: "",
   pendingSettingsAvatar: "",
   currentUser: null,
+  entitlements: null,
   result: null,
   lastProject: null,
   lastScope: "whole",
@@ -281,10 +306,18 @@ const state = {
   },
 };
 
-const AUTH_USERS_KEY = "cms_users";
-const AUTH_CURRENT_KEY = "cms_current_user";
+const LEGACY_AUTH_USERS_KEY = "cms_users";
+const LEGACY_AUTH_CURRENT_KEY = "cms_current_user";
 const AUTH_FONT_SIZE_KEY = "cms_font_size";
-const DEFAULT_USER_AVATAR = "/static/brand-avatar.png";
+const DEFAULT_USER_AVATAR = "";
+const authClient = AuthClient.create();
+const USER_TIER_LABELS = {
+  free: "Free",
+  plus: "Plus",
+  pro: "Pro",
+  internal_tester: "Internal Tester",
+  admin: "Admin",
+};
 let announcementReturnFocus = null;
 
 function openAnnouncement() {
@@ -301,33 +334,6 @@ function closeAnnouncement() {
 function restoreAnnouncementFocus() {
   if (announcementReturnFocus instanceof HTMLElement) announcementReturnFocus.focus();
   announcementReturnFocus = null;
-}
-
-function loadUsers() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || "{}");
-    const users = {};
-    let removedPlaintextPassword = false;
-    for (const [username, rawUser] of Object.entries(stored)) {
-      if (!rawUser || typeof rawUser !== "object") continue;
-      const { password: _discardedPassword, ...safeUser } = rawUser;
-      removedPlaintextPassword ||= "password" in rawUser;
-      users[username] = { ...safeUser, username };
-    }
-    if (removedPlaintextPassword) localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(users));
-    return users;
-  } catch (error) {
-    return {};
-  }
-}
-
-function saveUsers(users) {
-  const safeUsers = {};
-  for (const [username, rawUser] of Object.entries(users || {})) {
-    const { password: _discardedPassword, ...safeUser } = rawUser || {};
-    safeUsers[username] = { ...safeUser, username };
-  }
-  localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(safeUsers));
 }
 
 function setAuthMessage(message) {
@@ -362,6 +368,7 @@ function showAvatar(target, avatarData) {
     const image = document.createElement("img");
     image.src = avatarData;
     image.alt = "用户头像";
+    image.addEventListener("error", () => showDefaultAvatar(target), { once: true });
     target.appendChild(image);
   } else {
     target.textContent = "CM";
@@ -369,7 +376,27 @@ function showAvatar(target, avatarData) {
 }
 
 function userAvatar(user) {
-  return (user && user.avatar) || DEFAULT_USER_AVATAR;
+  return (user && user.avatarUrl) || DEFAULT_USER_AVATAR;
+}
+
+function refreshTierDisplay(target, user) {
+  if (!target || !user) {
+    if (target) {
+      target.textContent = "";
+      target.removeAttribute("data-role");
+      target.classList.add("hidden");
+    }
+    return;
+  }
+  const role = String(user.role || "free");
+  target.textContent = state.entitlements?.label || USER_TIER_LABELS[role] || "Free";
+  target.dataset.role = role;
+  target.classList.remove("hidden");
+}
+
+function refreshAvatarRole(target, user) {
+  if (!target) return;
+  target.classList.toggle("internal-tester-avatar", user?.role === "internal_tester");
 }
 
 function refreshCurrentUserDisplay(user = state.currentUser) {
@@ -377,34 +404,209 @@ function refreshCurrentUserDisplay(user = state.currentUser) {
     els.mainUserName.textContent = "未登录";
     els.mainUserName.title = "";
     showAvatar(els.mainUserAvatar, DEFAULT_USER_AVATAR);
+    refreshTierDisplay(els.mainUserTier, null);
+    refreshAvatarRole(els.mainUserAvatar, null);
     if (els.dynamicsUserName && els.dynamicsUserAvatar) {
       els.dynamicsUserName.textContent = "未登录";
       els.dynamicsUserName.title = "";
       showAvatar(els.dynamicsUserAvatar, DEFAULT_USER_AVATAR);
+      refreshTierDisplay(els.dynamicsUserTier, null);
+      refreshAvatarRole(els.dynamicsUserAvatar, null);
     }
     return;
   }
-  const displayName = user.nickname || user.username;
+  const displayName = user.displayName || user.username;
   els.mainUserName.textContent = displayName;
-  els.mainUserName.title = user.nickname ? `${user.nickname} (${user.username})` : user.username;
+  els.mainUserName.title = user.displayName ? `${user.displayName} (${user.username})` : user.username;
   showAvatar(els.mainUserAvatar, userAvatar(user));
+  refreshTierDisplay(els.mainUserTier, user);
+  refreshAvatarRole(els.mainUserAvatar, user);
   if (els.dynamicsUserName && els.dynamicsUserAvatar) {
     els.dynamicsUserName.textContent = displayName;
-    els.dynamicsUserName.title = user.nickname ? `${user.nickname} (${user.username})` : user.username;
+    els.dynamicsUserName.title = user.displayName ? `${user.displayName} (${user.username})` : user.username;
     showAvatar(els.dynamicsUserAvatar, userAvatar(user));
+    refreshTierDisplay(els.dynamicsUserTier, user);
+    refreshAvatarRole(els.dynamicsUserAvatar, user);
   }
 }
 
-function updateCurrentUser(patch) {
-  if (!state.currentUser) return null;
-  const users = loadUsers();
-  const username = state.currentUser.username;
-  const nextUser = { ...(users[username] || state.currentUser), ...patch, username };
-  users[username] = nextUser;
-  saveUsers(users);
-  state.currentUser = nextUser;
-  refreshCurrentUserDisplay(nextUser);
-  return nextUser;
+function hasLegacyAuthData() {
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (key === LEGACY_AUTH_USERS_KEY || key === LEGACY_AUTH_CURRENT_KEY) return true;
+  }
+  return false;
+}
+
+function clearLegacyAuthData() {
+  localStorage.removeItem(LEGACY_AUTH_USERS_KEY);
+  localStorage.removeItem(LEGACY_AUTH_CURRENT_KEY);
+}
+
+function updateMigrationNotice() {
+  if (!els.legacyProfileNotice) return;
+  els.legacyProfileNotice.classList.toggle("hidden", !hasLegacyAuthData());
+}
+
+function setButtonBusy(button, busy, label) {
+  if (!button) return;
+  if (busy) {
+    button.dataset.idleLabel = button.textContent;
+    button.textContent = label;
+    button.disabled = true;
+  } else {
+    button.textContent = button.dataset.idleLabel || button.textContent;
+    button.disabled = false;
+    delete button.dataset.idleLabel;
+  }
+}
+
+function authErrorMessage(error) {
+  if (error instanceof AuthClient.AuthClientError) return error.message;
+  return "账户服务暂时不可用，请稍后再试。";
+}
+
+function setEntitlementsMessage(message) {
+  if (els.entitlementsMessage) els.entitlementsMessage.textContent = message || "";
+}
+
+function entitlementExpiryText(value) {
+  if (!value) return "";
+  const expiresAt = new Date(value);
+  if (Number.isNaN(expiresAt.getTime())) return "内部测试资格有效期由服务器管理。";
+  return `内部测试资格有效至 ${new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(expiresAt)}`;
+}
+
+function renderEntitlements() {
+  if (!els.entitlementPlanList) return;
+  const view = state.entitlements;
+  els.entitlementPlanList.replaceChildren();
+  els.entitlementCurrentLabel.textContent = view?.label || "正在读取……";
+  els.entitlementExpiry.textContent = entitlementExpiryText(view?.internalExpiresAt);
+
+  const plans = Array.isArray(view?.plans) ? view.plans : [];
+  if (!plans.length) {
+    const empty = document.createElement("p");
+    empty.className = "entitlement-muted";
+    empty.textContent = view ? "套餐信息暂不可用。" : "正在从服务器读取套餐信息……";
+    els.entitlementPlanList.appendChild(empty);
+  }
+  for (const plan of plans) {
+    const card = document.createElement("article");
+    card.className = "entitlement-plan";
+    if (plan.current) card.classList.add("current");
+
+    const title = document.createElement("h4");
+    title.textContent = plan.displayName || plan.name || "套餐";
+    const description = document.createElement("p");
+    description.textContent = plan.description || "权益以服务端当前配置为准。";
+    const status = document.createElement("span");
+    status.className = "entitlement-plan-status";
+    status.textContent = plan.current
+      ? "当前套餐"
+      : plan.purchaseAvailable
+        ? "可申请"
+        : "尚未开放购买";
+    card.append(title, description, status);
+    els.entitlementPlanList.appendChild(card);
+  }
+
+  const isInternal = view?.role === "internal_tester";
+  els.internalInviteCode.disabled = isInternal;
+  els.redeemInternalButton.disabled = isInternal;
+  els.redeemInternalButton.textContent = isInternal ? "已启用" : "验证并启用";
+
+  const waiting = view?.pinnStatus === "waiting";
+  els.pinnWaitlistStatus.textContent = waiting ? "已加入等待名单" : "尚未加入等待名单";
+  els.joinPinnWaitlistButton.disabled = waiting || !view;
+  els.joinPinnWaitlistButton.textContent = waiting ? "已加入" : "加入等待名单";
+}
+
+function applyEntitlementPayload(payload) {
+  if (!payload || typeof payload !== "object") return;
+  state.entitlements = {
+    role: String(payload.role || "free"),
+    label: String(payload.label || "Free"),
+    entitlements: Array.isArray(payload.entitlements) ? [...payload.entitlements] : [],
+    plans: Array.isArray(payload.plans) ? payload.plans.map((plan) => ({ ...plan })) : [],
+    internalExpiresAt: payload.internalExpiresAt || null,
+    pinnStatus: payload.pinnStatus || null,
+  };
+  if (payload.user && typeof payload.user === "object") {
+    state.currentUser = { ...payload.user };
+  }
+  refreshCurrentUserDisplay(state.currentUser);
+  renderEntitlements();
+}
+
+async function refreshEntitlements({ silent = true } = {}) {
+  const requestedUserId = state.currentUser?.id;
+  if (!requestedUserId) return null;
+  try {
+    const payload = await authClient.entitlements();
+    if (state.currentUser?.id !== requestedUserId) return null;
+    applyEntitlementPayload(payload);
+    return payload;
+  } catch (error) {
+    if (error instanceof AuthClient.AuthClientError && error.status === 401) {
+      completeLogout();
+      return null;
+    }
+    if (!silent) setEntitlementsMessage(authErrorMessage(error));
+    return null;
+  }
+}
+
+async function openEntitlementsDialog() {
+  if (!state.currentUser || !els.entitlementsDialog) return;
+  setEntitlementsMessage("正在从服务器读取当前权益……");
+  renderEntitlements();
+  if (!els.entitlementsDialog.open) els.entitlementsDialog.showModal();
+  const payload = await refreshEntitlements({ silent: false });
+  if (payload) setEntitlementsMessage("权益由服务器实时校验。Plus 与 Pro 购买暂未开放。");
+}
+
+async function redeemInternalAccess() {
+  let credential = els.internalInviteCode.value.trim();
+  els.internalInviteCode.value = "";
+  if (!credential) {
+    setEntitlementsMessage("请输入内部测试凭据。凭据不会保存在浏览器中。");
+    return;
+  }
+  setButtonBusy(els.redeemInternalButton, true, "验证中……");
+  setEntitlementsMessage("");
+  try {
+    const payload = await authClient.redeemInternal(credential);
+    applyEntitlementPayload(payload);
+    setEntitlementsMessage("Internal Tester 已启用；该身份不包含管理员权限。");
+  } catch (error) {
+    setEntitlementsMessage(authErrorMessage(error));
+  } finally {
+    credential = "";
+    setButtonBusy(els.redeemInternalButton, false);
+    renderEntitlements();
+  }
+}
+
+async function joinPinnWaitlist() {
+  setButtonBusy(els.joinPinnWaitlistButton, true, "提交中……");
+  setEntitlementsMessage("");
+  try {
+    const payload = await authClient.joinPinnWaitlist();
+    applyEntitlementPayload(payload);
+    setEntitlementsMessage("已加入 PINN 等待名单。PINN 求解能力仍在开发中，尚未启用。");
+  } catch (error) {
+    setEntitlementsMessage(authErrorMessage(error));
+  } finally {
+    setButtonBusy(els.joinPinnWaitlistButton, false);
+    renderEntitlements();
+  }
 }
 
 function showAuthMode(mode) {
@@ -431,8 +633,8 @@ function resetAuthChoice() {
 }
 
 function setCurrentUser(user) {
+  state.entitlements = null;
   state.currentUser = user;
-  localStorage.setItem(AUTH_CURRENT_KEY, user.username);
   els.authChoicePanel.classList.add("hidden");
   els.authPanel.classList.add("hidden");
   els.loginCard.classList.add("hidden");
@@ -441,58 +643,97 @@ function setCurrentUser(user) {
   els.startAppButton.classList.remove("hidden");
   if (els.moduleChoicePanel) els.moduleChoicePanel.classList.add("hidden");
   refreshCurrentUserDisplay(user);
-  setAuthMessage(`当前本地配置：${user.username}`);
+  setAuthMessage(`已登录：${user.username}`);
+  void refreshEntitlements({ silent: true });
 }
 
-function initAuth() {
-  const users = loadUsers();
-  const currentUsername = localStorage.getItem(AUTH_CURRENT_KEY);
-  const currentUser = currentUsername ? users[currentUsername] : null;
-  if (currentUser) {
-    setCurrentUser(currentUser);
-  } else {
-    resetAuthChoice();
-    els.startPanel.classList.add("hidden");
-    showDefaultAvatar(els.registerAvatarPreview);
-    refreshCurrentUserDisplay(null);
-    setAuthMessage("");
+async function initAuth() {
+  resetAuthChoice();
+  els.startPanel.classList.add("hidden");
+  showDefaultAvatar(els.registerAvatarPreview);
+  refreshCurrentUserDisplay(null);
+  updateMigrationNotice();
+  setAuthMessage("正在检查登录状态……");
+  try {
+    const session = await authClient.session();
+    if (session.authenticated && session.user) {
+      setCurrentUser(session.user);
+      return;
+    }
+    setAuthMessage(hasLegacyAuthData() ? "请注册服务器账户完成旧配置迁移。" : "");
+  } catch (error) {
+    setAuthMessage(authErrorMessage(error));
   }
 }
 
-function loginUser() {
+async function loginUser() {
   const username = els.loginUsername.value.trim();
-  if (!username) {
-    setAuthMessage("请填写本地配置名称。");
+  const password = els.loginPassword.value;
+  if (!username || !password) {
+    setAuthMessage("请填写账户名和密码。");
     return;
   }
-  const user = loadUsers()[username];
-  if (!user) {
-    setAuthMessage("未找到该本地配置。");
-    return;
+  setButtonBusy(els.loginSubmit, true, "正在登录……");
+  setAuthMessage("");
+  try {
+    const session = await authClient.login({ username, password });
+    clearLegacyAuthData();
+    updateMigrationNotice();
+    els.loginPassword.value = "";
+    setCurrentUser(session.user);
+  } catch (error) {
+    setAuthMessage(authErrorMessage(error));
+  } finally {
+    setButtonBusy(els.loginSubmit, false);
   }
-  setCurrentUser(user);
 }
 
-function registerUser() {
+async function registerUser() {
   const username = els.registerUsername.value.trim();
-  const nickname = els.registerNickname.value.trim();
-  if (!username || !nickname) {
-    setAuthMessage("创建本地配置需要填写账户名和昵称。");
+  const password = els.registerPassword.value;
+  const passwordConfirm = els.registerPasswordConfirm.value;
+  const displayName = els.registerNickname.value.trim();
+  if (!username || !password || !passwordConfirm || !displayName) {
+    setAuthMessage("注册需要填写账户名、密码、确认密码和昵称。");
     return;
   }
-  const users = loadUsers();
-  if (users[username]) {
-    setAuthMessage("该账户名已存在，请换一个。");
+  if (!els.acceptTerms.checked || !els.acceptPrivacy.checked) {
+    setAuthMessage("请先阅读并同意用户协议与隐私说明。");
     return;
   }
-  const user = {
-    username,
-    nickname,
-    avatar: state.pendingAvatar || "",
-  };
-  users[username] = user;
-  saveUsers(users);
-  setCurrentUser(user);
+  setButtonBusy(els.registerSubmit, true, "正在注册……");
+  setAuthMessage("");
+  try {
+    let session = await authClient.register({
+      username,
+      password,
+      passwordConfirm,
+      displayName,
+      acceptedTerms: true,
+      acceptedPrivacy: true,
+    });
+    const avatarFile = els.registerAvatar.files && els.registerAvatar.files[0];
+    let avatarWarning = "";
+    if (avatarFile) {
+      try {
+        session = await authClient.uploadAvatar(avatarFile);
+      } catch (error) {
+        avatarWarning = `账户已创建，但头像未保存：${authErrorMessage(error)}`;
+      }
+    }
+    clearLegacyAuthData();
+    updateMigrationNotice();
+    state.pendingAvatar = "";
+    els.registerAvatar.value = "";
+    els.registerPassword.value = "";
+    els.registerPasswordConfirm.value = "";
+    setCurrentUser(session.user);
+    if (avatarWarning) setAuthMessage(avatarWarning);
+  } catch (error) {
+    setAuthMessage(authErrorMessage(error));
+  } finally {
+    setButtonBusy(els.registerSubmit, false);
+  }
 }
 
 function previewRegisterAvatar(file) {
@@ -512,22 +753,34 @@ function previewRegisterAvatar(file) {
 function openSettingsDialog() {
   if (!state.currentUser) return;
   state.pendingSettingsAvatar = "";
-  els.settingsNickname.value = state.currentUser.nickname || "";
+  els.settingsNickname.value = state.currentUser.displayName || "";
   els.settingsAvatar.value = "";
+  els.settingsCurrentPassword.value = "";
+  els.settingsNewPassword.value = "";
+  els.settingsNewPasswordConfirm.value = "";
   applyFontSize(localStorage.getItem(AUTH_FONT_SIZE_KEY), false);
   showAvatar(els.settingsAvatarPreview, userAvatar(state.currentUser));
   setSettingsMessage("");
   if (!els.settingsDialog.open) els.settingsDialog.showModal();
 }
 
-function saveNickname() {
-  const nickname = els.settingsNickname.value.trim();
-  if (!nickname) {
+async function saveNickname() {
+  const displayName = els.settingsNickname.value.trim();
+  if (!displayName) {
     setSettingsMessage("昵称不能为空。");
     return;
   }
-  updateCurrentUser({ nickname });
-  setSettingsMessage("昵称已保存。");
+  setButtonBusy(els.saveNicknameButton, true, "保存中……");
+  try {
+    const session = await authClient.updateProfile(displayName);
+    state.currentUser = session.user;
+    refreshCurrentUserDisplay(session.user);
+    setSettingsMessage("昵称已保存到服务器。");
+  } catch (error) {
+    setSettingsMessage(authErrorMessage(error));
+  } finally {
+    setButtonBusy(els.saveNicknameButton, false);
+  }
 }
 
 function previewSettingsAvatar(file) {
@@ -544,20 +797,63 @@ function previewSettingsAvatar(file) {
   reader.readAsDataURL(file);
 }
 
-function saveSettingsAvatar() {
-  if (!state.pendingSettingsAvatar) {
+async function saveSettingsAvatar() {
+  const avatarFile = els.settingsAvatar.files && els.settingsAvatar.files[0];
+  if (!avatarFile) {
     setSettingsMessage("请选择新的头像文件。");
     return;
   }
-  updateCurrentUser({ avatar: state.pendingSettingsAvatar });
-  setSettingsMessage("头像已保存。");
+  setButtonBusy(els.saveAvatarButton, true, "上传中……");
+  try {
+    const session = await authClient.uploadAvatar(avatarFile);
+    state.currentUser = session.user;
+    refreshCurrentUserDisplay(session.user);
+    showAvatar(els.settingsAvatarPreview, userAvatar(session.user));
+    state.pendingSettingsAvatar = "";
+    els.settingsAvatar.value = "";
+    setSettingsMessage("头像已安全保存到服务器。");
+  } catch (error) {
+    setSettingsMessage(authErrorMessage(error));
+  } finally {
+    setButtonBusy(els.saveAvatarButton, false);
+  }
 }
 
-function logoutUser() {
+async function savePassword() {
+  const currentPassword = els.settingsCurrentPassword.value;
+  const newPassword = els.settingsNewPassword.value;
+  const newPasswordConfirm = els.settingsNewPasswordConfirm.value;
+  if (!currentPassword || !newPassword || !newPasswordConfirm) {
+    setSettingsMessage("请完整填写原密码、新密码和确认新密码。");
+    return;
+  }
+  setButtonBusy(els.savePasswordButton, true, "更新中……");
+  try {
+    const session = await authClient.changePassword(
+      currentPassword,
+      newPassword,
+      newPasswordConfirm
+    );
+    state.currentUser = session.user;
+    refreshCurrentUserDisplay(session.user);
+    els.settingsCurrentPassword.value = "";
+    els.settingsNewPassword.value = "";
+    els.settingsNewPasswordConfirm.value = "";
+    setSettingsMessage("密码已更新，其他登录会话已撤销。");
+  } catch (error) {
+    setSettingsMessage(authErrorMessage(error));
+  } finally {
+    setButtonBusy(els.savePasswordButton, false);
+  }
+}
+
+function completeLogout() {
   cancelDynamicsFieldPlacement({ silent: true });
   state.currentUser = null;
-  localStorage.removeItem(AUTH_CURRENT_KEY);
+  state.entitlements = null;
   if (els.settingsDialog.open) els.settingsDialog.close();
+  if (els.entitlementsDialog?.open) els.entitlementsDialog.close();
+  if (els.internalInviteCode) els.internalInviteCode.value = "";
   els.appShell.classList.add("app-hidden");
   if (els.dynamicsShell) els.dynamicsShell.classList.add("app-hidden");
   els.welcomeScreen.classList.remove("hidden");
@@ -570,6 +866,23 @@ function logoutUser() {
   refreshCurrentUserDisplay(null);
   setAuthMessage("");
   setSettingsMessage("");
+  setEntitlementsMessage("");
+  renderEntitlements();
+}
+
+async function logoutUser() {
+  if (!state.currentUser) {
+    completeLogout();
+    return;
+  }
+  setSettingsMessage("正在退出……");
+  try {
+    await authClient.logout();
+    completeLogout();
+  } catch (error) {
+    setSettingsMessage(authErrorMessage(error));
+    if (error instanceof AuthClient.AuthClientError && error.status === 401) completeLogout();
+  }
 }
 
 function startApplication() {
@@ -594,6 +907,7 @@ function launchStaticApplication() {
   els.welcomeScreen.classList.add("hidden");
   els.appShell.classList.remove("app-hidden");
   if (els.dynamicsShell) els.dynamicsShell.classList.add("app-hidden");
+  window.scrollTo(0, 0);
   resizeCanvas();
   syncUi();
 }
@@ -608,6 +922,7 @@ function launchDynamicsApplication() {
   els.welcomeScreen.classList.add("hidden");
   els.appShell.classList.add("app-hidden");
   els.dynamicsShell.classList.remove("app-hidden");
+  window.scrollTo(0, 0);
   resizeDynamicsCanvas();
   syncDynamicsControls();
   updateDynamicsFieldStatus();
@@ -4691,6 +5006,11 @@ if (els.announcementDialog) {
   els.announcementDialog.addEventListener("close", restoreAnnouncementFocus);
 }
 els.showRegisterButton.addEventListener("click", () => showAuthMode("register"));
+if (els.internalLoginEntry) {
+  els.internalLoginEntry.addEventListener("click", () => {
+    setAuthMessage("请先登录，再通过“获得更多权益”进入内部测试通道。");
+  });
+}
 els.loginSubmit.addEventListener("click", loginUser);
 els.registerSubmit.addEventListener("click", registerUser);
 els.startAppButton.addEventListener("click", startApplication);
@@ -4699,11 +5019,30 @@ if (els.dynamicsModuleButton) els.dynamicsModuleButton.addEventListener("click",
 els.welcomeLogoutButton.addEventListener("click", logoutUser);
 els.settingsButton.addEventListener("click", openSettingsDialog);
 if (els.dynamicsSettingsButton) els.dynamicsSettingsButton.addEventListener("click", openSettingsDialog);
+if (els.benefitsButton) els.benefitsButton.addEventListener("click", openEntitlementsDialog);
+if (els.dynamicsBenefitsButton) {
+  els.dynamicsBenefitsButton.addEventListener("click", openEntitlementsDialog);
+}
+if (els.redeemInternalButton) {
+  els.redeemInternalButton.addEventListener("click", redeemInternalAccess);
+}
+if (els.joinPinnWaitlistButton) {
+  els.joinPinnWaitlistButton.addEventListener("click", joinPinnWaitlist);
+}
+if (els.internalInviteCode) {
+  els.internalInviteCode.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      redeemInternalAccess();
+    }
+  });
+}
 if (els.dynamicsToStaticButton) els.dynamicsToStaticButton.addEventListener("click", launchStaticApplication);
 if (els.staticToDynamicsButton) els.staticToDynamicsButton.addEventListener("click", launchDynamicsApplication);
 els.fontSizeSelect.addEventListener("change", () => applyFontSize(els.fontSizeSelect.value));
 els.saveNicknameButton.addEventListener("click", saveNickname);
 els.saveAvatarButton.addEventListener("click", saveSettingsAvatar);
+els.savePasswordButton.addEventListener("click", savePassword);
 els.logoutButton.addEventListener("click", logoutUser);
 els.registerAvatar.addEventListener("change", () => {
   const file = els.registerAvatar.files && els.registerAvatar.files[0];
@@ -4713,12 +5052,17 @@ els.settingsAvatar.addEventListener("change", () => {
   const file = els.settingsAvatar.files && els.settingsAvatar.files[0];
   previewSettingsAvatar(file);
 });
-for (const input of [els.loginUsername]) {
+for (const input of [els.loginUsername, els.loginPassword]) {
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter") loginUser();
   });
 }
-for (const input of [els.registerUsername, els.registerNickname]) {
+for (const input of [
+  els.registerUsername,
+  els.registerPassword,
+  els.registerPasswordConfirm,
+  els.registerNickname,
+]) {
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter") registerUser();
   });

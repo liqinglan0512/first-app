@@ -1,4 +1,5 @@
 .git/
+build/
 venv/
 __pycache__/
 *.pyc
@@ -7,3 +8,10 @@ __pycache__/
 .mypy_cache/
 .DS_Store
 .env
+.env.*
+!.env.example
+data/
+*.sqlite
+*.sqlite3
+*.db
+.webapp.*
