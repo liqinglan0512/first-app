@@ -9,6 +9,7 @@ const html = fs.readFileSync(path.join(root, "web", "index.html"), "utf8");
 const css = fs.readFileSync(path.join(root, "web", "app.css"), "utf8");
 const app = fs.readFileSync(path.join(root, "web", "app.js"), "utf8");
 const manualPath = "/downloads/computational-mechanics-solver-v1.3.2-manual.pdf";
+const manualFile = path.join(root, "web", "downloads", "computational-mechanics-solver-v1.3.2-manual.pdf");
 
 let checks = 0;
 function check(callback) {
@@ -17,13 +18,14 @@ function check(callback) {
 }
 
 check(() => {
-  assert.match(html, /id="releaseVersion"[^>]*class="[^"]*rainbow-animated[^"]*"[^>]*>v1\.5\.0-alpha\.1</);
+  assert.match(html, /<title>Computational Mechanics Solver v1\.5\.0<\/title>/);
+  assert.match(html, /id="releaseVersion"[^>]*class="[^"]*rainbow-animated[^"]*"[^>]*>v1\.5\.0</);
   assert.match(css, /\.rainbow-animated\s*\{[^}]*animation:\s*rainbowFlow/s);
 });
 
 check(() => {
   assert.match(html, /id="announcementButton"/);
-  assert.match(html, /aria-label="查看 v1\.3\.2 更新公告"/);
+  assert.match(html, /aria-label="查看 v1\.5\.0 更新公告"/);
   assert.match(html, /aria-controls="announcementDialog"/);
   assert.match(html, /class="li-atom"/);
   assert.match(css, /@keyframes atomOrbit/);
@@ -31,10 +33,16 @@ check(() => {
 
 check(() => {
   assert.match(html, /id="announcementDialog"[^>]*aria-labelledby="announcementTitle"/);
-  assert.match(html, /Computational Mechanics Solver v1\.3\.2 更新公告/);
-  assert.match(html, /二维多对象独立质点动力学/);
-  assert.match(html, /模型诊断接入正式求解流程/);
-  assert.match(html, /暂不发生碰撞、接触或相互作用/);
+  assert.match(html, /Computational Mechanics Solver v1\.5\.0 更新公告/);
+  assert.match(html, /同步二维动力学世界/);
+  assert.match(html, /圆—圆、圆—地面接触/);
+  assert.match(html, /受控 AST 与白名单求值/);
+  assert.match(html, /cms-dynamics-project@2/);
+  assert.match(html, /v1\.5\.0 新功能请参考本更新公告/);
+  assert.match(html, /仅作为历史版本说明书继续提供下载/);
+  assert.match(html, /不会自动推送 GitHub/);
+  assert.match(html, /轨道对象尚未与自由\/接触对象进入同一碰撞世界/);
+  assert.match(html, /不继续剩余时长的自由飞行/);
   assert.match(html, /不应用于未经独立复核的工程安全决策/);
 });
 
@@ -51,10 +59,28 @@ check(() => {
     assert.match(card[0], new RegExp(`href="${manualPath.replaceAll(".", "\\.")}"`));
     assert.match(card[0], /download/);
     assert.match(card[0], /用户与技术说明书/);
-    assert.match(card[0], /v1\.3\.2 PDF/);
+    assert.match(card[0], /v1\.3\.2 · 历史版本/);
+    assert.match(card[0], /适用于 v1\.3\.2 的历史版本/);
     assert.match(card[0], /manual-cube-icon/);
     assert.equal((card[0].match(/cube-edge/g) || []).length, 9);
   }
+});
+
+check(() => {
+  assert.equal(fs.existsSync(manualFile), true, "The single retained historical manual must exist.");
+  const bytes = fs.readFileSync(manualFile);
+  assert.ok(bytes.length > 0, "Historical manual must not be empty.");
+  assert.equal(bytes.subarray(0, 4).toString("ascii"), "%PDF");
+  assert.doesNotMatch(html, /href="[^"]*release\//);
+  assert.doesNotMatch(html, /v1\.5\.0[^<]{0,40}用户与技术说明书/);
+});
+
+check(() => {
+  assert.match(html, /Free、Plus、Pro/);
+  assert.match(html, /Plus\/Pro 暂不提供购买/);
+  assert.match(html, /<h3>Internal Tester<\/h3>/);
+  assert.match(html, /PINN 求解器（开发中）/);
+  assert.match(html, /加入等待名单不会开启 PINN 求解能力/);
 });
 
 check(() => {

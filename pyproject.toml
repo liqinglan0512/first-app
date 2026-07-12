@@ -1,6 +1,6 @@
 [project]
 name = "mechanics-mvp"
-version = "1.5.0a1"
+dynamic = ["version"]
 description = "MVP backend solver for 2D frame mechanics projects."
 requires-python = ">=3.10"
 dependencies = [
@@ -25,3 +25,6 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 mechanics_mvp = ["migrations/*.sql"]
+
+[tool.setuptools.dynamic]
+version = {attr = "mechanics_mvp.version.__version__"}

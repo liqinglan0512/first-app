@@ -1,13 +1,15 @@
 # v1.3.2 公开说明书构建说明
 
-## 产物
+## 保留资产
 
-- 可编辑 DOCX：`Computational-Mechanics-Solver-v1.3.2-用户与技术说明书.docx`
 - 公开 PDF：`../../../web/downloads/computational-mechanics-solver-v1.3.2-manual.pdf`
-- 可审查源稿：`manual-source.md`
+- 唯一维护源稿：`manual-source.md`
 - 封面资产：`assets/cover-v1.3.2.png`
+- 用户案例图片：`assets/static-triangle-frame-case.png`、`assets/dynamics-magnetic-case.png`、`assets/dynamics-spiral-case.png`
 
-`manual-source.md` 是公开内容的源文件。DOCX 与 PDF 是生成产物，不应直接手工修改后再覆盖源稿。
+`manual-source.md` 是公开内容的唯一维护源。DOCX 只允许作为本地生成和 Word 导出的中间文件，不提交仓库；网站 PDF 是唯一公开发布副本。
+
+该说明书适用于 v1.3.2，是 v1.5.0 页面保留的历史版本说明书。它不完整覆盖 v1.5.0 新增的云账户、Plus/Pro、内测通道、碰撞、刚体转动、约束轨道和变化场；这些功能以主页更新公告和 `RELEASE_NOTES_v1.5.0.md` 为准。
 
 ## 构建
 
@@ -17,7 +19,7 @@
 python -m pip install -r requirements-docs.txt
 ```
 
-生成 DOCX：
+在本地生成临时 DOCX：
 
 ```powershell
 python tools/build_public_manual.py
@@ -29,13 +31,13 @@ python tools/build_public_manual.py
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/export_public_manual.ps1
 ```
 
-运行结构与公开内容边界测试：
+导出完成后，删除或保留在 Git 忽略范围内，不要提交 DOCX。运行维护源、PDF 和公开内容边界测试：
 
 ```powershell
 python -m unittest tests.test_public_manual -v
 ```
 
-## 当前版式基线
+## PDF 版式基线
 
 - A4，26 页。
 - 封面使用 `web/welcome-bg.jpg`，按比例裁切后铺满整页。
@@ -43,7 +45,7 @@ python -m unittest tests.test_public_manual -v
 - 20 个 Word 公式对象、10 个表格、3 张正文案例图。
 - 正文从第一章开始，使用真实 Word 多级编号。
 
-## 案例证据门禁
+## 案例证据边界
 
 公开手册不得把仓库示例冒充为用户案例。当前用户案例证据为：
 
@@ -55,6 +57,4 @@ python -m unittest tests.test_public_manual -v
 
 用户于 2026-07-12 明确取消第二个静力学用户案例，并确认两张动力学截图中的头像和账号均为虚拟信息，可以直接写入公开 DOCX。说明书因此收录 1 个用户静力学案例和 2 个用户动力学案例。
 
-完整核验记录见 `../../../release/v1.3.2/case-verification.md`。
-
-页面、结构、哈希、自动测试和剩余门禁记录见 `QA-REPORT.md`。
+公开说明书不得把仓库示例冒充为用户案例。当前自动测试直接验证唯一 PDF、维护源、必要图片、页面数量、关键公开内容和内部信息边界，不依赖已清理的旧 release QA 文件。

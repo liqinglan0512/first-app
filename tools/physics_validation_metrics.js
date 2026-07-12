@@ -194,7 +194,7 @@ assert.ok(acceleratedCollision.totalSubsteps > 1, "external acceleration must re
 assert.ok(acceleratedCollision.contactCount > 0, "accelerated body must not tunnel through its partner");
 
 const metrics = {
-  release: "v1.5.0-alpha.1",
+  release: "v1.5.0",
   coordinateSystem: "SI, 2D, counter-clockwise positive rotation",
   elasticCollision: {
     theory: { finalVelocityA: 0, finalVelocityB: 1, momentumX: 1, kineticEnergy: 0.5 },

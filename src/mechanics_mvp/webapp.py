@@ -39,12 +39,13 @@ from .entitlements import (
 )
 from .project_io import project_from_dict
 from .report import build_report_pdf, build_text_report_pdf
+from .version import __version__
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WEB_ROOT = PROJECT_ROOT / "web"
 APPLICATION_ID = "computational-mechanics-solver"
-APPLICATION_VERSION = os.environ.get("MECHANICS_VERSION", "1.5.0-alpha.1")
+APPLICATION_VERSION = os.environ.get("MECHANICS_VERSION", __version__)
 STATIC_PROJECT_SCHEMA = "cms-static-project@1"
 DYNAMICS_PROJECT_SCHEMA = "cms-dynamics-project@2"
 STARTED_AT = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
@@ -149,7 +150,7 @@ def _solver_backend(raw: dict[str, Any]) -> str:
 
 
 class MechanicsWebHandler(BaseHTTPRequestHandler):
-    server_version = "MechanicsMVP/1.5.0-alpha.1"
+    server_version = f"MechanicsMVP/{APPLICATION_VERSION}"
 
     def do_GET(self) -> None:
         request_path = urlsplit(self.path).path
@@ -542,7 +543,7 @@ class MechanicsWebHandler(BaseHTTPRequestHandler):
 
     def _serve_manual(self) -> None:
         if not MANUAL_FILE.is_file():
-            self.send_error(404, "Manual not found")
+            self.send_error(404, "The v1.3.2 historical manual is unavailable")
             return
         self._send_bytes(
             MANUAL_FILE.read_bytes(),
