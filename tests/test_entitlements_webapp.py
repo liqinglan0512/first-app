@@ -149,6 +149,35 @@ class EntitlementWebAppTests(unittest.TestCase):
         error_code = error.get("code") if isinstance(error, dict) else None
         self.assertNotEqual(error_code, "ENTITLEMENT_REQUIRED")
 
+    def test_forged_role_cannot_unlock_advanced_export(self) -> None:
+        status, _headers, payload = self._request(
+            "/api/report",
+            method="POST",
+            payload={
+                "role": "pro",
+                "entitlements": ["export.advanced"],
+                "report_options": ["advanced_export"],
+            },
+        )
+        self.assertEqual(status, 403)
+        self.assertEqual(payload["error"]["code"], "ENTITLEMENT_REQUIRED")
+
+        with self.database.transaction() as connection:
+            self.database.execute_on(
+                connection,
+                "UPDATE users SET role = ? WHERE id = ?",
+                ("pro", self.user_id),
+            )
+        status, _headers, payload = self._request(
+            "/api/report",
+            method="POST",
+            payload={"report_options": ["advanced_export"]},
+        )
+        self.assertEqual(status, 422)
+        error = payload.get("error")
+        error_code = error.get("code") if isinstance(error, dict) else None
+        self.assertNotEqual(error_code, "ENTITLEMENT_REQUIRED")
+
     def test_internal_redeem_requires_csrf_and_never_echoes_credential(self) -> None:
         status, _headers, payload = self._request(
             "/api/entitlements/internal/redeem",
@@ -189,6 +218,39 @@ class EntitlementWebAppTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(payload["pinnStatus"], "waiting")
         self.assertNotIn("solve.pinn", payload["entitlements"])
+
+    def test_admin_can_revoke_internal_access_through_http(self) -> None:
+        target = self.auth_service.register(
+            username="internal-revoke-target",
+            password="correct-horse-staple-42",
+            display_name="待撤销内测用户",
+            remote_address="127.0.0.2",
+        )
+        self.entitlement_service.redeem_internal_access(
+            user_id=target.user.id,
+            invite_code="test-http-invite",
+            remote_address="127.0.0.2",
+        )
+        with self.database.transaction() as connection:
+            self.database.execute_on(
+                connection,
+                "UPDATE users SET role = ? WHERE id = ?",
+                ("admin", self.user_id),
+            )
+
+        status, _headers, payload = self._mutation(
+            "/api/entitlements/internal/revoke",
+            {"targetUserId": target.user.id},
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["role"], "free")
+        self.assertEqual(payload["user"]["role"], "admin")
+        grant = self.database.fetch_one(
+            "SELECT revoked_at, revoked_by FROM internal_access_grants WHERE user_id = ?",
+            (target.user.id,),
+        )
+        self.assertIsNotNone(grant["revoked_at"])
+        self.assertEqual(grant["revoked_by"], self.user_id)
 
 
 if __name__ == "__main__":

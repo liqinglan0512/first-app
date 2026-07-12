@@ -163,7 +163,7 @@
 - 内测码、密码、Cookie、哈希和令牌不得进入日志或仓库。
 - 商业文案不能把 PINNs 等开发中能力宣传为可用付费功能。
 
-**验收证据：** Python 75/75；全部 JavaScript 测试与语法检查通过。真实浏览器已验证 Free、Plus/Pro 只展示不购买、PINN 等待名单不解锁求解器、Internal Tester 不具备 Admin 权限、刷新持久化、彩虹头像光圈和唯一标签；1692×960、1366×768、390×844 三种视口通过，控制台错误为 0。114 个 Git 跟踪文件的凭据模式扫描通过。
+**验收证据：** Python 77/77；全部 JavaScript 测试与语法检查通过。HTTP 回归覆盖正式报告与高级导出拒绝前端伪造、管理员撤销 Internal Tester。真实浏览器已验证 Free、Plus/Pro 只展示不购买、PINN 等待名单不解锁求解器、Internal Tester 不具备 Admin 权限、刷新持久化、彩虹头像光圈和唯一标签；1692×960、1366×768、390×844 三种视口通过，控制台错误为 0。三视口截图与机器可读记录保存在 `release/v1.4.0-beta.1/browser-qa.json`；120 个 Git 跟踪 blob 的凭据模式扫描通过。
 **计划提交：** `feat: add plus pro and internal tester entitlements`
 **提交号：** `ce7e3d7`（`feat: add plus pro and internal tester entitlements`）
 
@@ -297,5 +297,6 @@
 - 内部通道只读取 `CMS_INTERNAL_INVITE_CODE`，数据库仅保存 HMAC 指纹；错误尝试限速、到期恢复和管理员撤销均有自动测试。
 - 权益面板已将“当前主身份”改为“当前身份”；说明书卡片图标改为六色线框正六面体。
 - 浏览器验证覆盖 Free、Internal Tester、刷新持久化、三种视口和彩虹头像光圈，控制台错误为 0。
-- Python 75/75、全部 JavaScript 测试和语法检查通过；114 个 Git 跟踪文件敏感模式扫描通过。
+- Python 77/77、全部 JavaScript 测试和语法检查通过；120 个 Git 跟踪 blob 敏感模式扫描通过。
+- 补充高级导出拒绝、管理员撤销 HTTP 回归测试，并提交三视口截图与 `browser-qa.json`；刷新会话、Internal Tester 唯一标签、无 Admin 权限与 PINN 等待名单不提权均可独立复核。
 - 功能提交：`ce7e3d7`。
