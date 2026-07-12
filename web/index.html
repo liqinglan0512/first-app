@@ -142,12 +142,20 @@
             aria-label="下载 Computational Mechanics Solver v1.3.2 用户与技术说明书"
             title="下载用户与技术说明书"
           >
-            <span class="manual-book-icon" aria-hidden="true"></span>
+            <span class="manual-cube-icon" aria-hidden="true">
+              <span class="cube-edge edge-1"></span><span class="cube-edge edge-2"></span>
+              <span class="cube-edge edge-3"></span><span class="cube-edge edge-4"></span>
+              <span class="cube-edge edge-5"></span><span class="cube-edge edge-6"></span>
+              <span class="cube-edge edge-7"></span><span class="cube-edge edge-8"></span>
+              <span class="cube-edge edge-9"></span>
+            </span>
             <span class="manual-download-title">用户与技术说明书</span>
             <small>v1.3.2 PDF</small>
           </a>
           <span id="mainUserAvatar" class="default-avatar main-avatar">CM</span>
           <span id="mainUserName" class="main-user-name">未登录</span>
+          <span id="mainUserTier" class="user-tier hidden"></span>
+          <button id="benefitsButton" class="benefits-button" type="button">获得更多权益</button>
           <button id="settingsButton" class="settings-button" title="设置">设置</button>
         </div>
 
@@ -300,12 +308,20 @@
             aria-label="下载 Computational Mechanics Solver v1.3.2 用户与技术说明书"
             title="下载用户与技术说明书"
           >
-            <span class="manual-book-icon" aria-hidden="true"></span>
+            <span class="manual-cube-icon" aria-hidden="true">
+              <span class="cube-edge edge-1"></span><span class="cube-edge edge-2"></span>
+              <span class="cube-edge edge-3"></span><span class="cube-edge edge-4"></span>
+              <span class="cube-edge edge-5"></span><span class="cube-edge edge-6"></span>
+              <span class="cube-edge edge-7"></span><span class="cube-edge edge-8"></span>
+              <span class="cube-edge edge-9"></span>
+            </span>
             <span class="manual-download-title">用户与技术说明书</span>
             <small>v1.3.2 PDF</small>
           </a>
           <span id="dynamicsUserAvatar" class="default-avatar main-avatar">CM</span>
           <span id="dynamicsUserName" class="main-user-name">未登录</span>
+          <span id="dynamicsUserTier" class="user-tier hidden"></span>
+          <button id="dynamicsBenefitsButton" class="benefits-button" type="button">获得更多权益</button>
           <button id="dynamicsSettingsButton" class="settings-button" title="设置">设置</button>
         </div>
 
@@ -948,6 +964,52 @@
         <p id="settingsMessage" class="settings-message" role="status"></p>
         <footer class="modal-actions">
           <button id="logoutButton" type="button" class="danger-button">退出登录</button>
+          <button value="cancel" class="primary">完成</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="entitlementsDialog" class="modal entitlements-modal" aria-labelledby="entitlementsTitle">
+      <form method="dialog">
+        <header class="modal-header">
+          <div>
+            <p class="modal-kicker">ACCOUNT &amp; ACCESS</p>
+            <h2 id="entitlementsTitle">账户与权益</h2>
+          </div>
+          <button value="cancel" class="icon-button" title="关闭权益面板">×</button>
+        </header>
+        <div class="entitlements-content">
+          <section class="entitlement-current">
+            <span>当前身份</span>
+            <strong id="entitlementCurrentLabel">正在读取……</strong>
+            <p id="entitlementExpiry" class="entitlement-muted"></p>
+          </section>
+          <section>
+            <h3>套餐权益</h3>
+            <div id="entitlementPlanList" class="entitlement-plan-list" aria-live="polite"></div>
+          </section>
+          <section id="internalAccessSection" class="entitlement-action-section">
+            <h3>Internal Tester</h3>
+            <p>内部测试身份不包含管理员权限。凭据只提交到服务器，本页不会保存。</p>
+            <div class="entitlement-action-row">
+              <label class="wide-field">
+                <span>内部测试凭据</span>
+                <input id="internalInviteCode" type="password" autocomplete="off" maxlength="256">
+              </label>
+              <button id="redeemInternalButton" type="button">验证并启用</button>
+            </div>
+          </section>
+          <section class="entitlement-action-section">
+            <h3>PINN 求解器</h3>
+            <p>仍在开发与验证中。加入等待名单不会开启 PINN 求解能力。</p>
+            <div class="entitlement-action-row">
+              <span id="pinnWaitlistStatus" class="entitlement-muted">尚未加入等待名单</span>
+              <button id="joinPinnWaitlistButton" type="button">加入等待名单</button>
+            </div>
+          </section>
+        </div>
+        <p id="entitlementsMessage" class="settings-message" role="status"></p>
+        <footer class="modal-actions">
           <button value="cancel" class="primary">完成</button>
         </footer>
       </form>

@@ -244,6 +244,15 @@ class AuthService:
             user=_public_user(record),
         )
 
+    def authenticated_user(self, session_token: str) -> PublicUser:
+        record = self._active_session(session_token)
+        if record is None:
+            raise AuthUnauthorizedError("请先登录。")
+        return _public_user(record)
+
+    def authorized_user(self, session_token: str, csrf_token: str) -> PublicUser:
+        return _public_user(self._require_session(session_token, csrf_token))
+
     def logout(self, session_token: str, csrf_token: str) -> None:
         record = self._require_session(session_token, csrf_token)
         with self.database.transaction() as connection:
