@@ -131,7 +131,7 @@
 
 **计划测试：** 注册、哈希、登录、退出、Session 撤销、迁移、限速、CSRF、头像安全、旧计算回归、响应式与无障碍。
 **计划提交：** `feat: add cloud accounts and refine dark visual system`
-**提交号：待生成。**
+**提交号：** `c7c0e49`（`feat: add cloud accounts and refine dark visual system`）
 
 **验收证据：** Python 64/64、JavaScript 118 项断言和全部语法检查通过；wheel 构建成功且包含 `0001_auth_schema.sql`。真实浏览器已验证注册、刷新恢复会话、昵称持久化、退出、重新登录，以及 1692×960、1366×768、390×844 三种视口；浏览器控制台错误为 0。敏感值扫描只命中允许的环境变量名和 `.env.example` 占位值。
 
@@ -139,23 +139,23 @@
 
 ## 4. 大目标三：Free、Plus、Pro 与 Internal Tester 权益
 
-**状态：等待大目标二门禁**
+**状态：完成**
 **计划分支：** `feature/v1.4-auth-commercial-ui`
 
 ### 4.1 小目标
 
-- [ ] 3.1 编写 `docs/adr/0002-entitlements-and-plans.md`。
-- [ ] 3.2 建立 Free、Plus、Pro、Internal Tester、Admin 的服务端角色与权益模型。
-- [ ] 3.3 明确 Internal Tester 不拥有管理员权限。
-- [ ] 3.4 实现“获得更多权益”按钮与权益面板。
-- [ ] 3.5 由服务端限制正式报告、高级导出等权益。
-- [ ] 3.6 PINNs 始终标记“开发中”，只允许等待名单或进度入口。
-- [ ] 3.7 内部通道只从 `CMS_INTERNAL_INVITE_CODE` 读取配置；仓库、前端、日志和响应中不得出现真实值。
-- [ ] 3.8 `.env` 保持忽略，`.env.example` 只使用占位值。
-- [ ] 3.9 实现内测码限速、到期、使用时间记录和管理员撤销。
-- [ ] 3.10 实现 Internal Tester 彩虹头像光圈及唯一主身份标签。
-- [ ] 3.11 标签优先级为 Internal Tester > Pro > Plus > Free。
-- [ ] 3.12 拒绝伪造前端角色和无权限报告请求。
+- [x] 3.1 编写 `docs/adr/0002-entitlements-and-plans.md`。
+- [x] 3.2 建立 Free、Plus、Pro、Internal Tester、Admin 的服务端角色与权益模型。
+- [x] 3.3 明确 Internal Tester 不拥有管理员权限。
+- [x] 3.4 实现“获得更多权益”按钮与权益面板。
+- [x] 3.5 由服务端限制正式报告、高级导出等权益。
+- [x] 3.6 PINNs 始终标记“开发中”，只允许等待名单或进度入口。
+- [x] 3.7 内部通道只从 `CMS_INTERNAL_INVITE_CODE` 读取配置；仓库、前端、日志和响应中不得出现真实值。
+- [x] 3.8 `.env` 保持忽略，`.env.example` 只使用占位值。
+- [x] 3.9 实现内测码限速、到期、使用时间记录和管理员撤销。
+- [x] 3.10 实现 Internal Tester 彩虹头像光圈及唯一主身份标签。
+- [x] 3.11 标签优先级为 Internal Tester > Pro > Plus > Free。
+- [x] 3.12 拒绝伪造前端角色和无权限报告请求。
 
 ### 4.2 风险与计划证据
 
@@ -163,9 +163,9 @@
 - 内测码、密码、Cookie、哈希和令牌不得进入日志或仓库。
 - 商业文案不能把 PINNs 等开发中能力宣传为可用付费功能。
 
-**计划测试：** 各套餐标签、权益矩阵、服务端报告拒绝、前端角色伪造、内测码限速/到期/撤销、敏感值扫描。
+**验收证据：** Python 75/75；全部 JavaScript 测试与语法检查通过。真实浏览器已验证 Free、Plus/Pro 只展示不购买、PINN 等待名单不解锁求解器、Internal Tester 不具备 Admin 权限、刷新持久化、彩虹头像光圈和唯一标签；1692×960、1366×768、390×844 三种视口通过，控制台错误为 0。114 个 Git 跟踪文件的凭据模式扫描通过。
 **计划提交：** `feat: add plus pro and internal tester entitlements`
-**提交号：待生成。**
+**提交号：** `ce7e3d7`（`feat: add plus pro and internal tester entitlements`）
 
 ---
 
@@ -288,3 +288,14 @@
 - 前端身份来源已改为服务器会话；旧 `cms_users`/`cms_current_user` 只按键名检测和删除，不解析或上传旧密码。
 - 静力学与动力学默认使用分层纯黑主题；两处说明书卡片统一为彩虹描边黑玻璃样式。
 - 浏览器真实流程与三种视口、全量回归、wheel 构建、Diff 检查及敏感值扫描均已通过；大目标二门禁完成。
+
+### 2026-07-12 - 大目标三权益系统冻结
+
+- 服务端建立 Free、Plus、Pro、Internal Tester 与 Admin 权益矩阵；Internal Tester 明确不继承管理员能力。
+- 正式报告和高级导出在服务端校验；浏览器自报角色不能提升权限。
+- PINN 仅提供等待名单，求解器选项保持禁用并持续标记“开发中”。
+- 内部通道只读取 `CMS_INTERNAL_INVITE_CODE`，数据库仅保存 HMAC 指纹；错误尝试限速、到期恢复和管理员撤销均有自动测试。
+- 权益面板已将“当前主身份”改为“当前身份”；说明书卡片图标改为六色线框正六面体。
+- 浏览器验证覆盖 Free、Internal Tester、刷新持久化、三种视口和彩虹头像光圈，控制台错误为 0。
+- Python 75/75、全部 JavaScript 测试和语法检查通过；114 个 Git 跟踪文件敏感模式扫描通过。
+- 功能提交：`ce7e3d7`。
