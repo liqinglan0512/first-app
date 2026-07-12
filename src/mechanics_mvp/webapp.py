@@ -12,8 +12,23 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
+from .auth import AuthError, AuthService, AuthValidationError, IssuedSession
+from .auth_http import (
+    JSON_BODY_LIMIT,
+    MULTIPART_BODY_LIMIT,
+    clear_session_cookie,
+    create_auth_service,
+    error_payload,
+    issued_session_payload,
+    make_session_cookie,
+    parse_avatar_multipart,
+    public_user_payload,
+    read_session_cookie,
+    require_same_origin,
+    session_view_payload,
+)
 from .engine import solve_with_backend
 from .project_io import project_from_dict
 from .report import build_report_pdf, build_text_report_pdf
@@ -22,7 +37,7 @@ from .report import build_report_pdf, build_text_report_pdf
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WEB_ROOT = PROJECT_ROOT / "web"
 APPLICATION_ID = "computational-mechanics-solver"
-APPLICATION_VERSION = os.environ.get("MECHANICS_VERSION", "1.3.2-beta.1")
+APPLICATION_VERSION = os.environ.get("MECHANICS_VERSION", "1.4.0-beta.1")
 STATIC_PROJECT_SCHEMA = "cms-static-project@1"
 DYNAMICS_PROJECT_SCHEMA = "cms-dynamics-project@1"
 STARTED_AT = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
@@ -127,12 +142,20 @@ def _solver_backend(raw: dict[str, Any]) -> str:
 
 
 class MechanicsWebHandler(BaseHTTPRequestHandler):
-    server_version = "MechanicsMVP/1.3.2-beta.1"
+    server_version = "MechanicsMVP/1.4.0-beta.1"
 
     def do_GET(self) -> None:
         request_path = urlsplit(self.path).path
         if request_path == "/api/version":
             self._send_json(runtime_version_payload())
+            return
+
+        if request_path == "/api/auth/session":
+            self._handle_auth_session()
+            return
+
+        if request_path.startswith("/api/avatars/"):
+            self._serve_avatar(request_path.removeprefix("/api/avatars/"))
             return
 
         if request_path == MANUAL_DOWNLOAD_PATH:
@@ -154,7 +177,18 @@ class MechanicsWebHandler(BaseHTTPRequestHandler):
         self.send_error(404, "Not found")
 
     def do_POST(self) -> None:
-        if self.path not in {"/api/solve", "/api/report", "/api/dynamics-report"}:
+        request_path = urlsplit(self.path).path
+        if request_path in {
+            "/api/auth/register",
+            "/api/auth/login",
+            "/api/auth/logout",
+            "/api/auth/password",
+            "/api/auth/avatar",
+        }:
+            self._handle_auth_mutation("POST", request_path)
+            return
+
+        if request_path not in {"/api/solve", "/api/report", "/api/dynamics-report"}:
             self.send_error(404, "Not found")
             return
 
@@ -162,14 +196,14 @@ class MechanicsWebHandler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", "0"))
             raw_body = self.rfile.read(length)
             payload = json.loads(raw_body.decode("utf-8"))
-            if self.path == "/api/dynamics-report":
+            if request_path == "/api/dynamics-report":
                 self._send_bytes(
                     dynamics_report_payload(payload),
                     content_type="application/pdf",
                     headers={"Content-Disposition": 'attachment; filename="dynamics-report.pdf"'},
                 )
                 return
-            if self.path == "/api/report":
+            if request_path == "/api/report":
                 self._send_bytes(
                     report_project_payload(payload),
                     content_type="application/pdf",
@@ -183,8 +217,197 @@ class MechanicsWebHandler(BaseHTTPRequestHandler):
 
         self._send_json(response)
 
+    def do_PATCH(self) -> None:
+        request_path = urlsplit(self.path).path
+        if request_path != "/api/auth/profile":
+            self.send_error(404, "Not found")
+            return
+        self._handle_auth_mutation("PATCH", request_path)
+
     def log_message(self, format: str, *args: Any) -> None:
         return
+
+    def _handle_auth_session(self) -> None:
+        try:
+            view = self._auth_service().session(read_session_cookie(self.headers))
+            self._send_json(session_view_payload(view))
+        except AuthError as error:
+            self._send_auth_error(error)
+        except Exception:  # noqa: BLE001 - do not expose backend details.
+            self._send_auth_internal_error()
+
+    def _handle_auth_mutation(self, method: str, request_path: str) -> None:
+        try:
+            require_same_origin(self.headers)
+            service = self._auth_service()
+            session_token = read_session_cookie(self.headers)
+            csrf_token = str(self.headers.get("X-CSRF-Token", ""))
+            remote_address = str(self.client_address[0]) if self.client_address else "unknown"
+
+            if method == "POST" and request_path == "/api/auth/register":
+                payload = self._read_json_body()
+                if payload.get("acceptedTerms") is not True or payload.get("acceptedPrivacy") is not True:
+                    raise AuthValidationError("请先阅读并同意用户协议与隐私说明。")
+                password = str(payload.get("password", ""))
+                if password != str(payload.get("passwordConfirm", "")):
+                    raise AuthValidationError("两次输入的密码不一致。")
+                issued = service.register(
+                    username=str(payload.get("username", "")),
+                    password=password,
+                    display_name=str(payload.get("displayName", "")),
+                    remote_address=remote_address,
+                )
+                self._send_issued_session(issued, status=201)
+                return
+
+            if method == "POST" and request_path == "/api/auth/login":
+                payload = self._read_json_body()
+                issued = service.login(
+                    username=str(payload.get("username", "")),
+                    password=str(payload.get("password", "")),
+                    remote_address=remote_address,
+                )
+                self._send_issued_session(issued)
+                return
+
+            if method == "POST" and request_path == "/api/auth/logout":
+                self._read_json_body(allow_empty=True)
+                service.logout(session_token, csrf_token)
+                self._send_json(
+                    {"ok": True},
+                    headers={"Set-Cookie": clear_session_cookie(secure=self._auth_cookie_secure())},
+                )
+                return
+
+            if method == "POST" and request_path == "/api/auth/password":
+                payload = self._read_json_body()
+                new_password = str(payload.get("newPassword", ""))
+                if new_password != str(payload.get("newPasswordConfirm", "")):
+                    raise AuthValidationError("两次输入的新密码不一致。")
+                issued = service.change_password(
+                    session_token,
+                    csrf_token,
+                    current_password=str(payload.get("currentPassword", "")),
+                    new_password=new_password,
+                )
+                self._send_issued_session(issued)
+                return
+
+            if method == "POST" and request_path == "/api/auth/avatar":
+                body = self._read_body(MULTIPART_BODY_LIMIT)
+                avatar = parse_avatar_multipart(str(self.headers.get("Content-Type", "")), body)
+                user = service.update_avatar(session_token, csrf_token, avatar)
+                self._send_json({"user": public_user_payload(user)})
+                return
+
+            if method == "PATCH" and request_path == "/api/auth/profile":
+                payload = self._read_json_body()
+                user = service.update_profile(
+                    session_token,
+                    csrf_token,
+                    display_name=str(payload.get("displayName", "")),
+                )
+                self._send_json({"user": public_user_payload(user)})
+                return
+
+            self.send_error(404, "Not found")
+        except AuthError as error:
+            self._send_auth_error(error)
+        except Exception:  # noqa: BLE001 - do not expose backend details or secrets.
+            self._send_auth_internal_error()
+
+    def _serve_avatar(self, encoded_name: str) -> None:
+        try:
+            name = unquote(encoded_name, errors="strict")
+            target = self._auth_service().avatar_file(name)
+        except (AuthError, UnicodeError, ValueError):
+            self.send_error(404, "Not found")
+            return
+        if not target.is_file():
+            self.send_error(404, "Not found")
+            return
+        content_type = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".webp": "image/webp",
+        }.get(target.suffix.lower())
+        if content_type is None:
+            self.send_error(404, "Not found")
+            return
+        self._send_bytes(
+            target.read_bytes(),
+            content_type=content_type,
+            headers={
+                "Cache-Control": "public, max-age=3600",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
+
+    def _auth_service(self) -> AuthService:
+        service = getattr(self.server, "auth_service", None)
+        if not isinstance(service, AuthService):
+            raise RuntimeError("Authentication service is unavailable.")
+        return service
+
+    def _auth_cookie_secure(self) -> bool:
+        return bool(getattr(self.server, "auth_cookie_secure", False))
+
+    def _read_json_body(self, *, allow_empty: bool = False) -> dict[str, Any]:
+        body = self._read_body(JSON_BODY_LIMIT)
+        if not body and allow_empty:
+            return {}
+        try:
+            payload = json.loads(body.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            raise AuthValidationError("请求内容不是有效的 JSON。") from None
+        if not isinstance(payload, dict):
+            raise AuthValidationError("请求内容必须为 JSON 对象。")
+        return payload
+
+    def _read_body(self, limit: int) -> bytes:
+        transfer_encoding = str(self.headers.get("Transfer-Encoding", "")).strip().lower()
+        if transfer_encoding and transfer_encoding != "identity":
+            raise AuthValidationError("不支持分块上传。")
+        raw_length = str(self.headers.get("Content-Length", "0")).strip()
+        try:
+            length = int(raw_length)
+        except ValueError:
+            raise AuthValidationError("请求长度无效。") from None
+        if length < 0 or length > limit:
+            raise AuthValidationError("请求内容过大。")
+        body = self.rfile.read(length)
+        if len(body) != length:
+            raise AuthValidationError("请求内容不完整。")
+        return body
+
+    def _send_issued_session(self, issued: IssuedSession, *, status: int = 200) -> None:
+        self._send_json(
+            issued_session_payload(issued),
+            status=status,
+            headers={
+                "Set-Cookie": make_session_cookie(
+                    issued,
+                    secure=self._auth_cookie_secure(),
+                )
+            },
+        )
+
+    def _send_auth_error(self, error: AuthError) -> None:
+        headers: dict[str, str] = {}
+        if error.retry_after is not None:
+            headers["Retry-After"] = str(error.retry_after)
+        self._send_json(error_payload(error), status=error.status, headers=headers)
+
+    def _send_auth_internal_error(self) -> None:
+        self._send_json(
+            {
+                "error": {
+                    "code": "AUTH_INTERNAL_ERROR",
+                    "message": "账户服务暂时不可用，请稍后再试。",
+                }
+            },
+            status=500,
+        )
 
     def _serve_static(self, relative_path: str) -> None:
         web_root = WEB_ROOT.resolve()
@@ -211,9 +434,25 @@ class MechanicsWebHandler(BaseHTTPRequestHandler):
             headers={"Content-Disposition": f'attachment; filename="{MANUAL_FILENAME}"'},
         )
 
-    def _send_json(self, payload: dict[str, Any], *, status: int = 200) -> None:
+    def _send_json(
+        self,
+        payload: dict[str, Any],
+        *,
+        status: int = 200,
+        headers: dict[str, str] | None = None,
+    ) -> None:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self._send_bytes(data, content_type="application/json; charset=utf-8", status=status)
+        response_headers = {
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+            **(headers or {}),
+        }
+        self._send_bytes(
+            data,
+            content_type="application/json; charset=utf-8",
+            status=status,
+            headers=response_headers,
+        )
 
     def _send_bytes(
         self,
@@ -226,7 +465,20 @@ class MechanicsWebHandler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
-        for key, value in (headers or {}).items():
+        security_headers = {
+            "Content-Security-Policy": (
+                "default-src 'self'; img-src 'self' data: blob:; "
+                "style-src 'self'; script-src 'self'; connect-src 'self'; "
+                "font-src 'self'; object-src 'none'; base-uri 'self'; "
+                "frame-ancestors 'none'; form-action 'self'"
+            ),
+            "Referrer-Policy": "no-referrer",
+            "X-Content-Type-Options": "nosniff",
+            "X-Frame-Options": "DENY",
+            "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+        }
+        security_headers.update(headers or {})
+        for key, value in security_headers.items():
             self.send_header(key, value)
         self.end_headers()
         self.wfile.write(data)
@@ -238,7 +490,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8765")))
     args = parser.parse_args(argv)
 
+    auth_service, auth_cookie_secure = create_auth_service(PROJECT_ROOT)
     server = ThreadingHTTPServer((args.host, args.port), MechanicsWebHandler)
+    server.auth_service = auth_service
+    server.auth_cookie_secure = auth_cookie_secure
     print(f"Mechanics MVP web app: http://{args.host}:{args.port}")
     try:
         server.serve_forever()

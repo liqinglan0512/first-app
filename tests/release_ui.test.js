@@ -17,7 +17,7 @@ function check(callback) {
 }
 
 check(() => {
-  assert.match(html, /id="releaseVersion"[^>]*class="[^"]*rainbow-animated[^"]*"[^>]*>v1\.3\.2</);
+  assert.match(html, /id="releaseVersion"[^>]*class="[^"]*rainbow-animated[^"]*"[^>]*>v1\.4\.0-beta\.1</);
   assert.match(css, /\.rainbow-animated\s*\{[^}]*animation:\s*rainbowFlow/s);
 });
 
@@ -58,7 +58,13 @@ check(() => {
 check(() => {
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /\.atom-orbit[\s\S]*animation:\s*none !important/);
+  assert.match(css, /\.manual-download-card[\s\S]*transition:\s*none !important/);
   assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.welcome-content[\s\S]*padding:\s*112px 22px 22px/);
+});
+
+check(() => {
+  assert.match(html, /Leo\s+<span class="li-ion">Li<sup>\+<\/sup><\/span>\s+Studio出品/);
+  assert.match(css, /\.li-ion sup[\s\S]*vertical-align:\s*super/);
 });
 
 console.log(`release-ui: ${checks} checks passed`);

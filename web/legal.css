@@ -1,0 +1,53 @@
+:root {
+  color-scheme: dark;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #030506;
+  color: #edf5f7;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: #030506 url("/static/welcome-bg.jpg") center / cover fixed;
+}
+
+main {
+  width: min(760px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 64px 0 80px;
+  text-shadow: 0 1px 8px #000;
+}
+
+h1,
+h2 {
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: clamp(32px, 6vw, 56px);
+}
+
+h2 {
+  margin-top: 32px;
+  color: #77d4ff;
+  font-size: 20px;
+}
+
+p {
+  color: #d5e0e4;
+  line-height: 1.8;
+}
+
+.eyebrow,
+a {
+  color: #89e8d6;
+  font-weight: 800;
+}
+
+sup {
+  position: relative;
+  top: -0.1em;
+  font-size: 0.62em;
+  line-height: 0;
+  vertical-align: super;
+}
